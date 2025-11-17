@@ -4,6 +4,8 @@ import { WrappedShareSummary } from "@/components/wrapped-share-summary"
 import { WrappedData } from "@/types/wrapped"
 import { getBaseUrl } from "@/lib/utils"
 
+export const dynamic = 'force-dynamic'
+
 async function getSharedWrapped(token: string) {
   try {
     const baseUrl = getBaseUrl()

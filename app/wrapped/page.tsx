@@ -7,6 +7,8 @@ import { WrappedViewerWrapper } from "@/components/wrapped-viewer-wrapper"
 import { WrappedData } from "@/types/wrapped"
 import { WrappedPageClient } from "@/components/wrapped-page-client"
 
+export const dynamic = 'force-dynamic'
+
 export default async function WrappedPage() {
   const session = await getServerSession(authOptions)
 

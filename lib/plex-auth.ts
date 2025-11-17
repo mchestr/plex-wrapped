@@ -27,7 +27,7 @@ function getClientIdentifier(): string {
   if (!clientId) {
     throw new Error(
       "PLEX_CLIENT_IDENTIFIER is not set in environment variables. " +
-      "Please generate a UUID and add it to your .env file."
+      "Please add a unique identifier string to your .env file."
     )
   }
 

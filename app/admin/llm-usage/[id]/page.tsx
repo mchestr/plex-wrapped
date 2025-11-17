@@ -5,6 +5,8 @@ import { getServerSession } from "next-auth"
 import Link from "next/link"
 import { notFound, redirect } from "next/navigation"
 
+export const dynamic = 'force-dynamic'
+
 export default async function LLMUsageDetailPage({ params }: { params: { id: string } }) {
   const session = await getServerSession(authOptions)
 

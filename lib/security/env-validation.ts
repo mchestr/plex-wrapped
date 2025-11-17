@@ -26,8 +26,8 @@ const envSchema = z.object({
   // Authentication
   NEXTAUTH_SECRET: z.string().min(32, "NEXTAUTH_SECRET must be at least 32 characters"),
 
-  // Plex - optional UUID
-  PLEX_CLIENT_IDENTIFIER: z.string().uuid("PLEX_CLIENT_IDENTIFIER must be a valid UUID").optional(),
+  // Plex - optional client identifier (any string, doesn't need to be UUID)
+  PLEX_CLIENT_IDENTIFIER: z.string().optional(),
 
   // Node environment
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),

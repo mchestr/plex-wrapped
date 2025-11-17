@@ -8,6 +8,24 @@
 
 Transform your Plex viewing data into a stunning, shareable year-end summary—just like Spotify Wrapped, but for your media library. Discover your viewing habits, celebrate your favorite content, and share your stats with friends.
 
+## 📸 Screenshots
+
+<div align="center">
+
+### Home Page
+![Home Page](docs/images/home.png)
+*Landing page with Plex authentication*
+
+### Wrapped Viewer
+![Wrapped Viewer](docs/images/wrapped-viewer.png)
+*Interactive wrapped viewer with animated sections*
+
+### Share Interface
+![Share Interface](docs/images/share.png)
+*Share your wrapped with secure, unique links*
+
+</div>
+
 ---
 
 ## 🌟 Features
@@ -74,7 +92,7 @@ Edit `.env` and configure:
 - `NEXT_PUBLIC_APP_URL` - Your public application URL (e.g., `http://localhost:3000` for dev, `https://yourdomain.com` for production)
 - `NEXTAUTH_URL` - Your application URL for NextAuth callbacks (should match `NEXT_PUBLIC_APP_URL` in production)
 - `NEXTAUTH_SECRET` - Generate with: `openssl rand -base64 32`
-- `PLEX_CLIENT_IDENTIFIER` - Unique UUID for your app instance
+- `PLEX_CLIENT_IDENTIFIER` - Unique identifier for your app instance (any string, doesn't need to be a UUID)
 
 4. **Initialize the database**
 ```bash

@@ -2,6 +2,8 @@ import { redirect } from "next/navigation"
 import { getSetupStatus } from "@/actions/setup"
 import { SetupWizard } from "@/components/setup-wizard/setup-wizard"
 
+export const dynamic = 'force-dynamic'
+
 export default async function SetupPage() {
   const { isComplete, currentStep } = await getSetupStatus()
 
