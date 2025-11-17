@@ -199,6 +199,27 @@ describe('Plex Connection', () => {
   })
 
   describe('checkUserServerAccess', () => {
+    it('should return true when user is admin (even if not in user list)', async () => {
+      // Clear any previous mocks
+      jest.clearAllMocks()
+
+      const result = await checkUserServerAccess(
+        {
+          hostname: 'plex.example.com',
+          port: 32400,
+          protocol: 'https',
+          token: 'server-token',
+          adminPlexUserId: '123',
+        },
+        '123'
+      )
+
+      expect(result.success).toBe(true)
+      expect(result.hasAccess).toBe(true)
+      // Should not call fetch since admin check happens first
+      expect(global.fetch).not.toHaveBeenCalled()
+    })
+
     it('should return true when user exists in server user list', async () => {
       const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer>
@@ -217,6 +238,7 @@ describe('Plex Connection', () => {
           port: 32400,
           protocol: 'https',
           token: 'server-token',
+          adminPlexUserId: '999',
         },
         '123'
       )
@@ -243,13 +265,35 @@ describe('Plex Connection', () => {
           port: 32400,
           protocol: 'https',
           token: 'server-token',
+          adminPlexUserId: '999',
         },
-        '999'
+        '777' // Different from admin (999) and not in user list
       )
 
       expect(result.success).toBe(true)
       expect(result.hasAccess).toBe(false)
       expect(result.error).toContain("User not found in server's user list")
+    })
+
+    it('should handle normalized ID comparison for admin (trim whitespace)', async () => {
+      // Clear any previous mocks
+      jest.clearAllMocks()
+
+      const result = await checkUserServerAccess(
+        {
+          hostname: 'plex.example.com',
+          port: 32400,
+          protocol: 'https',
+          token: 'server-token',
+          adminPlexUserId: ' 123 ',
+        },
+        '123'
+      )
+
+      expect(result.success).toBe(true)
+      expect(result.hasAccess).toBe(true)
+      // Should not call fetch since admin check happens first
+      expect(global.fetch).not.toHaveBeenCalled()
     })
 
     it('should handle normalized ID comparison (trim whitespace)', async () => {
@@ -269,6 +313,7 @@ describe('Plex Connection', () => {
           port: 32400,
           protocol: 'https',
           token: 'server-token',
+          adminPlexUserId: '999',
         },
         '123'
       )
@@ -289,6 +334,7 @@ describe('Plex Connection', () => {
           port: 32400,
           protocol: 'https',
           token: 'invalid-token',
+          adminPlexUserId: '999',
         },
         '123'
       )
@@ -314,6 +360,7 @@ describe('Plex Connection', () => {
           port: 32400,
           protocol: 'https',
           token: 'server-token',
+          adminPlexUserId: '999',
         },
         '123'
       )
@@ -334,6 +381,7 @@ describe('Plex Connection', () => {
           port: 32400,
           protocol: 'https',
           token: 'server-token',
+          adminPlexUserId: '999',
         },
         '123'
       )

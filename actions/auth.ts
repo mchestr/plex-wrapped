@@ -38,12 +38,14 @@ export async function checkServerAccess(userToken: string): Promise<{
 
     // Check if user has access to the configured Plex server
     // Use the server's admin token to check if the user exists in the server's user list
+    // Also check if the user is the admin (admin users may not be in the user list)
     const accessCheck = await checkUserServerAccess(
       {
         hostname: plexServer.hostname,
         port: plexServer.port,
         protocol: plexServer.protocol,
         token: plexServer.token,
+        adminPlexUserId: plexServer.adminPlexUserId,
       },
       plexUser.id
     )

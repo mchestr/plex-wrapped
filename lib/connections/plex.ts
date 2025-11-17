@@ -121,14 +121,26 @@ export async function getPlexUserInfo(token: string): Promise<{ success: boolean
 /**
  * Checks if a user has access to a configured Plex server
  * Uses the server's admin token to check if the user exists in the server's user list
+ * Also checks if the user is the admin (admin users may not be in the user list)
  * This is more reliable than using the user's token directly
  */
 export async function checkUserServerAccess(
-  serverConfig: { hostname: string; port: number; protocol: string; token: string },
+  serverConfig: { hostname: string; port: number; protocol: string; token: string; adminPlexUserId?: string | null },
   plexUserId: string
 ): Promise<{ success: boolean; hasAccess: boolean; error?: string }> {
   try {
-    // First, get the list of users from the server using the admin token
+    // Normalize IDs for comparison (convert to string and trim)
+    const normalizedPlexUserId = String(plexUserId).trim()
+
+    // First, check if the user is the admin (admin users may not be in the server's user list)
+    if (serverConfig.adminPlexUserId) {
+      const normalizedAdminPlexUserId = String(serverConfig.adminPlexUserId).trim()
+      if (normalizedPlexUserId === normalizedAdminPlexUserId) {
+        return { success: true, hasAccess: true }
+      }
+    }
+
+    // Then, get the list of users from the server using the admin token
     const usersResult = await getAllPlexServerUsers({
       hostname: serverConfig.hostname,
       port: serverConfig.port,
@@ -145,10 +157,6 @@ export async function checkUserServerAccess(
     }
 
     // Check if the user's Plex ID exists in the server's user list
-    // Normalize IDs for comparison (convert to string and trim)
-    const normalizedPlexUserId = String(plexUserId).trim()
-
-    // Check each user individually
     const userExists = usersResult.data.some((user) => {
       const normalizedServerUserId = String(user.id).trim()
       return normalizedServerUserId === normalizedPlexUserId
