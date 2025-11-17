@@ -10,6 +10,14 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 
+# Dev stage with source code for docker-compose
+FROM base AS dev
+WORKDIR /app
+ENV NEXT_TELEMETRY_DISABLED=1
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+RUN npx prisma generate
+
 # Rebuild the source code only when needed
 FROM base AS builder
 WORKDIR /app
@@ -48,6 +56,14 @@ COPY --from=builder --chown=nextjs:nodejs /app/node_modules/.prisma ./node_modul
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/@prisma ./node_modules/@prisma
 COPY --from=builder --chown=nextjs:nodejs /app/node_modules/prisma ./node_modules/prisma
 COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+# Install Prisma CLI in production (needed for migrations) - install as root, then change ownership
+RUN npm install --production=false prisma@$(node -p "require('./package.json').devDependencies.prisma") && \
+    npm cache clean --force && \
+    chown -R nextjs:nodejs node_modules/prisma node_modules/.bin/prisma 2>/dev/null || true
+
+# Copy entrypoint script (before switching user so chmod works)
+COPY --chown=nextjs:nodejs docker-entrypoint.sh ./docker-entrypoint.sh
+RUN chmod +x ./docker-entrypoint.sh && ls -la ./docker-entrypoint.sh
 
 # Ensure database directory exists and is writable
 # SQLite will create the database file, but parent directories must exist
@@ -63,4 +79,5 @@ ENV HOSTNAME="0.0.0.0"
 
 # server.js is created by next build from the standalone output
 # https://nextjs.org/docs/pages/api-reference/next-config-js/output
-CMD ["npm", "run", "start:migrate:prod"]
+ENTRYPOINT ["./docker-entrypoint.sh"]
+CMD ["npm", "run", "start:prod"]
