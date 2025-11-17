@@ -1,0 +1,124 @@
+---
+description: Concise project overview and architecture guide for Plex Wrapped
+globs: **/*
+---
+
+# Plex Wrapped - Project Overview
+
+## Tech Stack
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript (strict mode)
+- **Data Fetching**: TanStack Query (React Query)
+- **Database**: Prisma with SQLite
+- **Authentication**: NextAuth.js (Plex OAuth)
+- **Styling**: Tailwind CSS
+- **Animations**: Framer Motion
+- **Validation**: Zod
+
+## Architecture Principles
+
+### Component Strategy
+- **Server Components by default** - Use Client Components (`'use client'`) only when needed (interactivity, hooks, browser APIs)
+- **Server Actions** for mutations instead of API routes when possible
+- Route handlers (`route.ts`) only for external APIs or webhooks
+- Wrap client components in Suspense with fallback
+- Use dynamic loading for non-critical components
+
+### Data Fetching
+- TanStack Query for all client-side data fetching
+- Custom hooks wrapping `useQuery`/`useMutation` for reusability
+- Query keys follow hierarchy: `['resource', id, 'subresource']`
+- Use `useSuspenseQuery` in Server Components when possible
+- Invalidate queries after mutations
+
+### Database
+- Prisma Client for all database operations
+- Use transactions for multi-step operations
+- Prefer `findUnique` over `findFirst` for unique fields
+- Use `select`/`include` to avoid N+1 queries
+- Proper indexes and constraints in schema
+
+## File Structure
+```
+app/                    # Next.js App Router routes
+components/             # Shared components (Server Components by default)
+  [component-name]/     # Component directories (lowercase-dashed)
+actions/                # Server Actions
+lib/                    # Utilities, db client, helpers
+hooks/                  # Custom React hooks
+types/                  # TypeScript types/interfaces
+```
+
+## Code Standards
+
+### TypeScript
+- Interfaces for object definitions, types for unions/intersections
+- Avoid `any`, use `unknown` for truly unknown types
+- PascalCase for types/interfaces, camelCase for variables/functions
+- Explicit return types for public functions
+- Use Prisma generated types when available
+
+### React
+- Functional components with hooks only
+- Small, focused components (Single Responsibility)
+- Extract reusable logic into custom hooks
+- Minimize `useEffect` and client-side state
+- Use React.memo, useMemo, useCallback appropriately
+- Proper error boundaries and loading states
+
+### Styling
+- Tailwind utilities over custom CSS
+- Mobile-first responsive design
+- Use `clsx`/`cn` for conditional classes
+- Semantic color naming and proper contrast
+- Minimal custom CSS (prefer utilities)
+
+### Code Quality
+- Self-documenting code (clear names, no unnecessary comments)
+- DRY principle (extract repeated code)
+- Early returns to reduce nesting
+- Constants over magic numbers
+- Verify information before presenting (no assumptions)
+
+## Key Patterns
+
+### Authentication
+- NextAuth session via `auth()` in Server Components
+- `useSession` hook in Client Components
+- Protect routes and Server Actions with auth checks
+- Store user data in database after OAuth login
+
+### Forms & Validation
+- Zod for validation schemas
+- Server-side validation required
+- Controlled components for inputs
+- Proper error handling and loading states
+
+### Performance
+- Next.js Image optimization (WebP, sizing, lazy loading)
+- Proper caching strategies
+- Database query optimization
+- Dynamic loading for non-critical components
+- Connection pooling for database
+
+### Security
+- Never expose sensitive data to client components
+- Validate and sanitize all user inputs
+- Use NextAuth CSRF protection
+- Rate limiting for API routes
+- Environment variables for secrets
+- Prisma parameterized queries (automatic)
+
+## Development Workflow
+- Make changes file-by-file
+- Provide all edits in a single chunk
+- Preserve existing code unless explicitly changing
+- Write clear commit messages
+- Small, focused commits
+
+## Testing Approach
+- Unit tests for critical business logic
+- Test Server Actions and API routes
+- Mock external dependencies (Plex API, database)
+- React Testing Library for components
+- Test edge cases and error conditions

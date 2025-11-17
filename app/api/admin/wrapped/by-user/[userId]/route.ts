@@ -1,0 +1,42 @@
+import { getUserPlexWrapped } from "@/actions/users"
+import { NextRequest, NextResponse } from "next/server"
+import { requireAdminAPI, validateYear } from "@/lib/security/api-helpers"
+import { adminRateLimiter } from "@/lib/security/rate-limit"
+import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/security/error-handler"
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: { userId: string } }
+) {
+  try {
+    // Apply rate limiting
+    const rateLimitResponse = await adminRateLimiter(request)
+    if (rateLimitResponse) {
+      return rateLimitResponse
+    }
+
+    // Require admin authentication
+    const authResult = await requireAdminAPI(request)
+    if (authResult.response) {
+      return authResult.response
+    }
+
+    const yearParam = request.nextUrl.searchParams.get("year")
+    const currentYear = validateYear(yearParam)
+
+    const wrapped = await getUserPlexWrapped(params.userId, currentYear)
+
+    if (!wrapped) {
+      return NextResponse.json({ wrappedId: null })
+    }
+
+    return NextResponse.json({ wrappedId: wrapped.id })
+  } catch (error) {
+    logError("ADMIN_WRAPPED_BY_USER_API", error)
+    return NextResponse.json(
+      createSafeError(ErrorCode.INTERNAL_ERROR, "Failed to fetch wrapped ID"),
+      { status: getStatusCode(ErrorCode.INTERNAL_ERROR) }
+    )
+  }
+}
+

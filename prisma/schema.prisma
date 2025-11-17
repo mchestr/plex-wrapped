@@ -1,0 +1,169 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// User model
+model User {
+  id            String        @id @default(cuid())
+  name          String?
+  email         String?       @unique
+  emailVerified DateTime?
+  image         String?
+  plexUserId    String?       @unique
+  isAdmin       Boolean       @default(false)
+  plexWrapped   PlexWrapped[]
+  llmUsage      LLMUsage[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([plexUserId])
+  @@index([isAdmin])
+}
+
+// Setup and Configuration models
+model Setup {
+  id          String    @id @default(cuid())
+  isComplete  Boolean   @default(false)
+  currentStep Int       @default(1)
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model PlexServer {
+  id              String   @id @default(cuid())
+  name            String
+  hostname        String
+  port            Int      @default(32400)
+  protocol        String   @default("https")
+  token           String
+  adminPlexUserId String? // Plex user ID of the admin (user who configured this server)
+  isActive        Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([adminPlexUserId])
+}
+
+model Tautulli {
+  id        String   @id @default(cuid())
+  name      String
+  hostname  String
+  port      Int      @default(8181)
+  protocol  String   @default("http")
+  apiKey    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model Overseerr {
+  id        String   @id @default(cuid())
+  name      String
+  hostname  String
+  port      Int      @default(5055)
+  protocol  String   @default("http")
+  apiKey    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model LLMProvider {
+  id        String   @id @default(cuid())
+  provider  String // "openai" or "openrouter"
+  apiKey    String
+  model     String?
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([provider])
+}
+
+// Plex Wrapped models
+model PlexWrapped {
+  id          String              @id @default(cuid())
+  userId      String
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data        String // JSON string containing wrapped data
+  year        Int // Year this wrapped is for
+  status      String              @default("pending") // "pending", "generating", "completed", "failed"
+  error       String? // Error message if status is "failed"
+  shareToken  String?             @unique // Random token for sharing (URL-safe, unguessable)
+  summary     String? // Shareable summary text for social sharing
+  generatedAt DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  llmUsage    LLMUsage[] // Multiple LLM usage records can be associated with a wrapped (for regenerations)
+  shareVisits WrappedShareVisit[] // Track visits to shared wraps
+
+  @@unique([userId, year])
+  @@index([userId])
+  @@index([year])
+  @@index([status])
+  @@index([shareToken])
+}
+
+// Track visits to shared wraps
+model WrappedShareVisit {
+  id        String      @id @default(cuid())
+  wrappedId String
+  wrapped   PlexWrapped @relation(fields: [wrappedId], references: [id], onDelete: Cascade)
+  ipAddress String? // IP address of the visitor (for analytics)
+  userAgent String? // User agent string (for analytics)
+  referer   String? // Referer URL if available
+  createdAt DateTime    @default(now())
+
+  @@index([wrappedId])
+  @@index([createdAt])
+}
+
+// LLM Usage tracking for cost analysis
+// This model stores ALL LLM usage, including regenerations of wrapped content
+// wrappedId is optional to allow tracking LLM usage even without a wrapped
+model LLMUsage {
+  id               String       @id @default(cuid())
+  wrappedId        String? // Optional - allows tracking usage without a wrapped
+  wrapped          PlexWrapped? @relation(fields: [wrappedId], references: [id], onDelete: SetNull)
+  userId           String
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  provider         String // "openai" or "openrouter"
+  model            String? // Model used (e.g., "gpt-4", "openai/gpt-4")
+  prompt           String // The prompt sent to the LLM
+  response         String // The full response from the LLM
+  promptTokens     Int // Number of tokens in the prompt
+  completionTokens Int // Number of tokens in the completion
+  totalTokens      Int // Total tokens used
+  cost             Float // Estimated cost in USD
+  createdAt        DateTime     @default(now())
+
+  @@index([userId])
+  @@index([wrappedId])
+  @@index([provider])
+  @@index([createdAt])
+}
+
+// Application Configuration (singleton pattern)
+model Config {
+  id          String   @id @default("config")
+  llmDisabled Boolean  @default(false) // When true, LLM calls are disabled and mock data is returned
+  updatedAt   DateTime @updatedAt
+  updatedBy   String? // User ID who last updated this config
+}
+
+// Server Statistics are now calculated on the fly - no database caching needed
