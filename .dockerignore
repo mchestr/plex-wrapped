@@ -43,7 +43,6 @@ README.md
 # Prisma
 prisma/dev.db
 prisma/dev.db-journal
-prisma/migrations
 
 # Build artifacts
 build
