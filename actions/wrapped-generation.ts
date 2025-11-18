@@ -1,5 +1,9 @@
 "use server"
 
+// Note: Server action timeout is platform-dependent (Vercel Hobby: 10s, Pro: 60s+)
+// The fetch timeout in lib/wrapped/api-calls.ts is set to 5 minutes by default
+// and can be configured via LLM_REQUEST_TIMEOUT_MS environment variable
+
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateWrappedWithLLM } from "@/lib/wrapped/llm"

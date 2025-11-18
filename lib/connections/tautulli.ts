@@ -1,6 +1,6 @@
-import { type TautulliInput } from "@/lib/validations/tautulli";
+import { type TautulliParsed } from "@/lib/validations/tautulli";
 
-export async function testTautulliConnection(config: TautulliInput): Promise<{ success: boolean; error?: string }> {
+export async function testTautulliConnection(config: TautulliParsed): Promise<{ success: boolean; error?: string }> {
   try {
     const url = `${config.protocol}://${config.hostname}:${config.port}/api/v2?apikey=${config.apiKey}&cmd=get_server_info`
 

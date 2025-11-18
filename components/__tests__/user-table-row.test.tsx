@@ -1,14 +1,14 @@
 import { render, screen } from '@testing-library/react'
-import { UserTableRow } from '../admin/user-table-row'
+import { UserTableRow } from '../admin/users/user-table-row'
 
 // Mock child components
-jest.mock('../admin/user-status-badge', () => ({
+jest.mock('../admin/users/user-status-badge', () => ({
   UserStatusBadge: ({ status }: { status: string | null }) => (
     <span data-testid="status-badge">{status || 'Not Generated'}</span>
   ),
 }))
 
-jest.mock('../admin/regenerate-wrapped-button', () => ({
+jest.mock('../admin/users/regenerate-wrapped-button', () => ({
   RegenerateWrappedButton: ({ userId }: { userId: string }) => (
     <button data-testid="regenerate-button">Regenerate {userId}</button>
   ),

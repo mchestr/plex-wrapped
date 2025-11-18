@@ -12,17 +12,40 @@ Transform your Plex viewing data into a stunning, shareable year-end summary—j
 
 <div align="center">
 
-### Home Page
+<table>
+<tr>
+<td width="50%">
+
+**Home Dashboard**
+
 ![Home Page](docs/images/home.png)
-*Landing page with Plex authentication*
 
-### Wrapped Viewer
+</td>
+<td width="50%">
+
+**Wrapped Viewer**
+
 ![Wrapped Viewer](docs/images/wrapped-viewer.png)
-*Interactive wrapped viewer with animated sections*
 
-### Share Interface
-![Share Interface](docs/images/share.png)
-*Share your wrapped with secure, unique links*
+</td>
+</tr>
+<tr>
+<td width="50%">
+
+**Setup Wizard**
+
+![Setup Wizard](docs/images/setup.png)
+
+</td>
+<td width="50%">
+
+**Admin Dashboard**
+
+![Admin Dashboard](docs/images/admin-dashboard.png)
+
+</td>
+</tr>
+</table>
 
 </div>
 
@@ -41,7 +64,7 @@ Transform your Plex viewing data into a stunning, shareable year-end summary—j
 - **LLM-generated insights** that feel personal and engaging
 - **Fun facts and comparisons** ("That's like watching the entire Lord of the Rings trilogy 47 times!")
 - **Celebratory tone** that makes your year feel special
-- **Customizable** with OpenAI or OpenRouter support
+- **Customizable** with OpenAI support (extensible for other providers)
 
 ### 🔗 **Share & Discover**
 - **One-click sharing** with secure, unguessable tokens
@@ -67,7 +90,7 @@ Transform your Plex viewing data into a stunning, shareable year-end summary—j
   - A **Plex server** (with admin token)
   - **Tautulli** instance (for viewing statistics)
   - **Overseerr** (optional, for request stats)
-  - **OpenAI** or **OpenRouter** API key (for AI generation)
+  - **OpenAI** API key (for AI generation)
 
 ### Installation
 
@@ -110,10 +133,10 @@ Navigate to [http://localhost:3000](http://localhost:3000)
 
 7. **Complete the setup wizard**
 On first launch, you'll be guided through configuring:
-- Plex server connection
-- Tautulli integration
-- Overseerr integration (optional)
-- LLM provider (OpenAI or OpenRouter)
+- Plex server connection (URL format: `https://example.com:32400`)
+- Tautulli integration (URL format: `http://example.com:8181`)
+- Overseerr integration (optional, URL format: `http://example.com:5055`)
+- LLM provider (OpenAI)
 
 ---
 
@@ -202,6 +225,8 @@ See `example.env` for all available configuration options. Key variables:
 - **Application URLs**: `NEXT_PUBLIC_APP_URL` (preferred, used for public URLs), `NEXTAUTH_URL` (required by NextAuth, should match `NEXT_PUBLIC_APP_URL` in production)
 - **Authentication**: `NEXTAUTH_SECRET`, `PLEX_CLIENT_IDENTIFIER`
 - **Development**: `DEV_*` variables for setup wizard defaults
+  - Use URL format: `DEV_PLEX_URL="https://localhost:32400"` (includes protocol and port)
+  - Legacy format (separate protocol/hostname/port) is also supported for backward compatibility
 
 ---
 

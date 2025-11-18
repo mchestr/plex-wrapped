@@ -1,6 +1,6 @@
-import { type OverseerrInput } from "@/lib/validations/overseerr";
+import { type OverseerrParsed } from "@/lib/validations/overseerr";
 
-export async function testOverseerrConnection(config: OverseerrInput): Promise<{ success: boolean; error?: string }> {
+export async function testOverseerrConnection(config: OverseerrParsed): Promise<{ success: boolean; error?: string }> {
   try {
     const url = `${config.protocol}://${config.hostname}:${config.port}/api/v1/auth/me`
 

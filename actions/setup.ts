@@ -6,10 +6,11 @@ import { testPlexConnection } from "@/lib/connections/plex"
 import { testTautulliConnection } from "@/lib/connections/tautulli"
 import { prisma } from "@/lib/prisma"
 import { llmProviderSchema, type LLMProviderInput } from "@/lib/validations/llm-provider"
-import { overseerrSchema, type OverseerrInput } from "@/lib/validations/overseerr"
-import { plexServerSchema, type PlexServerInput } from "@/lib/validations/plex"
-import { tautulliSchema, type TautulliInput } from "@/lib/validations/tautulli"
+import { overseerrSchema, type OverseerrInput, type OverseerrParsed } from "@/lib/validations/overseerr"
+import { plexServerSchema, type PlexServerInput, type PlexServerParsed } from "@/lib/validations/plex"
+import { tautulliSchema, type TautulliInput, type TautulliParsed } from "@/lib/validations/tautulli"
 import { revalidatePath } from "next/cache"
+import { requireAdmin } from "@/lib/admin"
 
 export async function getSetupStatus() {
   const setup = await prisma.setup.findFirst({
@@ -24,7 +25,13 @@ export async function getSetupStatus() {
 
 export async function savePlexServer(data: PlexServerInput) {
   try {
-    const validated = plexServerSchema.parse(data)
+    // Require admin if setup is already complete
+    const setupStatus = await getSetupStatus()
+    if (setupStatus.isComplete) {
+      await requireAdmin()
+    }
+
+    const validated: PlexServerParsed = plexServerSchema.parse(data)
 
     // Test connection before saving
     const connectionTest = await testPlexConnection(validated)
@@ -88,7 +95,13 @@ export async function savePlexServer(data: PlexServerInput) {
 
 export async function saveTautulli(data: TautulliInput) {
   try {
-    const validated = tautulliSchema.parse(data)
+    // Require admin if setup is already complete
+    const setupStatus = await getSetupStatus()
+    if (setupStatus.isComplete) {
+      await requireAdmin()
+    }
+
+    const validated: TautulliParsed = tautulliSchema.parse(data)
 
     // Test connection before saving
     const connectionTest = await testTautulliConnection(validated)
@@ -142,7 +155,13 @@ export async function saveTautulli(data: TautulliInput) {
 
 export async function saveOverseerr(data: OverseerrInput) {
   try {
-    const validated = overseerrSchema.parse(data)
+    // Require admin if setup is already complete
+    const setupStatus = await getSetupStatus()
+    if (setupStatus.isComplete) {
+      await requireAdmin()
+    }
+
+    const validated: OverseerrParsed = overseerrSchema.parse(data)
 
     // Test connection before saving
     const connectionTest = await testOverseerrConnection(validated)
@@ -196,6 +215,12 @@ export async function saveOverseerr(data: OverseerrInput) {
 
 export async function saveLLMProvider(data: LLMProviderInput) {
   try {
+    // Require admin if setup is already complete
+    const setupStatus = await getSetupStatus()
+    if (setupStatus.isComplete) {
+      await requireAdmin()
+    }
+
     const validated = llmProviderSchema.parse(data)
 
     // Test connection before saving
@@ -238,6 +263,8 @@ export async function saveLLMProvider(data: LLMProviderInput) {
           provider: validated.provider,
           apiKey: validated.apiKey,
           model: validated.model || null,
+          temperature: validated.temperature ?? null,
+          maxTokens: validated.maxTokens ?? null,
           isActive: true,
         },
       })
@@ -254,6 +281,12 @@ export async function saveLLMProvider(data: LLMProviderInput) {
 }
 
 export async function completeSetup() {
+  // Require admin if setup is already complete
+  const setupStatus = await getSetupStatus()
+  if (setupStatus.isComplete) {
+    await requireAdmin()
+  }
+
   const setup = await prisma.setup.findFirst({
     orderBy: { createdAt: "desc" },
   })
@@ -270,5 +303,28 @@ export async function completeSetup() {
 
   revalidatePath("/")
   return { success: true }
+}
+
+export async function fetchLLMModels(
+  provider: "openai",
+  apiKey: string
+): Promise<{ success: boolean; models?: string[]; error?: string }> {
+  if (!apiKey || apiKey.trim() === "") {
+    return { success: false, error: "API key is required" }
+  }
+
+  try {
+    if (provider === "openai") {
+      const { fetchOpenAIModels } = await import("@/lib/connections/openai")
+      return await fetchOpenAIModels(apiKey)
+    }
+
+    return { success: false, error: "Invalid provider" }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: "Failed to fetch models" }
+  }
 }
 

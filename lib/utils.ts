@@ -52,3 +52,81 @@ export function getBaseUrl(): string {
   )
 }
 
+/**
+ * Construct a URL string from protocol, hostname, and port
+ *
+ * @param protocol - Protocol (http or https)
+ * @param hostname - Hostname or IP address
+ * @param port - Port number
+ * @returns Full URL string
+ */
+export function constructServerUrl(protocol: "http" | "https", hostname: string, port: number): string {
+  // Only include port if it's not the default port for the protocol
+  const defaultPort = protocol === "https" ? 443 : 80
+  if (port === defaultPort) {
+    return `${protocol}://${hostname}`
+  }
+  return `${protocol}://${hostname}:${port}`
+}
+
+/**
+ * Parse a URL string into its components (protocol, hostname, port)
+ * Supports URLs like: https://example.com:32400, http://192.168.1.100:8181
+ *
+ * @param url - Full URL string including protocol and port
+ * @returns Object with protocol, hostname, and port
+ * @throws Error if URL is invalid
+ */
+export function parseServerUrl(url: string): { protocol: "http" | "https"; hostname: string; port: number } {
+  try {
+    // Ensure URL has a protocol
+    let urlToParse = url.trim()
+
+    // Check if URL has a protocol
+    const protocolMatch = urlToParse.match(/^([a-z]+):\/\//i)
+    if (protocolMatch) {
+      const protocol = protocolMatch[1].toLowerCase()
+      // Only allow http and https protocols
+      if (protocol !== "http" && protocol !== "https") {
+        throw new Error("Protocol must be http or https")
+      }
+    } else {
+      // Default to https if no protocol specified
+      urlToParse = `https://${urlToParse}`
+    }
+
+    const parsed = new URL(urlToParse)
+
+    // Validate protocol
+    const protocol = parsed.protocol.replace(":", "").toLowerCase() as "http" | "https"
+    if (protocol !== "http" && protocol !== "https") {
+      throw new Error("Protocol must be http or https")
+    }
+
+    // Extract hostname
+    const hostname = parsed.hostname
+    if (!hostname) {
+      throw new Error("Hostname is required")
+    }
+
+    // Extract port (default based on protocol if not specified)
+    let port: number
+    if (parsed.port) {
+      port = parseInt(parsed.port, 10)
+      if (isNaN(port) || port < 1 || port > 65535) {
+        throw new Error("Port must be a number between 1 and 65535")
+      }
+    } else {
+      // Default ports based on protocol
+      port = protocol === "https" ? 443 : 80
+    }
+
+    return { protocol, hostname, port }
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Invalid URL format: ${error.message}. Expected format: https://example.com:32400`)
+    }
+    throw new Error(`Invalid URL format. Expected format: https://example.com:32400`)
+  }
+}
+

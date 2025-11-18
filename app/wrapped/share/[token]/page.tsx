@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import { Metadata } from "next"
-import { WrappedShareSummary } from "@/components/wrapped-share-summary"
+import { WrappedShareSummary } from "@/components/wrapped/wrapped-share-summary"
 import { WrappedData } from "@/types/wrapped"
 import { getBaseUrl } from "@/lib/utils"
 import { stripHighlightTags } from "@/lib/wrapped/text-processor"

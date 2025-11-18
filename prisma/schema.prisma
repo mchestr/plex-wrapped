@@ -83,12 +83,14 @@ model Overseerr {
 }
 
 model LLMProvider {
-  id        String   @id @default(cuid())
-  provider  String // "openai" or "openrouter"
-  apiKey    String
-  model     String?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id         String   @id @default(cuid())
+  provider   String // Currently "openai", but extensible for other providers
+  apiKey     String
+  model      String?
+  temperature Float? // Temperature setting (0.0-2.0), null uses model default
+  maxTokens  Int? // Max tokens for completion, null uses default (6000)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([isActive])
@@ -142,7 +144,7 @@ model LLMUsage {
   wrapped          PlexWrapped? @relation(fields: [wrappedId], references: [id], onDelete: SetNull)
   userId           String
   user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  provider         String // "openai" or "openrouter"
+  provider         String // Currently "openai", but extensible for other providers
   model            String? // Model used (e.g., "gpt-4", "openai/gpt-4")
   prompt           String // The prompt sent to the LLM
   response         String // The full response from the LLM
@@ -164,6 +166,22 @@ model Config {
   llmDisabled Boolean  @default(false) // When true, LLM calls are disabled and mock data is returned
   updatedAt   DateTime @updatedAt
   updatedBy   String? // User ID who last updated this config
+}
+
+// Prompt Template for LLM generation
+model PromptTemplate {
+  id          String   @id @default(cuid())
+  name        String   // Human-readable name for the template
+  description String?  // Optional description
+  template    String   // The prompt template with placeholders like {{userName}}, {{year}}, etc.
+  isActive    Boolean  @default(false) // Only one active template at a time
+  version     Int      @default(1) // Version number for tracking changes
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  updatedBy   String?  // User ID who last updated this template
+
+  @@index([isActive])
+  @@index([name])
 }
 
 // Server Statistics are now calculated on the fly - no database caching needed

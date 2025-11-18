@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WrappedHomeButton } from '../wrapped-home-button'
+import { WrappedHomeButton } from '../wrapped/wrapped-home-button'
 import * as userActions from '@/actions/users'
 
 // Mock the user actions
@@ -18,7 +18,7 @@ jest.mock('next/navigation', () => ({
 }))
 
 // Mock WrappedGeneratingAnimation
-jest.mock('../wrapped-generating-animation', () => ({
+jest.mock('../generator/wrapped-generating-animation', () => ({
   WrappedGeneratingAnimation: ({ year }: { year: number }) => (
     <div data-testid="generating-animation">Generating {year} Wrapped</div>
   ),

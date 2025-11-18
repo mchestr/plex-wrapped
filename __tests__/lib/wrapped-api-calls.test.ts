@@ -2,7 +2,16 @@
  * Tests for lib/wrapped/api-calls.ts - LLM API call implementations
  */
 
-import { callOpenAI, callOpenRouter } from '@/lib/wrapped/api-calls'
+// Mock next-auth and admin modules before other imports
+jest.mock('next-auth', () => ({
+  getServerSession: jest.fn(),
+}))
+
+jest.mock('@/lib/admin', () => ({
+  requireAdmin: jest.fn(),
+}))
+
+import { callOpenAI } from '@/lib/wrapped/api-calls'
 import { WrappedStatistics } from '@/types/wrapped'
 import { parseWrappedResponse } from '@/lib/wrapped/prompt'
 
@@ -311,98 +320,19 @@ describe('LLM API Calls', () => {
         'Test User'
       )
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://api.openai.com/v1/chat/completions',
-        expect.objectContaining({
-          method: 'POST',
-          headers: expect.objectContaining({
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer test-key',
-          }),
-          body: expect.stringContaining('test prompt'),
-        })
-      )
-    })
-  })
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const body = JSON.parse(fetchCall[1].body)
 
-  describe('callOpenRouter', () => {
-    it('should successfully call OpenRouter API and parse response', async () => {
-      const mockResponse = {
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({ sections: [], summary: 'Test summary' }),
-            },
-            finish_reason: 'stop',
-          },
-        ],
-        usage: {
-          prompt_tokens: 1000,
-          completion_tokens: 500,
-          total_tokens: 1500,
-        },
-      }
-
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      })
-
-      ;(parseWrappedResponse as jest.Mock).mockReturnValue({
-        sections: [],
-        summary: 'Test summary',
-      })
-
-      const result = await callOpenRouter(
-        {
-          provider: 'openrouter',
-          apiKey: 'test-key',
-          model: 'openai/gpt-4',
-        },
-        'test prompt',
-        mockStatistics,
-        2024,
-        'user-1',
-        'Test User'
-      )
-
-      expect(result.success).toBe(true)
-      expect(result.data).toBeDefined()
-      expect(result.tokenUsage).toBeDefined()
-      expect(result.tokenUsage?.promptTokens).toBe(1000)
-      expect(result.tokenUsage?.completionTokens).toBe(500)
-      expect(result.tokenUsage?.totalTokens).toBe(1500)
+      expect(body.model).toBe('gpt-4')
+      expect(body.temperature).toBe(0.8) // Default temperature
+      expect(body.max_tokens).toBe(6000) // Default maxTokens
+      expect(body.messages).toHaveLength(2)
+      expect(body.messages[0].role).toBe('system')
+      expect(body.messages[1].role).toBe('user')
+      expect(body.messages[1].content).toBe('test prompt')
     })
 
-    it('should handle API errors', async () => {
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Unauthorized',
-        json: async () => ({
-          error: {
-            message: 'Invalid API key',
-          },
-        }),
-      })
-
-      const result = await callOpenRouter(
-        {
-          provider: 'openrouter',
-          apiKey: 'invalid-key',
-          model: 'openai/gpt-4',
-        },
-        'test prompt',
-        mockStatistics,
-        2024,
-        'user-1',
-        'Test User'
-      )
-
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('Invalid API key')
-    })
-
-    it('should use default model if not provided', async () => {
+    it('should use configured temperature and maxTokens', async () => {
       const mockResponse = {
         choices: [
           {
@@ -428,10 +358,13 @@ describe('LLM API Calls', () => {
         sections: [],
       })
 
-      await callOpenRouter(
+      await callOpenAI(
         {
-          provider: 'openrouter',
+          provider: 'openai',
           apiKey: 'test-key',
+          model: 'gpt-4',
+          temperature: 0.9,
+          maxTokens: 8000,
         },
         'test prompt',
         mockStatistics,
@@ -442,10 +375,12 @@ describe('LLM API Calls', () => {
 
       const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
       const body = JSON.parse(fetchCall[1].body)
-      expect(body.model).toBe('openai/gpt-4') // Default model
+
+      expect(body.temperature).toBe(0.9)
+      expect(body.max_tokens).toBe(8000)
     })
 
-    it('should include HTTP-Referer header', async () => {
+    it('should use max_completion_tokens for newer models', async () => {
       const mockResponse = {
         choices: [
           {
@@ -471,11 +406,12 @@ describe('LLM API Calls', () => {
         sections: [],
       })
 
-      await callOpenRouter(
+      await callOpenAI(
         {
-          provider: 'openrouter',
+          provider: 'openai',
           apiKey: 'test-key',
-          model: 'openai/gpt-4',
+          model: 'gpt-5',
+          maxTokens: 5000,
         },
         'test prompt',
         mockStatistics,
@@ -484,79 +420,11 @@ describe('LLM API Calls', () => {
         'Test User'
       )
 
-      expect(global.fetch).toHaveBeenCalledWith(
-        'https://openrouter.ai/api/v1/chat/completions',
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            'HTTP-Referer': 'https://example.com',
-          }),
-        })
-      )
-    })
+      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
+      const body = JSON.parse(fetchCall[1].body)
 
-    it('should handle truncated responses', async () => {
-      const mockResponse = {
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({ sections: [] }).slice(0, -10), // Incomplete JSON
-            },
-            finish_reason: 'length',
-          },
-        ],
-        usage: {
-          prompt_tokens: 1000,
-          completion_tokens: 500,
-          total_tokens: 1500,
-        },
-      }
-
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      })
-
-      const result = await callOpenRouter(
-        {
-          provider: 'openrouter',
-          apiKey: 'test-key',
-          model: 'openai/gpt-4',
-        },
-        'test prompt',
-        mockStatistics,
-        2024,
-        'user-1',
-        'Test User'
-      )
-
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('truncated')
-    })
-
-    it('should handle JSON parse errors in error response', async () => {
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: false,
-        statusText: 'Internal Server Error',
-        json: async () => {
-          throw new Error('Invalid JSON')
-        },
-      })
-
-      const result = await callOpenRouter(
-        {
-          provider: 'openrouter',
-          apiKey: 'test-key',
-          model: 'openai/gpt-4',
-        },
-        'test prompt',
-        mockStatistics,
-        2024,
-        'user-1',
-        'Test User'
-      )
-
-      expect(result.success).toBe(false)
-      expect(result.error).toContain('OpenRouter API error')
+      expect(body.max_completion_tokens).toBe(5000)
+      expect(body.max_tokens).toBeUndefined()
     })
   })
 })

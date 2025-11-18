@@ -1,36 +1,28 @@
 import { getUserPlexWrapped } from "@/actions/users"
-import { HistoricalWrappedSelectorHeader } from "@/components/admin/historical-wrapped-selector-header"
-import { WrappedPageClient } from "@/components/wrapped-page-client"
-import { WrappedViewerWrapper } from "@/components/wrapped-viewer-wrapper"
-import { authOptions } from "@/lib/auth"
+import { HistoricalWrappedSelectorHeader } from "@/components/admin/wrapped/historical-wrapped-selector-header"
+import { WrappedPageClient } from "@/components/wrapped/wrapped-page-client"
+import { WrappedViewerWrapper } from "@/components/wrapped/wrapped-viewer-wrapper"
+import { requireAdmin } from "@/lib/admin"
 import { WrappedData } from "@/types/wrapped"
-import { getServerSession } from "next-auth"
 import Link from "next/link"
-import { redirect } from "next/navigation"
 
 // Force dynamic rendering to prevent caching
 export const dynamic = 'force-dynamic'
 
 export default async function UserWrappedPage({
   params,
+  searchParams,
 }: {
   params: { userId: string }
+  searchParams: { year?: string }
 }) {
-  const session = await getServerSession(authOptions)
+  await requireAdmin()
 
-  if (!session) {
-    redirect("/")
-  }
-
-  if (!session.user.isAdmin) {
-    redirect("/")
-  }
-
-  const currentYear = new Date().getFullYear()
-  const wrapped = await getUserPlexWrapped(params.userId, currentYear)
+  const year = searchParams.year ? parseInt(searchParams.year, 10) : new Date().getFullYear()
+  const wrapped = await getUserPlexWrapped(params.userId, year)
 
   // Admin header component
-  const AdminHeader = ({ userName, wrappedId, userId }: { userName?: string | null; wrappedId?: string; userId: string }) => (
+  const AdminHeader = ({ userName, wrappedId, userId, year: headerYear }: { userName?: string | null; wrappedId?: string; userId: string; year: number }) => (
     <div className="fixed top-0 left-0 right-0 z-50 bg-slate-900/90 backdrop-blur-sm border-b border-slate-700">
       <div className="max-w-7xl mx-auto px-6 py-4">
         <div className="flex justify-between items-center gap-4">
@@ -56,7 +48,7 @@ export default async function UserWrappedPage({
             </Link>
             <div className="flex-1 min-w-0">
               <h1 className="text-xl font-bold text-white truncate">
-                {userName || "User"}&apos;s {currentYear} Wrapped
+                {userName || "User"}&apos;s {headerYear} Wrapped
               </h1>
               <p className="text-xs text-slate-400 mt-0.5">
                 Viewing as admin
@@ -76,7 +68,7 @@ export default async function UserWrappedPage({
   if (!wrapped) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-        <AdminHeader userName={null} userId={params.userId} />
+        <AdminHeader userName={null} userId={params.userId} year={year} />
         <div className="pt-20 p-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-8 text-center">
@@ -96,7 +88,7 @@ export default async function UserWrappedPage({
 
   return (
     <main className="min-h-screen">
-      <AdminHeader userName={wrapped.user.name || wrapped.user.email} wrappedId={wrapped.id} userId={params.userId} />
+      <AdminHeader userName={wrapped.user.name || wrapped.user.email} wrappedId={wrapped.id} userId={params.userId} year={year} />
       <div className="pt-20">
         {wrapped.status === "completed" && wrapped.data ? (
           (() => {
@@ -104,7 +96,7 @@ export default async function UserWrappedPage({
               const wrappedData: WrappedData = JSON.parse(wrapped.data)
               return (
                 <div className="max-w-7xl mx-auto px-6 pb-8">
-                  <WrappedViewerWrapper wrappedData={wrappedData} year={currentYear} />
+                  <WrappedViewerWrapper wrappedData={wrappedData} year={year} />
                 </div>
               )
             } catch (error) {
@@ -128,7 +120,7 @@ export default async function UserWrappedPage({
             }
           })()
         ) : wrapped.status === "generating" ? (
-          <WrappedPageClient userId={params.userId} year={currentYear} initialStatus="generating" />
+          <WrappedPageClient userId={params.userId} year={year} initialStatus="generating" />
         ) : wrapped.status === "failed" ? (
           <div className="bg-slate-800/50 backdrop-blur-sm border border-red-500/50 rounded-lg p-12 text-center max-w-2xl mx-auto mt-8">
             <div className="max-w-md mx-auto">

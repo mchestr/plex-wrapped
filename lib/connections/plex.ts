@@ -1,4 +1,4 @@
-import { type PlexServerInput } from "@/lib/validations/plex"
+import { type PlexServerParsed } from "@/lib/validations/plex"
 import { XMLParser } from "fast-xml-parser"
 
 export interface PlexUserInfo {
@@ -17,7 +17,7 @@ export interface PlexServerUser {
   serverAdmin: boolean
 }
 
-export async function testPlexConnection(config: PlexServerInput): Promise<{ success: boolean; error?: string }> {
+export async function testPlexConnection(config: PlexServerParsed): Promise<{ success: boolean; error?: string }> {
   try {
     const url = `${config.protocol}://${config.hostname}:${config.port}/status/sessions?X-Plex-Token=${config.token}`
 

@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
-import { HeroSection } from '../wrapped-sections/hero-section'
+import { HeroSection } from '../wrapped/wrapped-sections/hero-section'
 import { WrappedSection } from '@/types/wrapped'
 
 // Mock child components
-jest.mock('../formatted-text', () => ({
+jest.mock('../shared/formatted-text', () => ({
   FormattedText: ({ text }: { text: string }) => <span>{text}</span>,
 }))
 

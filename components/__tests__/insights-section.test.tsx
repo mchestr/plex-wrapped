@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react'
-import { InsightsSection } from '../wrapped-sections/insights-section'
+import { InsightsSection } from '../wrapped/wrapped-sections/insights-section'
 import { WrappedData, WrappedSection } from '@/types/wrapped'
 
 // Mock child components
-jest.mock('../formatted-text', () => ({
+jest.mock('../shared/formatted-text', () => ({
   FormattedText: ({ text }: { text: string }) => <span>{text}</span>,
 }))
 
-jest.mock('../wrapped-sections/section-header', () => ({
+jest.mock('../wrapped/wrapped-sections/section-header', () => ({
   SectionHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => (
     <div>
       <h2>{title}</h2>

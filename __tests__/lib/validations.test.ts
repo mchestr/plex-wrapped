@@ -1,0 +1,231 @@
+import { plexServerSchema, type PlexServerInput } from '@/lib/validations/plex'
+import { tautulliSchema, type TautulliInput } from '@/lib/validations/tautulli'
+import { overseerrSchema, type OverseerrInput } from '@/lib/validations/overseerr'
+import { llmProviderSchema, type LLMProviderInput } from '@/lib/validations/llm-provider'
+
+describe('plexServerSchema', () => {
+  it('should validate valid Plex server data', () => {
+    const valid: PlexServerInput = {
+      name: 'My Plex Server',
+      url: 'https://plex.example.com:32400',
+      token: 'abc123token',
+    }
+    expect(() => plexServerSchema.parse(valid)).not.toThrow()
+  })
+
+  it('should use default port 32400', () => {
+    const data = {
+      name: 'My Plex Server',
+      url: 'https://plex.example.com:32400',
+      token: 'abc123token',
+    }
+    const result = plexServerSchema.parse(data)
+    expect(result.port).toBe(32400)
+  })
+
+  it('should use default protocol https', () => {
+    const data = {
+      name: 'My Plex Server',
+      url: 'plex.example.com:32400',
+      token: 'abc123token',
+    }
+    const result = plexServerSchema.parse(data)
+    expect(result.protocol).toBe('https')
+  })
+
+  it('should reject empty name', () => {
+    const invalid = {
+      name: '',
+      url: 'https://plex.example.com:32400',
+      token: 'abc123token',
+    }
+    expect(() => plexServerSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject empty url', () => {
+    const invalid = {
+      name: 'My Plex Server',
+      url: '',
+      token: 'abc123token',
+    }
+    expect(() => plexServerSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject empty token', () => {
+    const invalid = {
+      name: 'My Plex Server',
+      url: 'https://plex.example.com:32400',
+      token: '',
+    }
+    expect(() => plexServerSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject invalid port (too low)', () => {
+    const invalid = {
+      name: 'My Plex Server',
+      url: 'https://plex.example.com:0',
+      token: 'abc123token',
+    }
+    expect(() => plexServerSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject invalid port (too high)', () => {
+    const invalid = {
+      name: 'My Plex Server',
+      url: 'https://plex.example.com:65536',
+      token: 'abc123token',
+    }
+    expect(() => plexServerSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject invalid protocol', () => {
+    const invalid = {
+      name: 'My Plex Server',
+      url: 'ftp://plex.example.com:32400',
+      token: 'abc123token',
+    }
+    expect(() => plexServerSchema.parse(invalid)).toThrow('Invalid URL format')
+  })
+})
+
+describe('tautulliSchema', () => {
+  it('should validate valid Tautulli data', () => {
+    const valid: TautulliInput = {
+      name: 'My Tautulli',
+      url: 'http://tautulli.example.com:8181',
+      apiKey: 'abc123key',
+    }
+    expect(() => tautulliSchema.parse(valid)).not.toThrow()
+  })
+
+  it('should use default port 8181', () => {
+    const data = {
+      name: 'My Tautulli',
+      url: 'http://tautulli.example.com:8181',
+      apiKey: 'abc123key',
+    }
+    const result = tautulliSchema.parse(data)
+    expect(result.port).toBe(8181)
+  })
+
+  it('should use default protocol http', () => {
+    const data = {
+      name: 'My Tautulli',
+      url: 'tautulli.example.com:8181',
+      apiKey: 'abc123key',
+    }
+    const result = tautulliSchema.parse(data)
+    expect(result.protocol).toBe('https') // parseServerUrl defaults to https
+  })
+
+  it('should reject empty name', () => {
+    const invalid = {
+      name: '',
+      url: 'http://tautulli.example.com:8181',
+      apiKey: 'abc123key',
+    }
+    expect(() => tautulliSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject empty apiKey', () => {
+    const invalid = {
+      name: 'My Tautulli',
+      url: 'http://tautulli.example.com:8181',
+      apiKey: '',
+    }
+    expect(() => tautulliSchema.parse(invalid)).toThrow()
+  })
+})
+
+describe('overseerrSchema', () => {
+  it('should validate valid Overseerr data', () => {
+    const valid: OverseerrInput = {
+      name: 'My Overseerr',
+      url: 'http://overseerr.example.com:5055',
+      apiKey: 'abc123key',
+    }
+    expect(() => overseerrSchema.parse(valid)).not.toThrow()
+  })
+
+  it('should use default port 5055', () => {
+    const data = {
+      name: 'My Overseerr',
+      url: 'http://overseerr.example.com:5055',
+      apiKey: 'abc123key',
+    }
+    const result = overseerrSchema.parse(data)
+    expect(result.port).toBe(5055)
+  })
+
+  it('should use default protocol http', () => {
+    const data = {
+      name: 'My Overseerr',
+      url: 'overseerr.example.com:5055',
+      apiKey: 'abc123key',
+    }
+    const result = overseerrSchema.parse(data)
+    expect(result.protocol).toBe('https') // parseServerUrl defaults to https
+  })
+
+  it('should reject empty name', () => {
+    const invalid = {
+      name: '',
+      url: 'http://overseerr.example.com:5055',
+      apiKey: 'abc123key',
+    }
+    expect(() => overseerrSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject empty apiKey', () => {
+    const invalid = {
+      name: 'My Overseerr',
+      url: 'http://overseerr.example.com:5055',
+      apiKey: '',
+    }
+    expect(() => overseerrSchema.parse(invalid)).toThrow()
+  })
+})
+
+describe('llmProviderSchema', () => {
+  it('should validate valid OpenAI provider', () => {
+    const valid: LLMProviderInput = {
+      provider: 'openai',
+      apiKey: 'sk-abc123',
+      model: 'gpt-4',
+    }
+    expect(() => llmProviderSchema.parse(valid)).not.toThrow()
+  })
+
+  it('should allow optional model', () => {
+    const valid: LLMProviderInput = {
+      provider: 'openai',
+      apiKey: 'sk-abc123',
+    }
+    const result = llmProviderSchema.parse(valid)
+    expect(result.model).toBeUndefined()
+  })
+
+  it('should reject invalid provider', () => {
+    const invalid = {
+      provider: 'anthropic',
+      apiKey: 'sk-abc123',
+    }
+    expect(() => llmProviderSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject empty apiKey', () => {
+    const invalid = {
+      provider: 'openai',
+      apiKey: '',
+    }
+    expect(() => llmProviderSchema.parse(invalid)).toThrow()
+  })
+
+  it('should reject missing provider', () => {
+    const invalid = {
+      apiKey: 'sk-abc123',
+    }
+    expect(() => llmProviderSchema.parse(invalid)).toThrow('Please select a provider')
+  })
+})
+

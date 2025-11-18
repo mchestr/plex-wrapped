@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { getSetupStatus } from "@/actions/setup"
-import { SetupWizard } from "@/components/setup-wizard/setup-wizard"
+import { SetupWizard } from "@/components/setup/setup-wizard/setup-wizard"
 
 export const dynamic = 'force-dynamic'
 

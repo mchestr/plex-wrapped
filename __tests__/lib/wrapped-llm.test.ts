@@ -4,8 +4,8 @@
 
 import { generateWrappedWithLLM } from '@/lib/wrapped/llm'
 import { prisma } from '@/lib/prisma'
-import { generateWrappedPrompt } from '@/lib/wrapped/prompt'
-import { callOpenAI, callOpenRouter } from '@/lib/wrapped/api-calls'
+import { generateWrappedPrompt } from '@/lib/wrapped/prompt-template'
+import { callOpenAI } from '@/lib/wrapped/api-calls'
 import { generateMockWrappedData } from '@/lib/wrapped/mock-data'
 import { WrappedStatistics } from '@/types/wrapped'
 
@@ -24,13 +24,16 @@ jest.mock('@/lib/prisma', () => ({
   },
 }))
 
-jest.mock('@/lib/wrapped/prompt', () => ({
+jest.mock('@/actions/prompts', () => ({
+  getActivePromptTemplate: jest.fn(),
+}))
+
+jest.mock('@/lib/wrapped/prompt-template', () => ({
   generateWrappedPrompt: jest.fn(),
 }))
 
 jest.mock('@/lib/wrapped/api-calls', () => ({
   callOpenAI: jest.fn(),
-  callOpenRouter: jest.fn(),
 }))
 
 jest.mock('@/lib/wrapped/mock-data', () => ({
@@ -112,7 +115,7 @@ describe('generateWrappedWithLLM', () => {
       isActive: true,
     })
 
-    ;(generateWrappedPrompt as jest.Mock).mockReturnValue('test prompt')
+    ;(generateWrappedPrompt as jest.Mock).mockResolvedValue('test prompt')
 
     const mockLLMResponse = {
       success: true,
@@ -168,63 +171,6 @@ describe('generateWrappedWithLLM', () => {
     )
   })
 
-  it('should call OpenRouter when OpenRouter provider is configured', async () => {
-    ;(prisma.config.findUnique as jest.Mock).mockResolvedValue({
-      id: 'config',
-      llmDisabled: false,
-    })
-
-    ;(prisma.lLMProvider.findFirst as jest.Mock).mockResolvedValue({
-      id: 'provider-1',
-      provider: 'openrouter',
-      apiKey: 'test-key',
-      model: 'openai/gpt-4',
-      isActive: true,
-    })
-
-    ;(generateWrappedPrompt as jest.Mock).mockReturnValue('test prompt')
-
-    const mockLLMResponse = {
-      success: true,
-      data: {
-        sections: [],
-        summary: 'Test summary',
-      },
-      rawResponse: JSON.stringify({ sections: [], summary: 'Test summary' }),
-      tokenUsage: {
-        promptTokens: 1000,
-        completionTokens: 500,
-        totalTokens: 1500,
-        cost: 0.06,
-      },
-    }
-
-    ;(callOpenRouter as jest.Mock).mockResolvedValue(mockLLMResponse)
-    ;(prisma.lLMUsage.create as jest.Mock).mockResolvedValue({})
-
-    const result = await generateWrappedWithLLM(
-      'Test User',
-      2024,
-      'user-1',
-      'wrapped-1',
-      mockStatistics
-    )
-
-    expect(result.success).toBe(true)
-    expect(result.data).toEqual(mockLLMResponse.data)
-    expect(callOpenRouter).toHaveBeenCalledWith(
-      {
-        provider: 'openrouter',
-        apiKey: 'test-key',
-        model: 'openai/gpt-4',
-      },
-      'test prompt',
-      mockStatistics,
-      2024,
-      'user-1',
-      'Test User'
-    )
-  })
 
   it('should return error when no active LLM provider is configured', async () => {
     ;(prisma.config.findUnique as jest.Mock).mockResolvedValue({
@@ -260,7 +206,7 @@ describe('generateWrappedWithLLM', () => {
       isActive: true,
     })
 
-    ;(generateWrappedPrompt as jest.Mock).mockReturnValue('test prompt')
+    ;(generateWrappedPrompt as jest.Mock).mockResolvedValue('test prompt')
 
     ;(callOpenAI as jest.Mock).mockResolvedValue({
       success: false,
@@ -294,7 +240,7 @@ describe('generateWrappedWithLLM', () => {
       isActive: true,
     })
 
-    ;(generateWrappedPrompt as jest.Mock).mockReturnValue('test prompt')
+    ;(generateWrappedPrompt as jest.Mock).mockResolvedValue('test prompt')
 
     const result = await generateWrappedWithLLM(
       'Test User',
@@ -322,7 +268,7 @@ describe('generateWrappedWithLLM', () => {
       isActive: true,
     })
 
-    ;(generateWrappedPrompt as jest.Mock).mockReturnValue('test prompt')
+    ;(generateWrappedPrompt as jest.Mock).mockResolvedValue('test prompt')
 
     const mockLLMResponse = {
       success: true,
@@ -373,7 +319,7 @@ describe('generateWrappedWithLLM', () => {
       isActive: true,
     })
 
-    ;(generateWrappedPrompt as jest.Mock).mockReturnValue('test prompt')
+    ;(generateWrappedPrompt as jest.Mock).mockResolvedValue('test prompt')
 
     const mockLLMResponse = {
       success: true,

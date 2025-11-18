@@ -6,6 +6,7 @@
 import { requireAdmin } from '@/lib/admin'
 import {
   setLLMDisabled,
+  getConfig,
   getLLMUsageRecords,
   getLLMUsageById,
   getLLMUsageStats,
@@ -28,6 +29,7 @@ jest.mock('@/lib/prisma', () => ({
     config: {
       upsert: jest.fn(),
       findUnique: jest.fn(),
+      create: jest.fn(),
     },
     lLMUsage: {
       findMany: jest.fn(),
@@ -69,6 +71,68 @@ describe('Admin Actions Security', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockGetLLMUsageStats.mockClear()
+  })
+
+  describe('getConfig', () => {
+    it('should require admin to get config', async () => {
+      ;(requireAdmin as jest.Mock).mockResolvedValue(mockAdminSession)
+      ;(prisma.config.findUnique as jest.Mock).mockResolvedValue({
+        id: 'config',
+        llmDisabled: false,
+        updatedAt: new Date(),
+        updatedBy: null,
+      })
+
+      const result = await getConfig()
+
+      expect(requireAdmin).toHaveBeenCalled()
+      expect(result).toBeTruthy()
+      expect(result.id).toBe('config')
+    })
+
+    it('should create config with defaults if not exists (admin only)', async () => {
+      ;(requireAdmin as jest.Mock).mockResolvedValue(mockAdminSession)
+      ;(prisma.config.findUnique as jest.Mock).mockResolvedValue(null)
+      ;(prisma.config.create as jest.Mock).mockResolvedValue({
+        id: 'config',
+        llmDisabled: false,
+        updatedAt: new Date(),
+        updatedBy: null,
+      })
+
+      const result = await getConfig()
+
+      expect(requireAdmin).toHaveBeenCalled()
+      expect(prisma.config.create).toHaveBeenCalledWith({
+        data: {
+          id: 'config',
+          llmDisabled: false,
+        },
+      })
+      expect(result.id).toBe('config')
+    })
+
+    it('should reject non-admin user', async () => {
+      ;(requireAdmin as jest.Mock).mockImplementation(() => {
+        redirect('/')
+        throw new Error('Not admin')
+      })
+
+      await expect(getConfig()).rejects.toThrow()
+      expect(prisma.config.findUnique).not.toHaveBeenCalled()
+      expect(prisma.config.create).not.toHaveBeenCalled()
+    })
+
+    it('should reject unauthenticated user', async () => {
+      ;(requireAdmin as jest.Mock).mockImplementation(() => {
+        redirect('/')
+        throw new Error('Unauthenticated')
+      })
+
+      await expect(getConfig()).rejects.toThrow()
+      expect(prisma.config.findUnique).not.toHaveBeenCalled()
+      expect(prisma.config.create).not.toHaveBeenCalled()
+    })
   })
 
   describe('setLLMDisabled', () => {

@@ -1,17 +1,17 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { WrappedViewer } from '../wrapped-viewer'
+import { WrappedViewer } from '../wrapped/wrapped-viewer'
 import { WrappedData } from '@/types/wrapped'
 
 // Mock child components
-jest.mock('../formatted-text', () => ({
+jest.mock('../shared/formatted-text', () => ({
   FormattedText: ({ text }: { text: string }) => <span>{text}</span>,
 }))
 
-jest.mock('../setup-wizard/space-background', () => ({
+jest.mock('../setup/setup-wizard/space-background', () => ({
   SpaceBackground: () => <div data-testid="space-background" />,
 }))
 
-jest.mock('../wrapped-share-button', () => ({
+jest.mock('../wrapped/wrapped-share-button', () => ({
   WrappedShareButton: () => <div data-testid="share-button">Share</div>,
 }))
 

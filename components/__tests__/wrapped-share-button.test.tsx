@@ -10,7 +10,7 @@ jest.mock('framer-motion', () => ({
 
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WrappedShareButton } from '../wrapped-share-button'
+import { WrappedShareButton } from '../wrapped/wrapped-share-button'
 
 // Mock navigator.clipboard
 const mockWriteText = jest.fn()
@@ -36,7 +36,7 @@ describe('WrappedShareButton', () => {
 
   it('should render share button', () => {
     render(<WrappedShareButton shareToken="test-token" year={2024} />)
-    expect(screen.getByText('Share Your Wrapped')).toBeInTheDocument()
+    expect(screen.getByText('Share')).toBeInTheDocument()
   })
 
   it('should show "Copied!" message after copying', async () => {
@@ -44,7 +44,7 @@ describe('WrappedShareButton', () => {
 
     render(<WrappedShareButton shareToken="test-token" year={2024} />)
 
-    const button = screen.getByText('Share Your Wrapped').closest('button')
+    const button = screen.getByText('Share').closest('button')
     await user.click(button!)
 
     // Wait for "Copied!" to appear
@@ -58,7 +58,7 @@ describe('WrappedShareButton', () => {
 
     render(<WrappedShareButton shareToken="test-token" year={2024} />)
 
-    const button = screen.getByText('Share Your Wrapped').closest('button')
+    const button = screen.getByText('Share').closest('button')
     await user.click(button!)
 
     await waitFor(() => {
@@ -77,7 +77,7 @@ describe('WrappedShareButton', () => {
 
     render(<WrappedShareButton shareToken="test-token" year={2024} />)
 
-    const button = screen.getByText('Share Your Wrapped').closest('button')
+    const button = screen.getByText('Share').closest('button')
     await user.hover(button!)
 
     await waitFor(() => {
@@ -90,7 +90,7 @@ describe('WrappedShareButton', () => {
 
     render(<WrappedShareButton shareToken="test-token" year={2024} />)
 
-    const button = screen.getByText('Share Your Wrapped').closest('button')
+    const button = screen.getByText('Share').closest('button')
     await user.hover(button!)
 
     await waitFor(() => {

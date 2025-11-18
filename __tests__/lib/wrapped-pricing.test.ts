@@ -34,12 +34,6 @@ describe('Pricing Calculation', () => {
       expect(cost).toBeCloseTo(0.9, 2)
     })
 
-    it('should calculate cost for OpenRouter with provider/model format', () => {
-      const cost = calculateCost('openai/gpt-4', 1000000, 500000, 'openrouter')
-      // Should extract 'gpt-4' and use GPT-4 pricing
-      expect(cost).toBe(60)
-    })
-
     it('should use fallback pricing for unknown OpenAI model', () => {
       const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation()
       const cost = calculateCost('unknown-model', 1000000, 500000, 'openai')
@@ -50,12 +44,6 @@ describe('Pricing Calculation', () => {
       expect(warnCall[0]).toContain('Unknown model')
       expect(warnCall[0]).toContain('unknown-model')
       consoleWarnSpy.mockRestore()
-    })
-
-    it('should use fallback pricing for unknown OpenRouter model', () => {
-      const cost = calculateCost('unknown-provider/unknown-model', 1000000, 500000, 'openrouter')
-      // Should fallback to GPT-4 pricing: $30 + $30 = $60
-      expect(cost).toBe(60)
     })
 
     it('should handle zero tokens', () => {

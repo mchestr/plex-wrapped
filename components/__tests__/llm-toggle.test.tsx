@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { LLMToggle } from '../admin/llm-toggle'
+import { LLMToggle } from '../admin/settings/llm-toggle'
 import * as adminActions from '@/actions/admin'
 
 // Mock the admin actions

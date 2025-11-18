@@ -137,6 +137,38 @@ export interface WrappedStatistics {
   }
 }
 
+export interface MovieData {
+  title: string
+  watchTime: number
+  playCount: number
+  year?: number
+  rating?: number
+  ratingKey?: string
+}
+
+export interface ShowData {
+  title: string
+  watchTime: number
+  playCount: number
+  episodesWatched: number
+  year?: number
+  rating?: number
+  ratingKey?: string
+}
+
+export interface ProminentStat {
+  value: number | string
+  label: string
+  description: string
+}
+
+export type WrappedSectionData =
+  | { prominentStat: ProminentStat } // hero section
+  | { movies: MovieData[] } // top-movies section
+  | { shows: ShowData[] } // top-shows section
+  | { facts: string[] } // fun-facts section
+  | Record<string, unknown> // other sections may have various data structures
+
 export interface WrappedSection {
   id: string
   type:
@@ -154,7 +186,7 @@ export interface WrappedSection {
   title: string
   subtitle?: string
   content: string // LLM-generated narrative text
-  data?: any // Section-specific data
+  data?: WrappedSectionData // Section-specific data
   animationDelay?: number // Delay before showing this section
 }
 

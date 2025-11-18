@@ -1,17 +1,8 @@
-import { authOptions } from "@/lib/auth"
-import { getServerSession } from "next-auth"
+import { requireAdmin } from "@/lib/admin"
 import { redirect } from "next/navigation"
 
 export default async function AdminDashboard() {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/")
-  }
-
-  if (!session.user.isAdmin) {
-    redirect("/")
-  }
+  await requireAdmin()
 
   // Redirect to users page - the main admin interface
   redirect("/admin/users")

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { UsersStatsSummary } from '../admin/users-stats-summary'
+import { UsersStatsSummary } from '../admin/users/users-stats-summary'
 
 describe('UsersStatsSummary', () => {
   it('should render total users count', () => {

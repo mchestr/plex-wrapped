@@ -1,10 +1,8 @@
 import React from "react"
 import { getLLMUsageRecords, getLLMUsageStats, getUserById } from "@/actions/admin"
-import AdminLayoutClient from "@/components/admin/admin-layout-client"
-import { authOptions } from "@/lib/auth"
-import { getServerSession } from "next-auth"
+import AdminLayoutClient from "@/components/admin/shared/admin-layout-client"
+import { requireAdmin } from "@/lib/admin"
 import Link from "next/link"
-import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
@@ -13,15 +11,7 @@ export default async function LLMUsagePage({
 }: {
   searchParams: { page?: string; userId?: string }
 }) {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/")
-  }
-
-  if (!session.user.isAdmin) {
-    redirect("/")
-  }
+  await requireAdmin()
 
   const page = parseInt(searchParams.page || "1", 10)
   const userId = searchParams.userId
@@ -43,7 +33,6 @@ export default async function LLMUsagePage({
   const getProviderBadge = (provider: string) => {
     const colors = {
       openai: "bg-green-500/20 text-green-400",
-      openrouter: "bg-purple-500/20 text-purple-400",
       mock: "bg-slate-500/20 text-slate-400",
     }
     return (
@@ -58,11 +47,11 @@ export default async function LLMUsagePage({
       <div className="p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
           <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">LLM Usage & Token Tracking</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">LLM Requests</h1>
             <p className="text-sm text-slate-400">
               {filteredUser
                 ? `Filtered by: ${filteredUser.name || filteredUser.email || "Unknown User"}`
-                : "Monitor all LLM requests, responses, token usage, and costs"}
+                : "Investigate LLM requests, responses, and token usage"}
             </p>
             {filteredUser && (
               <Link
@@ -96,7 +85,7 @@ export default async function LLMUsagePage({
                   </div>
                 )}
                 <div className="min-w-0">
-                  <div className="text-xs sm:text-sm text-slate-400">Viewing LLM usage for</div>
+                  <div className="text-xs sm:text-sm text-slate-400">Viewing requests for</div>
                   <div className="text-base sm:text-lg font-semibold text-white truncate">
                     {filteredUser.name || filteredUser.email || "Unknown User"}
                   </div>
@@ -188,7 +177,7 @@ export default async function LLMUsagePage({
                 {records.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
-                      No LLM usage records found.
+                      No LLM requests found.
                     </td>
                   </tr>
                 ) : (

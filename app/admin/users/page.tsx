@@ -1,23 +1,15 @@
 import { getAllUsersWithWrapped } from "@/actions/users"
-import AdminLayoutClient from "@/components/admin/admin-layout-client"
-import { UserTableRow } from "@/components/admin/user-table-row"
-import { UsersStatsSummary } from "@/components/admin/users-stats-summary"
-import { authOptions } from "@/lib/auth"
-import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
+import AdminLayoutClient from "@/components/admin/shared/admin-layout-client"
+import { UserTableRow } from "@/components/admin/users/user-table-row"
+import { UsersStatsSummary } from "@/components/admin/users/users-stats-summary"
+import { ImportPlexUsersButton, ImportResultMessage } from "@/components/admin/users/import-plex-users-button"
+import { requireAdmin } from "@/lib/admin"
+import { ImportPlexUsersClient } from "@/components/admin/users/import-plex-users-client"
 
 export const dynamic = 'force-dynamic'
 
 export default async function UsersPage() {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/")
-  }
-
-  if (!session.user.isAdmin) {
-    redirect("/")
-  }
+  await requireAdmin()
 
   const currentYear = new Date().getFullYear()
   const users = await getAllUsersWithWrapped(currentYear)
@@ -26,11 +18,16 @@ export default async function UsersPage() {
     <AdminLayoutClient>
       <div className="p-4 sm:p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
-            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Users</h1>
-            <p className="text-sm text-slate-400">
-              {users.length} user{users.length !== 1 ? "s" : ""} in database
-            </p>
+          <div className="mb-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 relative">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Users</h1>
+                <p className="text-sm text-slate-400">
+                  {users.length} user{users.length !== 1 ? "s" : ""} in database
+                </p>
+              </div>
+              <ImportPlexUsersClient />
+            </div>
           </div>
 
         {/* Users Table */}

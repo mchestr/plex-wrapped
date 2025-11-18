@@ -4,25 +4,15 @@ import {
   getShareTimeSeriesData,
   getTopSharedWraps,
 } from "@/actions/share-analytics"
-import AdminLayoutClient from "@/components/admin/admin-layout-client"
-import { ShareTimeChart } from "@/components/admin/share-time-chart"
-import { authOptions } from "@/lib/auth"
-import { getServerSession } from "next-auth"
+import AdminLayoutClient from "@/components/admin/shared/admin-layout-client"
+import { ShareTimeChart } from "@/components/admin/shares/share-time-chart"
+import { requireAdmin } from "@/lib/admin"
 import Link from "next/link"
-import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
 export default async function SharesDashboardPage() {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/")
-  }
-
-  if (!session.user.isAdmin) {
-    redirect("/")
-  }
+  await requireAdmin()
 
   const [stats, timeSeriesData, topWraps] = await Promise.all([
     getShareAnalyticsStats(),

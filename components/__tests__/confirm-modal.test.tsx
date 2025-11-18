@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { ConfirmModal } from '../admin/confirm-modal'
+import { ConfirmModal } from '../admin/shared/confirm-modal'
 
 describe('ConfirmModal', () => {
   const defaultProps = {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
-import { SetupGuard } from "@/components/setup-guard";
+import { SetupGuard } from "@/components/setup/setup-guard";
 
 export const metadata: Metadata = {
   title: "Plex Wrapped",

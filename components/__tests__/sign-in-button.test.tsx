@@ -1,7 +1,7 @@
 import * as plexAuth from '@/lib/plex-auth'
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { SignInButton } from '../sign-in-button'
+import { SignInButton } from '../auth/sign-in-button'
 
 // Mock the plex-auth module
 jest.mock('@/lib/plex-auth', () => ({

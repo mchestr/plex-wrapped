@@ -1,6 +1,6 @@
-import { SignInButton } from "@/components/sign-in-button";
-import { WrappedHomeButton } from "@/components/wrapped-home-button";
-import { AdminFooter } from "@/components/admin-footer";
+import { SignInButton } from "@/components/auth/sign-in-button";
+import { WrappedHomeButton } from "@/components/wrapped/wrapped-home-button";
+import { AdminFooter } from "@/components/shared/admin-footer";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";

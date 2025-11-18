@@ -1,22 +1,14 @@
 import { getLLMUsageById } from "@/actions/admin"
-import { SignOutButton } from "@/components/admin/sign-out-button"
-import { authOptions } from "@/lib/auth"
-import { getServerSession } from "next-auth"
+import AdminLayoutClient from "@/components/admin/shared/admin-layout-client"
+import { ExpandablePrompt } from "@/components/admin/prompts/expandable-prompt"
+import { requireAdmin } from "@/lib/admin"
 import Link from "next/link"
-import { notFound, redirect } from "next/navigation"
+import { notFound } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
 export default async function LLMUsageDetailPage({ params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/")
-  }
-
-  if (!session.user.isAdmin) {
-    redirect("/")
-  }
+  await requireAdmin()
 
   const record = await getLLMUsageById(params.id)
 
@@ -38,7 +30,6 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
   const getProviderBadge = (provider: string) => {
     const colors = {
       openai: "bg-green-500/20 text-green-400",
-      openrouter: "bg-purple-500/20 text-purple-400",
       mock: "bg-slate-500/20 text-slate-400",
     }
     return (
@@ -49,43 +40,32 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
   }
 
   // Try to parse response as JSON for better display
-  let parsedResponse: any = null
+  let formattedResponse: string = record.response
+  let isJson = false
   try {
-    parsedResponse = JSON.parse(record.response)
+    const parsedResponse = JSON.parse(record.response)
+    formattedResponse = JSON.stringify(parsedResponse, null, 2)
+    isJson = true
   } catch {
     // Not JSON, will display as text
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">LLM Request Details</h1>
-            <p className="text-sm text-slate-400">Request ID: {record.id}</p>
-          </div>
-          <div className="flex gap-3">
+    <AdminLayoutClient>
+      <div className="p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
             <Link
               href="/admin/llm-usage"
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded transition-colors"
+              className="text-sm text-cyan-400 hover:text-cyan-300 mb-4 inline-block"
             >
-              Back to LLM Usage & Tokens
+              ← Back to LLM Requests
             </Link>
-            <Link
-              href="/admin/users"
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded transition-colors"
-            >
-              Users
-            </Link>
-            <Link
-              href="/admin/shares"
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium rounded transition-colors"
-            >
-              Share Analytics
-            </Link>
-            <SignOutButton />
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">LLM Request Details</h1>
+            <p className="text-sm text-slate-400">
+              Investigate LLM request details, token usage, and response data
+            </p>
           </div>
-        </div>
 
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -107,7 +87,7 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
             </div>
           </div>
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-4">
-            <div className="text-sm text-slate-400 mb-1">Cost</div>
+            <div className="text-sm text-slate-400 mb-1">Total Cost</div>
             <div className="text-2xl font-bold text-green-400">${record.cost.toFixed(4)}</div>
             <div className="text-xs text-slate-500 mt-1">
               ${((record.cost / record.totalTokens) * 1000).toFixed(6)} per 1K tokens
@@ -213,39 +193,22 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
         </div>
 
         {/* Prompt */}
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 mb-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Prompt</h2>
-          <div className="bg-slate-900/50 rounded-lg p-4 overflow-x-auto">
-            <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
-              {record.prompt}
-            </pre>
-          </div>
-          <div className="mt-2 text-xs text-slate-500">
-            {record.prompt.length.toLocaleString()} characters
-          </div>
-        </div>
+        <ExpandablePrompt
+          content={record.prompt}
+          title="Prompt"
+          characterCount={record.prompt.length}
+        />
 
         {/* Response */}
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
-          <h2 className="text-lg font-semibold text-white mb-4">Response</h2>
-          <div className="bg-slate-900/50 rounded-lg p-4 overflow-x-auto max-h-[600px] overflow-y-auto">
-            {parsedResponse ? (
-              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
-                {JSON.stringify(parsedResponse, null, 2)}
-              </pre>
-            ) : (
-              <pre className="text-sm text-slate-300 whitespace-pre-wrap font-mono">
-                {record.response}
-              </pre>
-            )}
-          </div>
-          <div className="mt-2 text-xs text-slate-500">
-            {record.response.length.toLocaleString()} characters
-            {parsedResponse && " (JSON formatted)"}
-          </div>
+        <ExpandablePrompt
+          content={formattedResponse}
+          title="Response"
+          characterCount={record.response.length}
+          characterCountSuffix={isJson ? "(JSON formatted)" : undefined}
+        />
         </div>
       </div>
-    </main>
+    </AdminLayoutClient>
   )
 }
 

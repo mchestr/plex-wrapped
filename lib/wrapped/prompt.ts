@@ -392,8 +392,8 @@ export function parseWrappedResponse(
     const exampleDelays = [2000, 4000, 6000, 8000, 10000, 12000, 14000, 16000]
     if (parsed.sections) {
       const delays = parsed.sections
-        .map((s: any) => s.animationDelay)
-        .filter((d: any) => d !== undefined && d !== 0)
+        .map((s: { animationDelay?: number }) => s.animationDelay)
+        .filter((d: number | undefined): d is number => d !== undefined && d !== 0)
       // If all delays match example values exactly, it's suspicious
       if (delays.length > 0 && delays.every((d: number) => exampleDelays.includes(d))) {
         // Allow if there are many sections (might be coincidence), but warn if few sections

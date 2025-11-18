@@ -1,9 +1,9 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WrappedViewerNavigation } from '../wrapped-viewer-navigation'
+import { WrappedViewerNavigation } from '../wrapped/wrapped-viewer-navigation'
 
 // Mock WrappedShareButton
-jest.mock('../wrapped-share-button', () => ({
+jest.mock('../wrapped/wrapped-share-button', () => ({
   WrappedShareButton: ({ shareToken }: { shareToken: string }) => (
     <div data-testid="share-button">Share Button {shareToken}</div>
   ),

@@ -4,6 +4,8 @@ import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/secur
 import { adminRateLimiter } from "@/lib/security/rate-limit"
 import { NextRequest, NextResponse } from "next/server"
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: { wrappedId: string } }

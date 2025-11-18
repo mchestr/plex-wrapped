@@ -1,13 +1,13 @@
 import { render, screen } from '@testing-library/react'
-import { TotalWatchTimeSection } from '../wrapped-sections/total-watch-time-section'
+import { TotalWatchTimeSection } from '../wrapped/wrapped-sections/total-watch-time-section'
 import { WrappedData, WrappedSection } from '@/types/wrapped'
 
 // Mock child components
-jest.mock('../formatted-text', () => ({
+jest.mock('../shared/formatted-text', () => ({
   FormattedText: ({ text }: { text: string }) => <span>{text}</span>,
 }))
 
-jest.mock('../wrapped-charts', () => ({
+jest.mock('../wrapped/wrapped-charts', () => ({
   BarChart: ({ data }: { data: Array<{ label: string; value: number }> }) => (
     <div data-testid="bar-chart">{data.length} bars</div>
   ),
@@ -16,7 +16,7 @@ jest.mock('../wrapped-charts', () => ({
   ),
 }))
 
-jest.mock('../wrapped-sections/section-header', () => ({
+jest.mock('../wrapped/wrapped-sections/section-header', () => ({
   SectionHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => (
     <div>
       <h2>{title}</h2>
@@ -216,29 +216,5 @@ describe('TotalWatchTimeSection', () => {
     expect(screen.queryByTestId('sparkline')).not.toBeInTheDocument()
   })
 
-  it('should display rounded watch time note', () => {
-    const section = createMockSection()
-    const wrappedData = createMockWrappedData({
-      statistics: {
-        totalWatchTime: {
-          total: 1000,
-          movies: 500,
-          shows: 500,
-        },
-        moviesWatched: 10,
-        showsWatched: 5,
-        episodesWatched: 50,
-        topMovies: [],
-        topShows: [],
-        watchTimeByMonth: [
-          { month: 1, watchTime: 100 },
-        ],
-      },
-    })
-
-    render(<TotalWatchTimeSection section={section} wrappedData={wrappedData} />)
-
-    expect(screen.getByText('Watch time rounded to nearest hour')).toBeInTheDocument()
-  })
 })
 

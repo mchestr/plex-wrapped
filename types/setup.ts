@@ -23,7 +23,7 @@ export const SETUP_STEPS: SetupStep[] = [
   {
     id: 4,
     title: "AI Provider",
-    description: "Configure OpenAI or OpenRouter for AI features",
+    description: "Configure OpenAI for AI features",
   },
 ]
 

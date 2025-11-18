@@ -1,11 +1,9 @@
 import { getHistoricalWrappedData } from "@/actions/admin"
-import { HistoricalWrappedSelectorHeader } from "@/components/admin/historical-wrapped-selector-header"
-import { WrappedViewerWrapper } from "@/components/wrapped-viewer-wrapper"
-import { authOptions } from "@/lib/auth"
+import { HistoricalWrappedSelectorHeader } from "@/components/admin/wrapped/historical-wrapped-selector-header"
+import { WrappedViewerWrapper } from "@/components/wrapped/wrapped-viewer-wrapper"
+import { requireAdmin } from "@/lib/admin"
 import { WrappedData } from "@/types/wrapped"
-import { getServerSession } from "next-auth"
 import Link from "next/link"
-import { redirect } from "next/navigation"
 
 // Force dynamic rendering to prevent caching
 export const dynamic = 'force-dynamic'
@@ -15,15 +13,7 @@ export default async function HistoricalWrappedPage({
 }: {
   params: { wrappedId: string; llmUsageId: string }
 }) {
-  const session = await getServerSession(authOptions)
-
-  if (!session) {
-    redirect("/")
-  }
-
-  if (!session.user.isAdmin) {
-    redirect("/")
-  }
+  await requireAdmin()
 
   const historicalData = await getHistoricalWrappedData(params.llmUsageId, params.wrappedId)
 

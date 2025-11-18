@@ -3,9 +3,9 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { getUserPlexWrapped } from "@/actions/users"
 import Link from "next/link"
-import { WrappedViewerWrapper } from "@/components/wrapped-viewer-wrapper"
+import { WrappedViewerWrapper } from "@/components/wrapped/wrapped-viewer-wrapper"
 import { WrappedData } from "@/types/wrapped"
-import { WrappedPageClient } from "@/components/wrapped-page-client"
+import { WrappedPageClient } from "@/components/wrapped/wrapped-page-client"
 
 export const dynamic = 'force-dynamic'
 

@@ -3,10 +3,10 @@
  */
 
 import { prisma } from "@/lib/prisma"
-import { WrappedStatistics } from "@/types/wrapped"
-import { generateWrappedPrompt } from "./prompt"
+import { WrappedData, WrappedStatistics } from "@/types/wrapped"
+import { callOpenAI, LLMConfig } from "./api-calls"
 import { generateMockWrappedData } from "./mock-data"
-import { callOpenAI, callOpenRouter, LLMConfig } from "./api-calls"
+import { generateWrappedPrompt } from "./prompt-template"
 
 /**
  * Call LLM to generate wrapped content
@@ -19,7 +19,7 @@ export async function generateWrappedWithLLM(
   statistics: WrappedStatistics
 ): Promise<{
   success: boolean
-  data?: any
+  data?: WrappedData
   error?: string
   tokenUsage?: {
     promptTokens: number
@@ -82,20 +82,21 @@ export async function generateWrappedWithLLM(
     }
 
     const config: LLMConfig = {
-      provider: llmProvider.provider as "openai" | "openrouter",
+      provider: llmProvider.provider as "openai",
       apiKey: llmProvider.apiKey,
-      model: llmProvider.model || undefined,
+      model: llmProvider.model ?? undefined,
+      temperature: llmProvider.temperature ?? undefined,
+      maxTokens: llmProvider.maxTokens ?? undefined,
     }
 
-    // Generate prompt
-    const prompt = generateWrappedPrompt(userName, year, statistics)
+    // Generate prompt using template system
+    const prompt = await generateWrappedPrompt(userName, year, statistics)
 
     // Call appropriate LLM provider
+    // Currently only OpenAI is supported, but the structure allows for easy extension
     let llmResult
     if (config.provider === "openai") {
       llmResult = await callOpenAI(config, prompt, statistics, year, userId, userName)
-    } else if (config.provider === "openrouter") {
-      llmResult = await callOpenRouter(config, prompt, statistics, year, userId, userName)
     } else {
       return { success: false, error: "Unsupported LLM provider" }
     }
@@ -113,7 +114,7 @@ export async function generateWrappedWithLLM(
             wrappedId,
             userId,
             provider: config.provider,
-            model: config.model || (config.provider === "openai" ? "gpt-4" : "openai/gpt-4"),
+            model: config.model || "gpt-4",
             prompt,
             response: llmResult.rawResponse || JSON.stringify(llmResult.data),
             promptTokens: llmResult.tokenUsage.promptTokens,

@@ -1,21 +1,41 @@
 import { getServerSession } from "next-auth"
-import { redirect } from "next/navigation"
 import { authOptions } from "@/lib/auth"
 
 /**
+ * Custom error class for unauthorized admin access
+ */
+export class UnauthorizedAdminError extends Error {
+  constructor(message: string = "Admin access required") {
+    super(message)
+    this.name = "UnauthorizedAdminError"
+  }
+}
+
+/**
+ * Custom error class for unauthenticated access
+ */
+export class UnauthenticatedError extends Error {
+  constructor(message: string = "Authentication required") {
+    super(message)
+    this.name = "UnauthenticatedError"
+  }
+}
+
+/**
  * Server-side helper to check if the current user is an admin
- * Redirects to sign-in if not authenticated
- * Returns the session if admin, throws error if not admin
+ * Throws UnauthenticatedError if not authenticated (caught by error boundary)
+ * Throws UnauthorizedAdminError if not admin (caught by error boundary)
+ * Returns the session if admin
  */
 export async function requireAdmin() {
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/")
+    throw new UnauthenticatedError("UNAUTHENTICATED")
   }
 
   if (!session.user.isAdmin) {
-    redirect("/")
+    throw new UnauthorizedAdminError("UNAUTHORIZED")
   }
 
   return session
