@@ -1,9 +1,10 @@
+import React from "react"
 import {
   getShareAnalyticsStats,
   getShareTimeSeriesData,
   getTopSharedWraps,
 } from "@/actions/share-analytics"
-import { SignOutButton } from "@/components/admin/sign-out-button"
+import AdminLayoutClient from "@/components/admin/admin-layout-client"
 import { ShareTimeChart } from "@/components/admin/share-time-chart"
 import { authOptions } from "@/lib/auth"
 import { getServerSession } from "next-auth"
@@ -16,7 +17,7 @@ export default async function SharesDashboardPage() {
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/auth/signin")
+    redirect("/")
   }
 
   if (!session.user.isAdmin) {
@@ -30,34 +31,18 @@ export default async function SharesDashboardPage() {
   ])
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">
+    <AdminLayoutClient>
+      <div className="p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
               Share Analytics
             </h1>
             <p className="text-sm text-slate-400">
               Track shares and visits over time
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link
-              href="/admin/users"
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded transition-colors"
-            >
-              Users
-            </Link>
-            <Link
-              href="/admin/llm-usage"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded transition-colors"
-            >
-              LLM Usage & Tokens
-            </Link>
-            <SignOutButton />
-          </div>
-        </div>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -100,22 +85,24 @@ export default async function SharesDashboardPage() {
         </div>
 
         {/* Time Series Chart */}
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 mb-6">
+        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-4 sm:p-6 mb-6">
           <div className="mb-4">
-            <h2 className="text-xl font-bold text-white mb-1">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-1">
               Shares & Visits Over Time
             </h2>
             <p className="text-sm text-slate-400">
               Last 30 days of share and visit activity
             </p>
           </div>
-          <ShareTimeChart data={timeSeriesData} height={250} />
+          <div className="overflow-x-auto">
+            <ShareTimeChart data={timeSeriesData} height={250} />
+          </div>
         </div>
 
         {/* Top Shared Wraps */}
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
-          <div className="p-6 border-b border-slate-700">
-            <h2 className="text-xl font-bold text-white mb-1">
+          <div className="p-4 sm:p-6 border-b border-slate-700">
+            <h2 className="text-lg sm:text-xl font-bold text-white mb-1">
               Top Shared Wraps
             </h2>
             <p className="text-sm text-slate-400">
@@ -126,22 +113,22 @@ export default async function SharesDashboardPage() {
             <table className="w-full">
               <thead className="bg-slate-700/30 border-b border-slate-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Year
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Visits
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden sm:table-cell">
                     First Shared
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden md:table-cell">
                     Last Visit
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -162,27 +149,27 @@ export default async function SharesDashboardPage() {
                       key={wrap.wrappedId}
                       className="hover:bg-slate-700/20 transition-colors"
                     >
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-white">
                           {wrap.userName || wrap.userEmail || "Unknown"}
                         </div>
                         {wrap.userEmail && wrap.userName && (
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-slate-400 hidden sm:block">
                             {wrap.userEmail}
                           </div>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <span className="text-sm text-slate-300">
                           {wrap.year}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <span className="text-sm font-medium text-green-400">
                           {wrap.visitCount.toLocaleString()}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
                         <div className="text-sm text-slate-300">
                           {wrap.firstSharedAt
                             ? new Date(
@@ -195,7 +182,7 @@ export default async function SharesDashboardPage() {
                             : "—"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
                         <div className="text-sm text-slate-300">
                           {wrap.lastVisitedAt
                             ? new Date(
@@ -208,20 +195,20 @@ export default async function SharesDashboardPage() {
                             : "—"}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex gap-2">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="flex flex-col sm:flex-row gap-1 sm:gap-2">
                           <Link
                             href={`/wrapped/share/${wrap.shareToken}`}
                             target="_blank"
-                            className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors"
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors text-center"
                           >
                             View
                           </Link>
                           <Link
                             href={`/admin/users/${wrap.userId}/wrapped`}
-                            className="px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium rounded transition-colors"
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium rounded transition-colors text-center"
                           >
-                            Admin View
+                            Admin
                           </Link>
                         </div>
                       </td>
@@ -233,7 +220,8 @@ export default async function SharesDashboardPage() {
           </div>
         </div>
       </div>
-    </main>
+      </div>
+    </AdminLayoutClient>
   )
 }
 

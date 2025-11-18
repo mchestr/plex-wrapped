@@ -1,5 +1,6 @@
+import React from "react"
 import { getLLMUsageRecords, getLLMUsageStats, getUserById } from "@/actions/admin"
-import { SignOutButton } from "@/components/admin/sign-out-button"
+import AdminLayoutClient from "@/components/admin/admin-layout-client"
 import { authOptions } from "@/lib/auth"
 import { getServerSession } from "next-auth"
 import Link from "next/link"
@@ -15,7 +16,7 @@ export default async function LLMUsagePage({
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/auth/signin")
+    redirect("/")
   }
 
   if (!session.user.isAdmin) {
@@ -53,11 +54,11 @@ export default async function LLMUsagePage({
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">LLM Usage & Token Tracking</h1>
+    <AdminLayoutClient>
+      <div className="p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">LLM Usage & Token Tracking</h1>
             <p className="text-sm text-slate-400">
               {filteredUser
                 ? `Filtered by: ${filteredUser.name || filteredUser.email || "Unknown User"}`
@@ -72,30 +73,14 @@ export default async function LLMUsagePage({
               </Link>
             )}
           </div>
-          <div className="flex gap-3">
-            <Link
-              href="/admin/users"
-              className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded transition-colors"
-            >
-              Users
-            </Link>
-            <Link
-              href="/admin/shares"
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium rounded transition-colors"
-            >
-              Share Analytics
-            </Link>
-            <SignOutButton />
-          </div>
-        </div>
 
         {/* Filter Banner */}
         {filteredUser && (
           <div className="bg-cyan-500/10 border border-cyan-500/30 rounded-lg p-4 mb-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3 sm:gap-4">
                 {filteredUser.image ? (
-                  <div className="relative w-12 h-12 rounded-full overflow-hidden bg-slate-700">
+                  <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={filteredUser.image}
@@ -104,22 +89,22 @@ export default async function LLMUsagePage({
                     />
                   </div>
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-slate-700 flex items-center justify-center">
-                    <span className="text-slate-400 text-lg font-medium">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-slate-700 flex items-center justify-center flex-shrink-0">
+                    <span className="text-slate-400 text-base sm:text-lg font-medium">
                       {(filteredUser.name || filteredUser.email || "U")[0].toUpperCase()}
                     </span>
                   </div>
                 )}
-                <div>
-                  <div className="text-sm text-slate-400">Viewing LLM usage for</div>
-                  <div className="text-lg font-semibold text-white">
+                <div className="min-w-0">
+                  <div className="text-xs sm:text-sm text-slate-400">Viewing LLM usage for</div>
+                  <div className="text-base sm:text-lg font-semibold text-white truncate">
                     {filteredUser.name || filteredUser.email || "Unknown User"}
                   </div>
                 </div>
               </div>
               <Link
                 href="/admin/llm-usage"
-                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded transition-colors"
+                className="px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm font-medium rounded transition-colors self-start sm:self-auto"
               >
                 Clear Filter
               </Link>
@@ -173,28 +158,28 @@ export default async function LLMUsagePage({
             <table className="w-full">
               <thead className="bg-slate-700/30 border-b border-slate-700">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden md:table-cell">
                     User
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Provider
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                     Model
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Tokens
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Cost
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden lg:table-cell">
                     Wrapped
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -209,10 +194,18 @@ export default async function LLMUsagePage({
                 ) : (
                   records.map((record) => (
                     <tr key={record.id} className="hover:bg-slate-700/20 transition-colors">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-300">{formatDate(record.createdAt)}</div>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                        <div className="text-xs sm:text-sm text-slate-300">
+                          <div className="md:hidden">
+                            {new Date(record.createdAt).toLocaleDateString("en-US", {
+                              month: "short",
+                              day: "numeric",
+                            })}
+                          </div>
+                          <div className="hidden md:block">{formatDate(record.createdAt)}</div>
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
                         <div className="flex items-center gap-2">
                           {record.user.image ? (
                             <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-700">
@@ -240,26 +233,26 @@ export default async function LLMUsagePage({
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">{getProviderBadge(record.provider)}</td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-slate-300 font-mono">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">{getProviderBadge(record.provider)}</td>
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
+                        <div className="text-sm text-slate-300 font-mono truncate max-w-[120px]">
                           {record.model || <span className="text-slate-500">—</span>}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <div className="text-sm">
                           <div className="text-white font-medium">{record.totalTokens.toLocaleString()}</div>
-                          <div className="text-xs text-slate-400">
+                          <div className="text-xs text-slate-400 hidden sm:block">
                             {record.promptTokens.toLocaleString()} + {record.completionTokens.toLocaleString()}
                           </div>
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-green-400 font-medium">
                           ${record.cost.toFixed(4)}
                         </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
                         {record.wrapped ? (
                           <Link
                             href={`/admin/users/${record.userId}/wrapped`}
@@ -271,12 +264,13 @@ export default async function LLMUsagePage({
                           <span className="text-sm text-slate-500">—</span>
                         )}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
                         <Link
                           href={`/admin/llm-usage/${record.id}`}
-                          className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors inline-block"
+                          className="px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors inline-block"
                         >
-                          View Details
+                          <span className="hidden sm:inline">View Details</span>
+                          <span className="sm:hidden">View</span>
                         </Link>
                       </td>
                     </tr>
@@ -288,8 +282,8 @@ export default async function LLMUsagePage({
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="px-6 py-4 border-t border-slate-700 flex items-center justify-between">
-              <div className="text-sm text-slate-400">
+            <div className="px-4 sm:px-6 py-4 border-t border-slate-700 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="text-xs sm:text-sm text-slate-400">
                 Showing {(pagination.page - 1) * pagination.pageSize + 1} to{" "}
                 {Math.min(pagination.page * pagination.pageSize, pagination.total)} of{" "}
                 {pagination.total} results
@@ -298,7 +292,7 @@ export default async function LLMUsagePage({
                 {pagination.page > 1 && (
                   <Link
                     href={`/admin/llm-usage?page=${pagination.page - 1}${userId ? `&userId=${userId}` : ""}`}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded transition-colors"
+                    className="px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm font-medium rounded transition-colors"
                   >
                     Previous
                   </Link>
@@ -306,7 +300,7 @@ export default async function LLMUsagePage({
                 {pagination.page < pagination.totalPages && (
                   <Link
                     href={`/admin/llm-usage?page=${pagination.page + 1}${userId ? `&userId=${userId}` : ""}`}
-                    className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-medium rounded transition-colors"
+                    className="px-3 sm:px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-xs sm:text-sm font-medium rounded transition-colors"
                   >
                     Next
                   </Link>
@@ -316,7 +310,8 @@ export default async function LLMUsagePage({
           )}
         </div>
       </div>
-    </main>
+      </div>
+    </AdminLayoutClient>
   )
 }
 

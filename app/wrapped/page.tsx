@@ -13,7 +13,7 @@ export default async function WrappedPage() {
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/auth/signin")
+    redirect("/")
   }
 
   const currentYear = new Date().getFullYear()

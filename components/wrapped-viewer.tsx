@@ -214,7 +214,7 @@ export function WrappedViewer({
   }
 
   return (
-    <div className="min-h-screen relative py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen relative py-8 sm:py-12 px-4 sm:px-6 lg:px-8 pb-24 md:pb-12">
       <SpaceBackground />
       <div className="max-w-4xl mx-auto relative z-10">
         <WrappedViewerProgress
@@ -236,8 +236,8 @@ export function WrappedViewer({
               stiffness: 100,
               damping: 20
             }}
-            className="bg-slate-900/90 border border-cyan-500/20 shadow-2xl rounded-lg p-8 md:p-12"
-            style={{ backdropFilter: "blur(8px)", minHeight: "60vh" }}
+            className="bg-slate-900/90 border border-cyan-500/20 shadow-2xl rounded-lg p-6 sm:p-8 md:p-12"
+            style={{ backdropFilter: "blur(8px)", minHeight: "50vh" }}
           >
             <SectionRenderer section={currentSection} wrappedData={wrappedData} sectionIndex={currentSectionIndex} />
           </motion.div>

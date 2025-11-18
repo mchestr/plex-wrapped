@@ -11,7 +11,7 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/auth/signin")
+    redirect("/")
   }
 
   if (!session.user.isAdmin) {

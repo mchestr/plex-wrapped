@@ -87,7 +87,7 @@ export function PlexCallbackPageClient() {
             </h1>
             <p className="text-center text-slate-300 mb-6">{error}</p>
             <button
-              onClick={() => router.push("/auth/signin")}
+              onClick={() => router.push("/")}
               className="w-full py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-cyan-600 hover:bg-cyan-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-cyan-500 transition-colors"
             >
               Try Again

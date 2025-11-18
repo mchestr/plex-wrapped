@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
-import { AdminFooter } from "@/components/admin-footer";
 import { SetupGuard } from "@/components/setup-guard";
 
 export const metadata: Metadata = {
@@ -24,7 +23,6 @@ export default function RootLayout({
         <Providers>
           <SetupGuard>
             {children}
-            <AdminFooter />
           </SetupGuard>
         </Providers>
       </body>

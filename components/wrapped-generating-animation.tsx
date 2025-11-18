@@ -31,17 +31,6 @@ export function WrappedGeneratingAnimation({ year, compact = false }: WrappedGen
   const [isTyping, setIsTyping] = useState(true)
 
   useEffect(() => {
-    // Rotate phrases every 3 seconds
-    const phraseInterval = setInterval(() => {
-      setCurrentPhraseIndex((prev) => (prev + 1) % funPhrases.length)
-      setIsTyping(true)
-      setDisplayedPhrase("")
-    }, 3000)
-
-    return () => clearInterval(phraseInterval)
-  }, [])
-
-  useEffect(() => {
     if (!isTyping) return
 
     const currentPhrase = funPhrases[currentPhraseIndex]
@@ -55,10 +44,23 @@ export function WrappedGeneratingAnimation({ year, compact = false }: WrappedGen
         setIsTyping(false)
         clearInterval(typingInterval)
       }
-    }, 50) // Typing speed
+    }, 80) // Typing speed - slower for better readability
 
     return () => clearInterval(typingInterval)
   }, [currentPhraseIndex, isTyping])
+
+  useEffect(() => {
+    // After typing finishes, wait 2.5 seconds before rotating to next phrase
+    if (!isTyping) {
+      const timeout = setTimeout(() => {
+        setCurrentPhraseIndex((prev) => (prev + 1) % funPhrases.length)
+        setIsTyping(true)
+        setDisplayedPhrase("")
+      }, 2500) // Display full sentence for 2.5 seconds
+
+      return () => clearTimeout(timeout)
+    }
+  }, [isTyping])
 
   // Generate stable random positions for background particles
   const backgroundParticles = useMemo(() => {

@@ -1,10 +1,9 @@
 import { getAllUsersWithWrapped } from "@/actions/users"
-import { SignOutButton } from "@/components/admin/sign-out-button"
+import AdminLayoutClient from "@/components/admin/admin-layout-client"
 import { UserTableRow } from "@/components/admin/user-table-row"
 import { UsersStatsSummary } from "@/components/admin/users-stats-summary"
 import { authOptions } from "@/lib/auth"
 import { getServerSession } from "next-auth"
-import Link from "next/link"
 import { redirect } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
@@ -13,7 +12,7 @@ export default async function UsersPage() {
   const session = await getServerSession(authOptions)
 
   if (!session) {
-    redirect("/auth/signin")
+    redirect("/")
   }
 
   if (!session.user.isAdmin) {
@@ -24,31 +23,15 @@ export default async function UsersPage() {
   const users = await getAllUsersWithWrapped(currentYear)
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 p-6">
-      <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Users</h1>
+    <AdminLayoutClient>
+      <div className="p-4 sm:p-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Users</h1>
             <p className="text-sm text-slate-400">
               {users.length} user{users.length !== 1 ? "s" : ""} in database
             </p>
           </div>
-          <div className="flex gap-3">
-            <Link
-              href="/admin/shares"
-              className="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium rounded transition-colors"
-            >
-              Share Analytics
-            </Link>
-            <Link
-              href="/admin/llm-usage"
-              className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white text-sm font-medium rounded transition-colors"
-            >
-              LLM Usage & Tokens
-            </Link>
-            <SignOutButton />
-          </div>
-        </div>
 
         {/* Users Table */}
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
@@ -110,9 +93,10 @@ export default async function UsersPage() {
           </div>
         </div>
 
-        <UsersStatsSummary users={users} />
+          <UsersStatsSummary users={users} />
+        </div>
       </div>
-    </main>
+    </AdminLayoutClient>
   )
 }
 

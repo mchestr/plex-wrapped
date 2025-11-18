@@ -1,13 +1,31 @@
 "use client"
 
 import { ShareTimeSeriesData } from "@/actions/share-analytics"
+import {
+  BarElement,
+  CategoryScale,
+  Chart as ChartJS,
+  ChartOptions,
+  Legend,
+  LinearScale,
+  Tooltip,
+} from "chart.js"
+import { Bar } from "react-chartjs-2"
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Tooltip,
+  Legend
+)
 
 interface ShareTimeChartProps {
   data: ShareTimeSeriesData[]
   height?: number
 }
 
-export function ShareTimeChart({ data, height = 200 }: ShareTimeChartProps) {
+export function ShareTimeChart({ data, height = 250 }: ShareTimeChartProps) {
   if (data.length === 0) {
     return (
       <div
@@ -19,74 +37,112 @@ export function ShareTimeChart({ data, height = 200 }: ShareTimeChartProps) {
     )
   }
 
-  const maxShares = Math.max(...data.map((d) => d.shares), 1)
-  const maxVisits = Math.max(...data.map((d) => d.visits), 1)
-  const maxValue = Math.max(maxShares, maxVisits)
+  // Format data for Chart.js
+  const labels = data.map((point) =>
+    new Date(point.date).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+  )
 
-  const chartHeight = height - 60 // Leave room for labels
-  const barWidth = Math.max(2, (100 / data.length) * 0.8)
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: "Visits",
+        data: data.map((point) => point.visits),
+        backgroundColor: "#22c55e",
+        borderColor: "#16a34a",
+        borderWidth: 0,
+        borderRadius: {
+          topLeft: 0,
+          topRight: 0,
+          bottomLeft: 0,
+          bottomRight: 0,
+        },
+      },
+      {
+        label: "Shares",
+        data: data.map((point) => point.shares),
+        backgroundColor: "#06b6d4",
+        borderColor: "#0891b2",
+        borderWidth: 0,
+        borderRadius: {
+          topLeft: 4,
+          topRight: 4,
+          bottomLeft: 0,
+          bottomRight: 0,
+        },
+      },
+    ],
+  }
+
+  const options: ChartOptions<"bar"> = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: "top" as const,
+        labels: {
+          color: "#94a3b8",
+          font: {
+            size: 12,
+          },
+          usePointStyle: true,
+          padding: 15,
+        },
+      },
+      tooltip: {
+        backgroundColor: "#1e293b",
+        titleColor: "#cbd5e1",
+        bodyColor: "#e2e8f0",
+        borderColor: "#475569",
+        borderWidth: 1,
+        padding: 12,
+        cornerRadius: 6,
+        displayColors: true,
+      },
+    },
+    scales: {
+      x: {
+        stacked: true,
+        ticks: {
+          color: "#94a3b8",
+          font: {
+            size: 11,
+          },
+          maxRotation: 45,
+          minRotation: 45,
+        },
+        grid: {
+          color: "rgba(71, 85, 105, 0.3)",
+        },
+        border: {
+          display: false,
+        },
+      },
+      y: {
+        stacked: true,
+        beginAtZero: true,
+        ticks: {
+          color: "#94a3b8",
+          font: {
+            size: 11,
+          },
+        },
+        grid: {
+          color: "rgba(71, 85, 105, 0.3)",
+        },
+        border: {
+          display: false,
+        },
+      },
+    },
+  }
 
   return (
-    <div className="w-full">
-      <div className="flex items-end gap-0.5" style={{ height: chartHeight }}>
-        {data.map((point, index) => {
-          const shareHeight = (point.shares / maxValue) * 100
-          const visitHeight = (point.visits / maxValue) * 100
-
-          return (
-            <div
-              key={point.date}
-              className="flex flex-col items-center gap-0.5 flex-1 group relative"
-              style={{ minWidth: `${barWidth}%` }}
-            >
-              <div className="flex flex-col-reverse gap-0.5 w-full items-center">
-                {/* Visits bar */}
-                {point.visits > 0 && (
-                  <div
-                    className="bg-green-500 w-full rounded-t transition-all hover:bg-green-400"
-                    style={{
-                      height: `${visitHeight}%`,
-                      minHeight: point.visits > 0 ? "2px" : "0",
-                    }}
-                    title={`${point.date}: ${point.visits} visits`}
-                  />
-                )}
-                {/* Shares bar */}
-                {point.shares > 0 && (
-                  <div
-                    className="bg-cyan-500 w-full rounded-t transition-all hover:bg-cyan-400"
-                    style={{
-                      height: `${shareHeight}%`,
-                      minHeight: point.shares > 0 ? "2px" : "0",
-                    }}
-                    title={`${point.date}: ${point.shares} shares`}
-                  />
-                )}
-              </div>
-              {/* Date label (show every Nth date) */}
-              {index % Math.ceil(data.length / 7) === 0 && (
-                <div className="text-[10px] text-slate-500 mt-1 transform -rotate-45 origin-left whitespace-nowrap">
-                  {new Date(point.date).toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
-                </div>
-              )}
-            </div>
-          )
-        })}
-      </div>
-      {/* Legend */}
-      <div className="flex gap-4 mt-4 text-xs text-slate-400">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-cyan-500 rounded" />
-          <span>Shares</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 bg-green-500 rounded" />
-          <span>Visits</span>
-        </div>
-      </div>
+    <div className="w-full" style={{ height }}>
+      <Bar data={chartData} options={options} />
     </div>
   )
 }

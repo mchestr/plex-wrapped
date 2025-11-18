@@ -129,7 +129,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
   if (wrapped && wrapped.status === "completed") {
     return (
       <div className="flex flex-col items-center gap-6">
-        <h1 className="text-5xl md:text-6xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-4">
           {heroTitle}
         </h1>
         <p className="text-sm text-slate-400 text-center max-w-xl">
@@ -142,26 +142,23 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
         )}
         <Link
           href="/wrapped"
-          className="group relative px-12 py-6 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-cyan-500/50"
+          className="px-12 py-6 flex items-center justify-center gap-3 text-white text-xl font-semibold rounded-xl bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 transition-all duration-200 shadow-lg"
         >
-          <span className="relative z-10 flex items-center gap-3">
-            <svg
-              className="w-8 h-8 group-hover:rotate-12 transition-transform"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M13 10V3L4 14h7v7l9-11h-7z"
-              />
-            </svg>
-            Let&apos;s Get Started!
-          </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 rounded-xl blur-xl transition-opacity"></div>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 10V3L4 14h7v7l9-11h-7z"
+            />
+          </svg>
+          Let&apos;s Get Started!
         </Link>
         {wrapped.shareToken && (
           <WrappedShareButton shareToken={wrapped.shareToken} year={currentYear} />
@@ -174,7 +171,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
   if (wrapped && wrapped.status === "failed") {
     return (
       <div className="flex flex-col items-center gap-6">
-        <h1 className="text-5xl md:text-6xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-4">
           {heroTitle}
         </h1>
         <p className="text-sm text-slate-400 text-center max-w-xl">
@@ -188,26 +185,23 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
         <button
           onClick={handleGenerate}
           disabled={isGenerating}
-          className="group relative px-12 py-6 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+          className="px-12 py-6 flex items-center justify-center gap-3 text-white text-xl font-semibold rounded-xl bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <span className="relative z-10 flex items-center gap-3">
-            <svg
-              className="w-8 h-8 group-hover:rotate-12 transition-transform"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-              />
-            </svg>
-            Try Again
-          </span>
-          <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 rounded-xl blur-xl transition-opacity"></div>
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
+          </svg>
+          Try Again
         </button>
       </div>
     )
@@ -216,7 +210,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
   // No wrapped exists, show button to generate
   return (
     <div className="flex flex-col items-center gap-6">
-      <h1 className="text-5xl md:text-6xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+      <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-4">
         {heroTitle}
       </h1>
       <p className="text-sm text-slate-400 text-center max-w-xl">
@@ -230,26 +224,23 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
       <button
         onClick={handleGenerate}
         disabled={isGenerating}
-        className="group relative px-12 py-6 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 text-white text-2xl font-bold rounded-xl shadow-2xl transition-all duration-300 transform hover:scale-105 hover:shadow-cyan-500/50 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+        className="px-12 py-6 flex items-center justify-center gap-3 text-white text-xl font-semibold rounded-xl bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        <span className="relative z-10 flex items-center gap-3">
-          <svg
-            className="w-8 h-8 group-hover:rotate-12 transition-transform"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M13 10V3L4 14h7v7l9-11h-7z"
-            />
-          </svg>
-          Generate My Wrapped
-        </span>
-        <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-20 rounded-xl blur-xl transition-opacity"></div>
+        <svg
+          className="w-6 h-6"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
+        </svg>
+        Generate My Wrapped
       </button>
     </div>
   )

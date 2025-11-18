@@ -25,16 +25,17 @@ export function WrappedViewerNavigation({
   year,
 }: WrappedViewerNavigationProps) {
   return (
-    <div className="mt-8 flex justify-between items-center">
-      {currentSectionIndex > 0 && (
+    <div className="mt-6 sm:mt-8 flex justify-between items-center gap-3">
+      {currentSectionIndex > 0 ? (
         <button
           onClick={onPrevious}
-          className="px-4 py-2 bg-slate-800/50 border border-slate-600 rounded-md text-white hover:border-cyan-500 transition-colors"
+          className="px-3 sm:px-4 py-2 bg-slate-800/50 border border-slate-600 rounded-md text-white hover:border-cyan-500 transition-colors text-sm sm:text-base"
         >
           Previous
         </button>
+      ) : (
+        <div />
       )}
-      {currentSectionIndex === 0 && <div />}
       {!isShared && shareToken && currentSectionIndex === totalSections - 1 && (
         <motion.div
           initial={{ opacity: 0, scale: 0.8, y: 20 }}
@@ -45,6 +46,7 @@ export function WrappedViewerNavigation({
             stiffness: 200,
             damping: 15,
           }}
+          className="flex-1 flex justify-center"
         >
           <WrappedShareButton
             shareToken={shareToken}
@@ -55,14 +57,14 @@ export function WrappedViewerNavigation({
       {currentSectionIndex < totalSections - 1 ? (
         <button
           onClick={onNext}
-          className="px-4 py-2 bg-slate-800/50 border border-slate-600 rounded-md text-white hover:border-cyan-500 transition-colors"
+          className="px-3 sm:px-4 py-2 bg-slate-800/50 border border-slate-600 rounded-md text-white hover:border-cyan-500 transition-colors text-sm sm:text-base"
         >
           Next
         </button>
       ) : (
         <button
           onClick={onShowAll}
-          className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white rounded-lg text-base font-semibold transition-all shadow-lg border border-white/10"
+          className="px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white rounded-lg text-sm sm:text-base font-semibold transition-all shadow-lg border border-white/10"
         >
           Show All
         </button>

@@ -44,41 +44,12 @@ export function WrappedShareButton({
 
   return (
     <div className="relative">
-      {/* Animated glow effect */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 rounded-lg blur-md opacity-40"
-        animate={{
-          opacity: [0.2, 0.35, 0.2],
-          scale: [1, 1.08, 1],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-      />
       <motion.button
         onClick={handleCopy}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        className="relative px-8 py-4 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-500 hover:to-purple-500 text-white rounded-lg text-lg font-bold transition-all flex items-center gap-3 shadow-xl border-2 border-white/20"
-        animate={{
-          scale: [1, 1.05, 1],
-          boxShadow: [
-            "0 8px 20px rgba(34, 211, 238, 0.25), 0 0 0 0 rgba(34, 211, 238, 0.4)",
-            "0 12px 28px rgba(168, 85, 247, 0.35), 0 0 0 4px rgba(168, 85, 247, 0.2)",
-            "0 8px 20px rgba(34, 211, 238, 0.25), 0 0 0 0 rgba(34, 211, 238, 0.4)",
-          ],
-        }}
-        transition={{
-          duration: 2,
-          repeat: Infinity,
-          ease: "easeInOut",
-        }}
-        whileHover={{
-          scale: 1.08,
-          boxShadow: "0 12px 32px rgba(168, 85, 247, 0.4), 0 0 0 4px rgba(168, 85, 247, 0.3)"
-        }}
+        className="relative px-6 py-3 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 text-white rounded-xl text-sm font-semibold transition-all duration-200 flex items-center gap-2 shadow-lg"
+        whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
         <AnimatePresence mode="wait">
@@ -104,7 +75,7 @@ export function WrappedShareButton({
                   d="M5 13l4 4L19 7"
                 />
               </svg>
-              Copied!
+              <span>Copied!</span>
             </motion.div>
           ) : (
             <motion.div
@@ -114,21 +85,12 @@ export function WrappedShareButton({
               exit={{ opacity: 0, scale: 0.8 }}
               className="flex items-center gap-2"
             >
-              <motion.svg
-                className="w-6 h-6"
+              <svg
+                className="w-4 h-4"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
                 xmlns="http://www.w3.org/2000/svg"
-                animate={{
-                  rotate: [0, 10, -10, 0],
-                  scale: [1, 1.1, 1],
-                }}
-                transition={{
-                  duration: 2,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
               >
                 <path
                   strokeLinecap="round"
@@ -142,30 +104,8 @@ export function WrappedShareButton({
                   strokeWidth={2}
                   d="M18 8h2a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V10a2 2 0 012-2h2m6-4h4a2 2 0 012 2v2M10 4H6a2 2 0 00-2 2v2m8-4v8m0 0l-3-3m3 3l3-3"
                 />
-              </motion.svg>
-              <span>Share Your Wrapped</span>
-              <motion.svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                xmlns="http://www.w3.org/2000/svg"
-                animate={{
-                  x: [0, 4, 0],
-                }}
-                transition={{
-                  duration: 1.5,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 7l5 5m0 0l-5 5m5-5H6"
-                />
-              </motion.svg>
+              </svg>
+              <span>Share</span>
             </motion.div>
           )}
         </AnimatePresence>
