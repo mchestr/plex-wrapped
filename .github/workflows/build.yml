@@ -27,10 +27,20 @@ jobs:
       - name: Run linter
         run: npm run lint
 
+      - name: Setup PostgreSQL
+        uses: ankane/setup-postgres@v1
+        with:
+          postgres-version: 16
+
+      - name: Run Prisma migrations
+        run: npx prisma migrate deploy
+        env:
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test_db?schema=public"
+
       - name: Build application
         run: npm run build
         env:
-          DATABASE_URL: "file:./prisma/test.db"
+          DATABASE_URL: "postgresql://postgres:postgres@localhost:5432/test_db?schema=public"
           NEXT_PUBLIC_APP_URL: "http://localhost:3000"
           NEXTAUTH_URL: "http://localhost:3000"
           NEXTAUTH_SECRET: "test-secret-for-ci-build-at-least-32-chars-long"
