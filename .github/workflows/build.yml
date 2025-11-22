@@ -8,6 +8,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_db
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v5
@@ -26,11 +41,6 @@ jobs:
 
       - name: Run linter
         run: npm run lint
-
-      - name: Setup PostgreSQL
-        uses: ankane/setup-postgres@v1
-        with:
-          postgres-version: 16
 
       - name: Run Prisma migrations
         run: npx prisma migrate deploy
