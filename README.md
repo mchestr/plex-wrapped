@@ -110,7 +110,7 @@ cp example.env .env
 ```
 
 Edit `.env` and configure:
-- `DATABASE_URL` - SQLite database path (default: `file:./dev.db`)
+- `DATABASE_URL` - PostgreSQL connection string (default: `postgresql://postgres:postgres@localhost:5432/plex_wrapped?schema=public`)
 - `NEXT_PUBLIC_APP_URL` - Your public application URL (e.g., `http://localhost:3000` for dev, `https://yourdomain.com` for production)
 - `NEXTAUTH_URL` - Your application URL for NextAuth callbacks (should match `NEXT_PUBLIC_APP_URL` in production)
 - `NEXTAUTH_SECRET` - Generate with: `openssl rand -base64 32`
@@ -248,8 +248,8 @@ When deploying to production, ensure the following environment variables are set
    - Keep this secret and never commit it to version control
 
 4. **`DATABASE_URL`** - Your production database connection string
-   - For SQLite: `file:./prisma/production.db`
-   - For PostgreSQL: `postgresql://user:password@host:port/database`
+   - PostgreSQL: `postgresql://user:password@host:port/database?schema=public`
+   - Example: `postgresql://postgres:password@db.example.com:5432/plex_wrapped?schema=public`
 
 ### Important Notes
 
@@ -273,7 +273,7 @@ The project includes a `Dockerfile` for containerized deployments. When deployin
 |----------|-----------|
 | **Framework** | Next.js 14+ (App Router) |
 | **Language** | TypeScript (strict mode) |
-| **Database** | Prisma + SQLite |
+| **Database** | Prisma + PostgreSQL |
 | **Authentication** | NextAuth.js (Plex PIN-based authentication) |
 | **Data Fetching** | TanStack Query (React Query) |
 | **Styling** | Tailwind CSS |

@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-# Ensure /data directory exists (SQLite needs parent directory to exist)
+# Ensure /data directory exists
 mkdir -p /data
 
 echo "Running Prisma migrations..."

@@ -190,7 +190,7 @@ export default async function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs font-medium text-slate-400 mb-1">Database Provider</div>
-                    <div className="text-sm text-white">SQLite</div>
+                    <div className="text-sm text-white">PostgreSQL</div>
                   </div>
                   <div>
                     <div className="text-xs font-medium text-slate-400 mb-1">Database URL</div>
