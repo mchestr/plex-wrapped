@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { parseStyledText, TextPart } from "@/lib/wrapped/text-processor"
+import { parseStyledText } from "@/lib/wrapped/text-processor"
 
 interface FormattedTextProps {
   text: string

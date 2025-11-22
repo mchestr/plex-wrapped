@@ -2,9 +2,9 @@
 
 import { motion } from "framer-motion"
 import CountUp from "react-countup"
-import { FormattedText } from "../../shared/formatted-text"
-import { SectionHeader } from "./section-header"
-import { formatWatchTime } from "./utils"
+import { FormattedText } from "@/components/shared/formatted-text"
+import { SectionHeader } from "@/components/wrapped/wrapped-sections/section-header"
+import { formatWatchTime } from "@/components/wrapped/wrapped-sections/utils"
 import { WrappedData, WrappedSection } from "@/types/wrapped"
 
 interface ShowsBreakdownSectionProps {

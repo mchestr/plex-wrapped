@@ -5,9 +5,9 @@
 
 import { createLogger } from "@/lib/utils/logger"
 import { WrappedData, WrappedStatistics } from "@/types/wrapped"
-import { calculateCost } from "./pricing"
-import { parseWrappedResponse } from "./prompt"
-import { generateSystemPrompt } from "./prompt-template"
+import { calculateCost } from "@/lib/wrapped/pricing"
+import { parseWrappedResponse } from "@/lib/wrapped/prompt"
+import { generateSystemPrompt } from "@/lib/wrapped/prompt-template"
 
 const logger = createLogger("LLM")
 

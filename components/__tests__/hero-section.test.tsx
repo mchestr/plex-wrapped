@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { HeroSection } from '../wrapped/wrapped-sections/hero-section'
+import { HeroSection } from '@/components/wrapped/wrapped-sections/hero-section'
 import { WrappedSection } from '@/types/wrapped'
 
 // Mock child components

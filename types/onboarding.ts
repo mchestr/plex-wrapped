@@ -8,22 +8,27 @@ export const ONBOARDING_STEPS: OnboardingStep[] = [
   {
     id: 1,
     title: "Welcome",
-    description: "Get started with Plex Wrapped",
+    description: "How Plex Wrapped works",
   },
   {
     id: 2,
-    title: "Your Profile",
-    description: "Tell us about yourself",
+    title: "Configuration",
+    description: "Optimize your experience",
   },
   {
     id: 3,
-    title: "How It Works",
-    description: "Learn about Plex Wrapped features",
+    title: "Requests",
+    description: "Request new media",
   },
   {
     id: 4,
-    title: "You're All Set!",
-    description: "Start exploring your wrapped",
+    title: "Support",
+    description: "Report issues & feedback",
+  },
+  {
+    id: 5,
+    title: "All Set!",
+    description: "Start exploring",
   },
 ]
 

@@ -1,25 +1,104 @@
 /**
- * Centralized logging utility
- * Provides consistent, secure logging across the application
+ * Production-ready logging utility using Winston
+ * Provides structured JSON logging with context, sanitization, and request tracking
  *
  * Features:
- * - Structured logging with context
+ * - Structured JSON logging (production) with pretty printing (development)
  * - Automatic sanitization of sensitive data
- * - Log levels (debug, info, warn, error)
- * - Environment-aware (reduces verbosity in production)
+ * - Request ID tracking via AsyncLocalStorage
+ * - Log levels with environment-aware filtering
+ * - Performance metrics and timing
+ * - Child loggers for context isolation
  * - Client-safe logging (no sensitive data in browser)
  */
 
-type LogLevel = "debug" | "info" | "warn" | "error"
+import type { AsyncLocalStorage } from "async_hooks"
+import type * as Winston from "winston"
 
-interface LogEntry {
-  level: LogLevel
-  context: string
-  message: string
-  metadata?: Record<string, unknown>
-  timestamp: string
-  environment: string
+// --- Types ---
+
+export interface LogMetadata extends Record<string, unknown> {
+  requestId?: string
+  userId?: string
+  error?: unknown
+  err?: unknown
+  duration?: number
+  label?: string
+  [key: string]: unknown
 }
+
+export interface Logger {
+  debug(message: string, metadata?: LogMetadata): void
+  info(message: string, metadata?: LogMetadata): void
+  warn(message: string, metadata?: LogMetadata): void
+  error(message: string, error?: unknown, metadata?: LogMetadata): void
+  child(bindings: LogMetadata): Logger
+  time<T>(label: string, fn: () => Promise<T>): Promise<T>
+  timeSync<T>(label: string, fn: () => T): T
+}
+
+interface RequestContextType {
+  requestId: string
+  userId?: string
+}
+
+// --- Environment Checks ---
+
+// Only import Winston and Chalk on server-side to avoid bundling Node.js modules in client
+// Also exclude from Edge Runtime which doesn't support Node.js APIs
+const isServer = typeof window === "undefined"
+// Detect Edge Runtime: Next.js sets NEXT_RUNTIME=edge for middleware
+// Also check for absence of Node.js APIs that Winston needs
+const isEdgeRuntime =
+  (typeof process !== "undefined" && process.env.NEXT_RUNTIME === "edge") ||
+  (typeof process !== "undefined" && typeof process.nextTick === "undefined")
+const canUseWinston = isServer && !isEdgeRuntime
+
+// --- Server-Side Modules ---
+
+// Use explicit types for server modules to avoid 'any'
+let winston: typeof Winston | null = null
+let chalk: any = null // Chalk types are hard to import conditionally without esModuleInterop issues in some setups, keeping any for now or could use a simplified interface
+
+if (canUseWinston) {
+  try {
+    // eslint-disable-next-line
+    winston = require("winston")
+    // eslint-disable-next-line
+    chalk = require("chalk")
+  } catch {
+    // Ignore if modules can't be loaded
+  }
+}
+
+// --- Request Context ---
+
+/**
+ * Request context storage for tracking request IDs across async operations
+ * Only available on server-side (Node.js)
+ */
+let requestContext: AsyncLocalStorage<RequestContextType> | null = null
+
+function createAsyncLocalStorage() {
+  // Only import AsyncLocalStorage on server-side
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line
+      const { AsyncLocalStorage } = require("async_hooks")
+      return new AsyncLocalStorage()
+    } catch {
+      return null
+    }
+  }
+  return null
+}
+
+// Initialize request context only on server-side (not Edge Runtime)
+if (canUseWinston) {
+  requestContext = createAsyncLocalStorage()
+}
+
+// --- Sanitization ---
 
 /**
  * Sensitive fields that should be redacted from logs
@@ -34,6 +113,10 @@ const SENSITIVE_FIELDS = [
   "cookie",
   "session",
   "email", // PII - only log in development
+  "apikey",
+  "access_token",
+  "refresh_token",
+  "credentials",
 ] as const
 
 /**
@@ -62,9 +145,11 @@ function sanitizeValue(value: unknown, isDevelopment: boolean): unknown {
     }
 
     const sanitized: Record<string, unknown> = {}
-    for (const [key, val] of Object.entries(value)) {
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
       const lowerKey = key.toLowerCase()
-      const isSensitive = SENSITIVE_FIELDS.some((field) => lowerKey.includes(field.toLowerCase()))
+      const isSensitive = SENSITIVE_FIELDS.some((field) =>
+        lowerKey.includes(field.toLowerCase())
+      )
 
       if (isSensitive && !isDevelopment) {
         sanitized[key] = "[REDACTED]"
@@ -89,7 +174,7 @@ function sanitizeUrl(url: string, isDevelopment: boolean): string {
   try {
     const urlObj = new URL(url)
     // Remove common token params
-    const sensitiveParams = ["token", "apiKey", "key", "auth", "password", "secret"]
+    const sensitiveParams = ["token", "apiKey", "key", "auth", "password", "secret", "apikey"]
     sensitiveParams.forEach((param) => {
       if (urlObj.searchParams.has(param)) {
         urlObj.searchParams.set(param, "[REDACTED]")
@@ -105,121 +190,247 @@ function sanitizeUrl(url: string, isDevelopment: boolean): string {
   }
 }
 
-/**
- * Format log entry for output
- */
-function formatLogEntry(entry: LogEntry): string {
-  const metadataStr = entry.metadata
-    ? ` ${JSON.stringify(sanitizeValue(entry.metadata, entry.environment === "development"))}`
-    : ""
-
-  return `[${entry.level.toUpperCase()}] [${entry.context}] ${entry.message}${metadataStr}`
-}
+// --- Helper Functions ---
 
 /**
- * Check if log level should be output
+ * Get log level from environment variable or default based on NODE_ENV
  */
-function shouldLog(level: LogLevel, isDevelopment: boolean): boolean {
-  // In production, skip debug logs
-  if (!isDevelopment && level === "debug") {
-    return false
+function getLogLevel(): string {
+  const envLevel = process.env.LOG_LEVEL?.toLowerCase()
+  if (
+    envLevel &&
+    ["error", "warn", "info", "verbose", "debug", "silly"].includes(envLevel)
+  ) {
+    return envLevel
   }
-  return true
+
+  // Default levels based on environment
+  if (process.env.NODE_ENV === "production") {
+    return "info"
+  }
+  return "debug"
 }
 
 /**
- * Create a logger instance for a specific context
+ * Create Winston logger instance (server-side only, not Edge Runtime)
  */
-export function createLogger(context: string) {
+function createWinstonLogger(): Winston.Logger | null {
+  if (!winston || !canUseWinston) {
+    return null
+  }
+
   const isDevelopment = process.env.NODE_ENV === "development"
   const isClient = typeof window !== "undefined"
 
-  return {
-    /**
-     * Debug logs - only in development
-     */
-    debug(message: string, metadata?: Record<string, unknown>) {
-      if (!shouldLog("debug", isDevelopment)) return
+  // Custom format to sanitize sensitive data
+  const sanitizeFormat = winston.format((info: Winston.Logform.TransformableInfo) => {
+    const isDev = process.env.NODE_ENV === "development"
+    if (info.metadata) {
+      info.metadata = sanitizeValue(info.metadata, isDev) as Record<string, unknown>
+    }
+    return info
+  })
 
-      const entry: LogEntry = {
-        level: "debug",
-        context,
-        message,
-        metadata: metadata ? sanitizeValue(metadata, isDevelopment) as Record<string, unknown> : undefined,
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "unknown",
+  // Base format for all logs
+  const baseFormat = winston.format.combine(
+    winston.format.timestamp({ format: "YYYY-MM-DDTHH:mm:ss.SSSZ" }),
+    winston.format.errors({ stack: true }),
+    sanitizeFormat(),
+    winston.format.json()
+  )
+
+  // Development format with Chalk for pretty printing
+  const developmentFormat = winston.format.combine(
+    winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
+    winston.format.errors({ stack: true }),
+    sanitizeFormat(),
+    winston.format.printf((info: Winston.Logform.TransformableInfo) => {
+      if (!chalk) return JSON.stringify(info)
+
+      const { timestamp, level, message, context, metadata, ...rest } = info as Record<string, unknown>
+
+      // Get log level (lowercase for consistency)
+      const logLevel = (level || "").toString().toLowerCase()
+
+      // Color code log levels
+      let levelColor: (text: string) => string
+      let levelSymbol: string
+
+      switch (logLevel) {
+        case "error":
+          levelColor = chalk.red.bold
+          levelSymbol = "✖"
+          break
+        case "warn":
+          levelColor = chalk.yellow.bold
+          levelSymbol = "⚠"
+          break
+        case "info":
+          levelColor = chalk.blue.bold
+          levelSymbol = "ℹ"
+          break
+        case "debug":
+          levelColor = chalk.gray.bold
+          levelSymbol = "→"
+          break
+        case "verbose":
+          levelColor = chalk.cyan.bold
+          levelSymbol = "•"
+          break
+        default:
+          levelColor = chalk.white.bold
+          levelSymbol = "•"
       }
 
-      // Only log debug on server-side or in development
-      if (!isClient || isDevelopment) {
-        console.debug(formatLogEntry(entry))
+      // Format timestamp
+      const timestampStr = chalk.gray(String(timestamp || ""))
+
+      // Format context
+      const contextStr = context
+        ? chalk.magenta.bold(`[${context}]`)
+        : ""
+
+      // Format message
+      const messageStr = logLevel === "error"
+        ? chalk.red(String(message || ""))
+        : chalk.white(String(message || ""))
+
+      // Format metadata - combine metadata object and rest properties
+      const allMetadata: Record<string, unknown> = {}
+      if (metadata && typeof metadata === "object") {
+        Object.assign(allMetadata, metadata)
       }
-    },
-
-    /**
-     * Info logs - general information
-     */
-    info(message: string, metadata?: Record<string, unknown>) {
-      if (!shouldLog("info", isDevelopment)) return
-
-      const entry: LogEntry = {
-        level: "info",
-        context,
-        message,
-        metadata: metadata ? sanitizeValue(metadata, isDevelopment) as Record<string, unknown> : undefined,
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "unknown",
-      }
-
-      console.log(formatLogEntry(entry))
-    },
-
-    /**
-     * Warning logs - non-critical issues
-     */
-    warn(message: string, metadata?: Record<string, unknown>) {
-      const entry: LogEntry = {
-        level: "warn",
-        context,
-        message,
-        metadata: metadata ? sanitizeValue(metadata, isDevelopment) as Record<string, unknown> : undefined,
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "unknown",
+      if (rest && typeof rest === "object") {
+        Object.assign(allMetadata, rest)
       }
 
-      console.warn(formatLogEntry(entry))
-    },
+      // Remove Winston internal fields
+      delete allMetadata.timestamp
+      delete allMetadata.level
+      delete allMetadata.message
+      delete allMetadata.context
+      delete allMetadata.service
+      delete allMetadata.env
 
-    /**
-     * Error logs - errors that need attention
-     */
-    error(message: string, error?: unknown, metadata?: Record<string, unknown>) {
-      const errorMetadata: Record<string, unknown> = {
-        ...metadata,
-      }
+      let metaStr = ""
+      if (Object.keys(allMetadata).length > 0) {
+        // Format metadata with colors - build colored string directly
+        const metaLines: string[] = []
+        for (const [key, value] of Object.entries(allMetadata)) {
+          const keyStr = chalk.gray(`${key}:`)
+          let valueStr: string
 
-      if (error instanceof Error) {
-        errorMetadata.errorMessage = error.message
-        errorMetadata.errorName = error.name
-        // Only include stack traces in development or server-side
-        if (isDevelopment || !isClient) {
-          errorMetadata.stack = error.stack
+          if (key === "requestId") {
+            valueStr = chalk.cyan(String(value))
+          } else if (key === "userId") {
+            valueStr = chalk.green(String(value))
+          } else if (key === "err" || key === "error") {
+            // Error objects get special formatting
+            if (typeof value === "object" && value !== null) {
+              valueStr = chalk.red(JSON.stringify(value, null, 2))
+            } else {
+              valueStr = chalk.red(String(value))
+            }
+          } else if (typeof value === "object" && value !== null) {
+            valueStr = chalk.white(JSON.stringify(value, null, 2))
+          } else {
+            valueStr = chalk.white(String(value))
+          }
+
+          metaLines.push(`  ${keyStr} ${valueStr}`)
         }
-      } else if (error !== undefined) {
-        errorMetadata.error = String(error)
+
+        const openBrace = chalk.gray("{")
+        const closeBrace = chalk.gray("}")
+        metaStr = `\n${openBrace}\n${metaLines.join("\n")}\n${closeBrace}`
       }
 
-      const entry: LogEntry = {
-        level: "error",
-        context,
-        message,
-        metadata: sanitizeValue(errorMetadata, isDevelopment) as Record<string, unknown>,
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || "unknown",
-      }
+      // Build the formatted log line
+      const parts = [
+        timestampStr,
+        levelColor(`${levelSymbol} ${logLevel.toUpperCase().padEnd(5)}`),
+        contextStr,
+        messageStr,
+      ].filter(Boolean)
 
-      console.error(formatLogEntry(entry))
+      return parts.join(" ") + metaStr
+    })
+  )
+
+  // @ts-ignore - Typescript doesn't like the conditional return of createLogger when winston is defined as nullable
+  return winston.createLogger({
+    level: getLogLevel(),
+    format: isDevelopment && !isClient ? developmentFormat : baseFormat,
+    defaultMeta: {
+      service: "plex-wrapped",
+      env: process.env.NODE_ENV || "unknown",
     },
+    transports: [
+      new winston.transports.Console({
+        stderrLevels: ["error"],
+      }),
+    ],
+    // Don't exit on handled exceptions
+    exitOnError: false,
+  })
+}
+
+// Create logger instance only on server-side (not Edge Runtime)
+const baseLogger = canUseWinston ? createWinstonLogger() : null
+
+// --- Public API ---
+
+/**
+ * Generate a new request ID
+ */
+export function generateRequestId(): string {
+  if (typeof window === "undefined") {
+    try {
+      // eslint-disable-next-line
+      const { randomUUID } = require("crypto")
+      return randomUUID()
+    } catch {
+      // fallback
+    }
+  }
+  // Fallback for client-side (shouldn't be used, but provide a fallback)
+  return `client-${Date.now()}-${Math.random().toString(36).substring(2, 9)}`
+}
+
+/**
+ * Get current request context
+ */
+function getRequestContext(): RequestContextType | undefined {
+  if (!requestContext) return undefined
+  return requestContext.getStore()
+}
+
+/**
+ * Run a function within a request context
+ * Only works on server-side (Node.js)
+ * Supports both sync and async functions
+ */
+export function runWithRequestContext<T>(
+  requestId: string,
+  userId: string | undefined,
+  fn: () => T | Promise<T>
+): T | Promise<T> {
+  if (!requestContext) {
+    // Client-side or Edge Runtime fallback: just run the function
+    return fn()
+  }
+  return requestContext.run({ requestId, userId }, fn)
+}
+
+/**
+ * Set user ID in current request context
+ * Only works on server-side (Node.js)
+ */
+export function setRequestUserId(userId: string): void {
+  if (!requestContext) return
+  const context = requestContext.getStore()
+  if (context) {
+    context.userId = userId
   }
 }
 
@@ -227,15 +438,210 @@ export function createLogger(context: string) {
  * Sanitize URL for logging (standalone utility)
  */
 export function sanitizeUrlForLogging(url: string): string {
-  const isDevelopment = process.env.NODE_ENV === "development"
-  return sanitizeUrl(url, isDevelopment)
+  const isDev = process.env.NODE_ENV === "development"
+  return sanitizeUrl(url, isDev)
 }
 
 /**
  * Sanitize object for logging (standalone utility)
  */
 export function sanitizeForLogging(data: unknown): unknown {
-  const isDevelopment = process.env.NODE_ENV === "development"
-  return sanitizeValue(data, isDevelopment)
+  const isDev = process.env.NODE_ENV === "development"
+  return sanitizeValue(data, isDev)
 }
 
+/**
+ * Get the base logger instance (for advanced use cases)
+ * Returns null on client-side
+ */
+export function getBaseLogger() {
+  return baseLogger
+}
+
+/**
+ * Create a logger instance for a specific context
+ */
+export function createLogger(context: string): Logger {
+  const isDevelopment = process.env.NODE_ENV === "development"
+  const isClient = typeof window !== "undefined"
+
+  // Use Winston logger on server-side, console on client-side
+  const childLogger = baseLogger ? baseLogger.child({ context }) : null
+
+  // Client-safe logger implementation
+  const clientLogger = {
+    debug: (msg: string, meta?: LogMetadata) => {
+      if (!isDevelopment) return
+      const ctx = getRequestContext()
+      const logData = { ...meta, ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }) }
+      console.debug(`[${context}]`, msg, logData)
+    },
+    info: (msg: string, meta?: LogMetadata) => {
+      const ctx = getRequestContext()
+      const logData = { ...meta, ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }) }
+      console.log(`[${context}]`, msg, logData)
+    },
+    warn: (msg: string, meta?: LogMetadata) => {
+      const ctx = getRequestContext()
+      const logData = { ...meta, ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }) }
+      console.warn(`[${context}]`, msg, logData)
+    },
+    error: (msg: string, err?: unknown, meta?: LogMetadata) => {
+      const ctx = getRequestContext()
+      const errorMeta: LogMetadata = { ...meta }
+      if (err instanceof Error) {
+        errorMeta.err = { message: err.message, name: err.name, ...(isDevelopment && { stack: err.stack }) }
+      } else if (err !== undefined) {
+        errorMeta.error = String(err)
+      }
+      const logData = { ...errorMeta, ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }) }
+      console.error(`[${context}]`, msg, logData)
+    },
+  }
+
+  return {
+    /**
+     * Debug logs - detailed information for debugging
+     */
+    debug(message: string, metadata?: LogMetadata) {
+      if (isClient && !isDevelopment) return
+
+      const ctx = getRequestContext()
+      const logData: LogMetadata = {
+        ...metadata,
+        ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }),
+      }
+
+      if (childLogger) {
+        childLogger.debug(message, { metadata: logData })
+      } else {
+        clientLogger.debug(message, metadata)
+      }
+    },
+
+    /**
+     * Info logs - general information
+     */
+    info(message: string, metadata?: LogMetadata) {
+      const ctx = getRequestContext()
+      const logData: LogMetadata = {
+        ...metadata,
+        ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }),
+      }
+
+      if (childLogger) {
+        childLogger.info(message, { metadata: logData })
+      } else {
+        clientLogger.info(message, metadata)
+      }
+    },
+
+    /**
+     * Warning logs - non-critical issues
+     */
+    warn(message: string, metadata?: LogMetadata) {
+      const ctx = getRequestContext()
+      const logData: LogMetadata = {
+        ...metadata,
+        ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }),
+      }
+
+      if (childLogger) {
+        childLogger.warn(message, { metadata: logData })
+      } else {
+        clientLogger.warn(message, metadata)
+      }
+    },
+
+    /**
+     * Error logs - errors that need attention
+     */
+    error(message: string, error?: unknown, metadata?: LogMetadata) {
+      const ctx = getRequestContext()
+      const errorMetadata: LogMetadata = {
+        ...metadata,
+      }
+
+      if (error instanceof Error) {
+        errorMetadata.err = {
+          message: error.message,
+          name: error.name,
+          ...(isDevelopment && { stack: error.stack }),
+        }
+      } else if (error !== undefined) {
+        errorMetadata.error = String(error)
+      }
+
+      const logData: LogMetadata = {
+        ...errorMetadata,
+        ...(ctx && { requestId: ctx.requestId, userId: ctx.userId }),
+      }
+
+      if (childLogger) {
+        childLogger.error(message, { metadata: logData })
+      } else {
+        clientLogger.error(message, error, metadata)
+      }
+    },
+
+    /**
+     * Create a child logger with additional context
+     */
+    child(bindings: LogMetadata) {
+      // Helper to merge bindings for client logger
+      // Note: We don't create a new Winston child here to avoid deep nesting issues,
+      // instead we just return a wrapper that merges bindings
+
+      const parent = this
+
+      return {
+        debug: (msg: string, meta?: LogMetadata) =>
+          parent.debug(msg, { ...bindings, ...meta }),
+        info: (msg: string, meta?: LogMetadata) =>
+          parent.info(msg, { ...bindings, ...meta }),
+        warn: (msg: string, meta?: LogMetadata) =>
+          parent.warn(msg, { ...bindings, ...meta }),
+        error: (msg: string, err?: unknown, meta?: LogMetadata) =>
+          parent.error(msg, err, { ...bindings, ...meta }),
+        child: (newBindings: LogMetadata) =>
+          parent.child({ ...bindings, ...newBindings }),
+        time: <T>(label: string, fn: () => Promise<T>) => parent.time(label, fn),
+        timeSync: <T>(label: string, fn: () => T) => parent.timeSync(label, fn)
+      }
+    },
+
+    /**
+     * Time a function execution
+     */
+    async time<T>(label: string, fn: () => Promise<T>): Promise<T> {
+      const start = Date.now()
+      try {
+        const result = await fn()
+        const duration = Date.now() - start
+        this.debug(`${label} completed`, { duration, label })
+        return result
+      } catch (error) {
+        const duration = Date.now() - start
+        this.error(`${label} failed`, error, { duration, label })
+        throw error
+      }
+    },
+
+    /**
+     * Time a synchronous function execution
+     */
+    timeSync<T>(label: string, fn: () => T): T {
+      const start = Date.now()
+      try {
+        const result = fn()
+        const duration = Date.now() - start
+        this.debug(`${label} completed`, { duration, label })
+        return result
+      } catch (error) {
+        const duration = Date.now() - start
+        this.error(`${label} failed`, error, { duration, label })
+        throw error
+      }
+    },
+  }
+}

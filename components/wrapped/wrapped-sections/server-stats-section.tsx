@@ -1,8 +1,8 @@
 "use client"
 
-import { FormattedText } from "../../shared/formatted-text"
-import { SectionHeader } from "./section-header"
-import { BarChart } from "../wrapped-charts"
+import { FormattedText } from "@/components/shared/formatted-text"
+import { SectionHeader } from "@/components/wrapped/wrapped-sections/section-header"
+import { BarChart } from "@/components/wrapped/wrapped-charts"
 import { WrappedData, WrappedSection } from "@/types/wrapped"
 
 interface ServerStatsSectionProps {
@@ -11,17 +11,17 @@ interface ServerStatsSectionProps {
   sectionIndex: number
 }
 
-export function ServerStatsSection({ section, wrappedData, sectionIndex }: ServerStatsSectionProps) {
+export function ServerStatsSection({ section, wrappedData }: ServerStatsSectionProps) {
   return (
     <div className="text-center space-y-6">
       <SectionHeader title={section.title} subtitle={section.subtitle} />
       {wrappedData.statistics.serverStats && (
         <div className="bg-slate-800/50 backdrop-blur-sm border border-cyan-500/30 rounded-lg p-8 max-w-2xl mx-auto relative overflow-hidden">
           <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/10 via-transparent to-purple-500/10" />
-          <div className="relative text-4xl font-bold text-cyan-400 mb-4">
+          <div className="relative text-3xl sm:text-4xl font-bold text-cyan-400 mb-4">
             {wrappedData.statistics.serverStats.totalStorageFormatted}
           </div>
-          <div className="relative text-lg text-slate-300 mb-6">
+          <div className="relative text-base sm:text-lg text-slate-300 mb-6">
             Total Media Content
           </div>
           <div className="grid grid-cols-3 gap-4 text-sm relative">
@@ -31,10 +31,10 @@ export function ServerStatsSection({ section, wrappedData, sectionIndex }: Serve
               { label: "Episodes", value: wrappedData.statistics.serverStats.librarySize.episodes },
             ].map(({ label, value }) => (
               <div key={label}>
-                <div className="text-2xl font-bold text-white">
+                <div className="text-xl sm:text-2xl font-bold text-white">
                   {value.toLocaleString()}
                 </div>
-                <div className="text-slate-400">{label}</div>
+                <div className="text-xs sm:text-sm text-slate-400">{label}</div>
               </div>
             ))}
           </div>
@@ -53,7 +53,7 @@ export function ServerStatsSection({ section, wrappedData, sectionIndex }: Serve
         </div>
       )}
       {section.content && (
-        <p className="text-lg text-slate-300 max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto">
           <FormattedText text={section.content} />
         </p>
       )}

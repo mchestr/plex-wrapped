@@ -53,3 +53,39 @@ export async function completeOnboarding() {
   }
 }
 
+/**
+ * Get onboarding configuration info
+ */
+export async function getOnboardingInfo() {
+  try {
+    const overseerr = await prisma.overseerr.findFirst({
+      where: { isActive: true },
+      select: {
+        publicUrl: true,
+        protocol: true,
+        hostname: true,
+        port: true
+      },
+    })
+
+    let overseerrUrl = null
+    if (overseerr) {
+      if (overseerr.publicUrl) {
+        overseerrUrl = overseerr.publicUrl
+      } else {
+        // Construct internal URL if public URL is not set
+        // Note: This might not be reachable from client browser if it's an internal IP/docker hostname
+        // but it's better than nothing for now
+        overseerrUrl = `${overseerr.protocol}://${overseerr.hostname}:${overseerr.port}`
+      }
+    }
+
+    return {
+      overseerrUrl,
+    }
+  } catch (error) {
+    logger.error("Error fetching onboarding info", error)
+    return { overseerrUrl: null }
+  }
+}
+

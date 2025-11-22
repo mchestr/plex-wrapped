@@ -1,6 +1,6 @@
 import { WrappedData, WrappedSection } from '@/types/wrapped'
 import { render, screen } from '@testing-library/react'
-import { TotalWatchTimeSection } from '../wrapped/wrapped-sections/total-watch-time-section'
+import { TotalWatchTimeSection } from '@/components/wrapped/wrapped-sections/total-watch-time-section'
 
 // Mock child components
 jest.mock('../shared/formatted-text', () => ({

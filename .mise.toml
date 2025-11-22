@@ -29,6 +29,18 @@ run = "npm run test:watch"
 description = "Run tests with coverage report"
 run = "npm run test:coverage"
 
+[tasks."test:e2e"]
+description = "Run Playwright end-to-end tests"
+run = "npx playwright test"
+
+[tasks."test:e2e:ui"]
+description = "Run Playwright tests in UI mode"
+run = "npx playwright test --ui"
+
+[tasks."test:e2e:headed"]
+description = "Run Playwright tests in headed mode"
+run = "npx playwright test --headed"
+
 [tasks."db:generate"]
 description = "Generate Prisma Client"
 run = "npm run db:generate"

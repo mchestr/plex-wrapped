@@ -1,5 +1,5 @@
 import { type LLMProviderInput } from "@/lib/validations/llm-provider";
-import { testOpenAIConnection } from "./openai";
+import { testOpenAIConnection } from "@/lib/connections/openai";
 
 export async function testLLMProviderConnection(config: LLMProviderInput): Promise<{ success: boolean; error?: string }> {
   if (config.provider === "openai") {

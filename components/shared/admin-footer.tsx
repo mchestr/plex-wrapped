@@ -4,8 +4,8 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { getLLMUsageStats } from "@/lib/wrapped/usage"
 import { getServerSession } from "next-auth"
-import Link from "next/link"
-import { AdminFooterClient } from "./admin-footer-client"
+import _Link from "next/link"
+import { AdminFooterClient } from "@/components/shared/admin-footer-client"
 
 export async function AdminFooter() {
   const session = await getServerSession(authOptions)

@@ -60,6 +60,7 @@ export function WrappedGeneratingAnimation({ year, compact = false }: WrappedGen
 
       return () => clearTimeout(timeout)
     }
+    return undefined
   }, [isTyping])
 
   // Generate stable random positions for background particles

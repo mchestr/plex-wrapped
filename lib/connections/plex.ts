@@ -65,6 +65,7 @@ interface ParsedXmlServerUser {
 interface ParsedXmlServerUsersResponse {
   MediaContainer?: {
     User?: ParsedXmlServerUser | ParsedXmlServerUser[]
+    Account?: ParsedXmlServerUser | ParsedXmlServerUser[]
   }
 }
 
@@ -376,6 +377,12 @@ export async function checkUserServerAccess(
     const normalizedPlexUserId = String(plexUserId).trim()
     logger.debug("Normalized Plex user ID", { normalizedPlexUserId })
 
+    // Check if user is admin (optimization: skip API calls)
+    if (serverConfig.adminPlexUserId && normalizedPlexUserId === String(serverConfig.adminPlexUserId).trim()) {
+      logger.info("User is admin, granting access", { plexUserId: normalizedPlexUserId })
+      return { success: true, hasAccess: true }
+    }
+
     // Get the server's machine identifier
     logger.debug("Fetching server machine identifier")
     const identityResult = await getPlexServerIdentity({
@@ -534,17 +541,20 @@ export async function getAllPlexServerUsers(
     }
 
     // Handle Plex.tv API response structure: <MediaContainer><User>...</User></MediaContainer>
+    // or <MediaContainer><Account>...</Account></MediaContainer>
     const mediaContainer = parsedData.MediaContainer
-    if (!mediaContainer?.User) {
+    const userOrAccountElements = mediaContainer?.User || mediaContainer?.Account
+
+    if (!userOrAccountElements) {
       const duration = Date.now() - fetchStartTime
       logger.debug("No users found in response", { duration })
       return { success: true, data: [] } // No users found
     }
 
     // Handle both single user and array of users
-    const userElements: ParsedXmlServerUser[] = Array.isArray(mediaContainer.User)
-      ? mediaContainer.User
-      : [mediaContainer.User]
+    const userElements: ParsedXmlServerUser[] = Array.isArray(userOrAccountElements)
+      ? userOrAccountElements
+      : [userOrAccountElements]
 
     logger.debug("Found users in response", { count: userElements.length })
 

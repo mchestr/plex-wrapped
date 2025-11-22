@@ -20,6 +20,26 @@ export const authOptions: NextAuthOptions = {
         },
       },
       async authorize(credentials) {
+        // TEST MODE BYPASS
+        // Only active if explicitly enabled via env var or strictly in dev/test mode with specific token
+        if (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test') {
+          if (credentials?.authToken === 'TEST_ADMIN_TOKEN') {
+             // Return the seeded admin user
+             const adminUser = await prisma.user.findUnique({
+               where: { email: 'admin@example.com' }
+             })
+             if (adminUser && adminUser.isAdmin) {
+               return {
+                 id: adminUser.id,
+                 email: adminUser.email,
+                 name: adminUser.name,
+                 image: adminUser.image,
+                 isAdmin: true,
+               }
+             }
+          }
+        }
+
         if (!credentials?.authToken) {
           return null
         }

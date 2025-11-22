@@ -71,7 +71,7 @@ export function PlexSignInButton({
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [showWarningState, setShowWarningState] = useState(false)
-  const [authUrl, setAuthUrl] = useState<string | null>(null)
+  const [_authUrl, setAuthUrl] = useState<string | null>(null)
 
   const handleSignIn = async () => {
     setIsLoading(true)

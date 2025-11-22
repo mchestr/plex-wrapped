@@ -1,5 +1,5 @@
-export { WelcomeStep } from "./welcome-step"
-export { ProfileStep } from "./profile-step"
-export { HowItWorksStep } from "./how-it-works-step"
-export { FinalStep } from "./final-step"
-
+export { WelcomeStep } from "@/components/onboarding/onboarding-steps/welcome-step"
+export { PlexConfigurationStep } from "@/components/onboarding/onboarding-steps/plex-configuration-step"
+export { MediaRequestStep } from "@/components/onboarding/onboarding-steps/media-request-step"
+export { ReportIssuesStep } from "@/components/onboarding/onboarding-steps/report-issues-step"
+export { FinalStep } from "@/components/onboarding/onboarding-steps/final-step"

@@ -2,6 +2,10 @@
  * Functions to fetch statistics from Tautulli, Plex, and Overseerr
  */
 
+import { createLogger } from "@/lib/utils/logger"
+
+const logger = createLogger("STATISTICS")
+
 
 export interface TautulliConfig {
   hostname: string
@@ -100,7 +104,6 @@ export async function fetchTautulliStatistics(
     )
 
     if (!usersResponse.ok) {
-      const errorText = await usersResponse.text()
       return {
         success: false,
         error: `Failed to fetch users from Tautulli: ${usersResponse.statusText}`
@@ -203,7 +206,6 @@ export async function fetchTautulliStatistics(
       )
 
       if (!historyResponse.ok) {
-        const errorText = await historyResponse.text()
         return {
           success: false,
           error: `Failed to fetch watch history: ${historyResponse.statusText}`
@@ -450,7 +452,7 @@ export async function fetchTautulliStatistics(
       },
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching Tautulli statistics:", error)
+    logger.error("Error fetching Tautulli statistics", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch Tautulli statistics",
@@ -488,7 +490,7 @@ async function fetchPlexServerStatisticsFromPlex(
     })
 
     if (!sectionsResponse.ok) {
-      console.error(`[STATISTICS] Failed to fetch library sections from Plex: ${sectionsResponse.statusText}`)
+      logger.error("Failed to fetch library sections from Plex", undefined, { statusText: sectionsResponse.statusText })
       return {
         success: false,
         error: `Failed to fetch library sections from Plex: ${sectionsResponse.statusText}`,
@@ -499,7 +501,7 @@ async function fetchPlexServerStatisticsFromPlex(
     const sections = sectionsData.MediaContainer?.Directory || []
 
     if (!Array.isArray(sections)) {
-      console.error(`[STATISTICS] Invalid response format from Plex API: expected array of sections`)
+      logger.error("Invalid response format from Plex API: expected array of sections")
       return {
         success: false,
         error: "Invalid response format from Plex API",
@@ -597,7 +599,7 @@ async function fetchPlexServerStatisticsFromPlex(
       },
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching server statistics from Plex:", error)
+    logger.error("Error fetching server statistics from Plex", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch server statistics from Plex",
@@ -653,7 +655,7 @@ export async function fetchPlexServerStatistics(
       },
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching server statistics:", error)
+    logger.error("Error fetching server statistics", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch server statistics",
@@ -737,7 +739,7 @@ async function fetchTautulliLibraryCounts(
       },
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching library counts from Tautulli:", error)
+    logger.error("Error fetching library counts from Tautulli", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch library counts from Tautulli",
@@ -911,7 +913,7 @@ export async function fetchOverseerrStatistics(
       },
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching Overseerr statistics:", error)
+    logger.error("Error fetching Overseerr statistics", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch Overseerr statistics",
@@ -998,7 +1000,7 @@ export async function fetchItemLeaderboard(
       data: leaderboard,
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching item leaderboard:", error)
+    logger.error("Error fetching item leaderboard", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch item leaderboard",
@@ -1136,7 +1138,7 @@ export async function fetchWatchTimeLeaderboard(
       data: leaderboard,
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching watch time leaderboard:", error)
+    logger.error("Error fetching watch time leaderboard", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch watch time leaderboard",
@@ -1272,7 +1274,7 @@ export async function fetchTopContentLeaderboards(
       },
     }
   } catch (error) {
-    console.error("[STATISTICS] Error fetching top content leaderboards:", error)
+    logger.error("Error fetching top content leaderboards", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch top content leaderboards",

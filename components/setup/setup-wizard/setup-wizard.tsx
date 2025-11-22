@@ -5,13 +5,13 @@ import { SETUP_STEPS } from "@/types/setup"
 import { AnimatePresence, motion } from "framer-motion"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { FinalSuccessAnimation } from "./final-success-animation"
-import { LLMProviderForm } from "./llm-provider-form"
-import { OverseerrForm } from "./overseerr-form"
-import { PlexServerForm } from "./plex-server-form"
-import { SpaceBackground } from "./space-background"
-import { SuccessAnimation } from "./success-animation"
-import { TautulliForm } from "./tautulli-form"
+import { FinalSuccessAnimation } from "@/components/setup/setup-wizard/final-success-animation"
+import { LLMProviderForm } from "@/components/setup/setup-wizard/llm-provider-form"
+import { OverseerrForm } from "@/components/setup/setup-wizard/overseerr-form"
+import { PlexServerForm } from "@/components/setup/setup-wizard/plex-server-form"
+import { SpaceBackground } from "@/components/setup/setup-wizard/space-background"
+import { SuccessAnimation } from "@/components/setup/setup-wizard/success-animation"
+import { TautulliForm } from "@/components/setup/setup-wizard/tautulli-form"
 
 interface SetupWizardProps {
   currentStep: number
@@ -87,10 +87,10 @@ export function SetupWizard({ currentStep: initialStep }: SetupWizardProps) {
           className="mb-8"
         >
           <h1 className="text-4xl font-bold mb-2 drop-shadow-lg bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-            Welcome to Plex Wrapped
+            Welcome to Plex Manager
           </h1>
           <p className="text-slate-300 text-lg">
-            Let&apos;s get your Plex Wrapped setup configured
+            Let&apos;s get your Plex Manager setup configured
           </p>
         </motion.div>
 

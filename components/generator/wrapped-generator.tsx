@@ -2,9 +2,9 @@
 
 import { generatePlexWrapped, getUserPlexWrapped } from "@/actions/users"
 import { useEffect, useState, useCallback } from "react"
-import { WrappedGeneratingAnimation } from "./wrapped-generating-animation"
-import { WrappedGeneratorStatus } from "./wrapped-generator-status"
-import { WrappedGeneratorPrompt } from "./wrapped-generator-prompt"
+import { WrappedGeneratingAnimation } from "@/components/generator/wrapped-generating-animation"
+import { WrappedGeneratorStatus } from "@/components/generator/wrapped-generator-status"
+import { WrappedGeneratorPrompt } from "@/components/generator/wrapped-generator-prompt"
 import { useWrappedPolling } from "@/hooks/use-wrapped-polling"
 
 interface WrappedGeneratorProps {

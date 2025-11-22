@@ -1,7 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { WrappedShareButton } from "./wrapped-share-button"
+import { WrappedShareButton } from "@/components/wrapped/wrapped-share-button"
 
 interface WrappedViewerNavigationProps {
   currentSectionIndex: number

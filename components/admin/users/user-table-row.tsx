@@ -1,47 +1,16 @@
 "use client"
 
+import { UserActionsMenu } from "@/components/admin/users/user-actions-menu"
+import { AdminUserWithWrappedStats } from "@/types/admin"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { RegenerateWrappedButton } from "./regenerate-wrapped-button"
-import { UnshareUserButton } from "./unshare-user-button"
-import { UserStatusBadge } from "./user-status-badge"
 
 interface UserTableRowProps {
-  user: {
-    id: string
-    name: string | null
-    email: string | null
-    image: string | null
-    plexUserId: string | null
-    isAdmin: boolean
-    wrappedStatus: string | null
-    wrappedGeneratedAt: Date | null
-    totalWrappedCount: number
-    hasPlexAccess: boolean | null
-    totalLlmUsage: {
-      totalTokens: number
-      promptTokens: number
-      completionTokens: number
-      cost: number
-      provider: string | null
-      model: string | null
-      count: number
-    } | null
-    llmUsage: {
-      totalTokens: number
-      promptTokens: number
-      completionTokens: number
-      cost: number
-      provider: string | null
-      model: string | null
-      count: number
-    } | null
-    createdAt: Date
-  }
+  user: AdminUserWithWrappedStats
   currentYear: number
 }
 
-export function UserTableRow({ user, currentYear }: UserTableRowProps) {
+export function UserTableRow({ user }: UserTableRowProps) {
   const router = useRouter()
 
   const handleRowClick = () => {
@@ -94,11 +63,6 @@ export function UserTableRow({ user, currentYear }: UserTableRowProps) {
         )}
       </td>
       <td className="px-2 py-2">
-        <span className="text-xs text-slate-300">
-          {user.totalWrappedCount}
-        </span>
-      </td>
-      <td className="px-2 py-2">
         <div className="text-xs">
           {user.hasPlexAccess === true ? (
             <span className="px-1.5 py-0.5 bg-green-500/20 text-green-400 font-medium rounded">
@@ -139,33 +103,8 @@ export function UserTableRow({ user, currentYear }: UserTableRowProps) {
         </div>
       </td>
       <td className="px-2 py-2">
-        <div className="flex flex-col gap-1" onClick={(e) => e.stopPropagation()}>
-          {user.wrappedStatus === "completed" ? (
-            <>
-              <Link
-                href={`/admin/users/${user.id}/wrapped`}
-                className="px-2 py-1 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors inline-block text-center"
-              >
-                View
-              </Link>
-              <RegenerateWrappedButton userId={user.id} />
-            </>
-          ) : user.wrappedStatus ? (
-            <div className="flex flex-col gap-1">
-              <span className="text-xs text-slate-500">
-                {user.wrappedStatus === "generating" ? "Generating..." : "Not ready"}
-              </span>
-              {user.wrappedStatus === "failed" && (
-                <RegenerateWrappedButton userId={user.id} />
-              )}
-            </div>
-          ) : (
-            <RegenerateWrappedButton userId={user.id} />
-          )}
-          {/* Show unshare button only for non-admin users with Plex access */}
-          {!user.isAdmin && user.hasPlexAccess === true && (
-            <UnshareUserButton userId={user.id} userName={user.name} />
-          )}
+        <div onClick={(e) => e.stopPropagation()}>
+          <UserActionsMenu user={user} />
         </div>
       </td>
     </tr>

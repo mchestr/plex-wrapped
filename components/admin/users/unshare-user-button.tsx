@@ -3,18 +3,20 @@
 import { unshareUserLibrary } from "@/actions/users"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
-import { ConfirmModal } from "../shared/confirm-modal"
+import { ConfirmModal } from "@/components/admin/shared/confirm-modal"
 
 interface UnshareUserButtonProps {
   userId: string
   userName: string | null
   onSuccess?: () => void
+  inline?: boolean
 }
 
 export function UnshareUserButton({
   userId,
   userName,
   onSuccess,
+  inline = false,
 }: UnshareUserButtonProps) {
   const [isUnsharing, setIsUnsharing] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -48,6 +50,86 @@ export function UnshareUserButton({
     } finally {
       setIsUnsharing(false)
     }
+  }
+
+  if (inline) {
+    return (
+      <>
+        <button
+          onClick={() => setShowConfirmModal(true)}
+          disabled={isUnsharing}
+          className="w-full flex items-center gap-2 text-sm text-slate-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          title="Unshare library access"
+        >
+          {isUnsharing ? (
+            <svg
+              className="animate-spin h-4 w-4 text-red-400"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+          ) : showSuccess ? (
+            <svg
+              className="w-4 h-4 text-green-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          ) : (
+            <svg
+              className="w-4 h-4 text-red-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"
+              />
+            </svg>
+          )}
+          <span>
+            {isUnsharing ? "Unsharing..." : showSuccess ? "Unshared!" : "Unshare Library"}
+          </span>
+        </button>
+        {error && (
+          <span className="text-xs text-red-400 mt-1">{error}</span>
+        )}
+        <ConfirmModal
+          isOpen={showConfirmModal}
+          onClose={() => setShowConfirmModal(false)}
+          onConfirm={handleUnshare}
+          title="Unshare Library Access"
+          message={`Are you sure you want to remove library access for ${userName || "this user"}? This will revoke their access to the Plex server.`}
+          confirmText="Unshare"
+          cancelText="Cancel"
+          confirmButtonClass="bg-red-600 hover:bg-red-700"
+        />
+      </>
+    )
   }
 
   return (

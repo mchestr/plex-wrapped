@@ -289,7 +289,7 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
 
 interface ServerFormProps {
   type: "plex" | "tautulli" | "overseerr"
-  server: { name: string; hostname: string; port: number; protocol: string; token?: string; apiKey?: string } | null
+  server: { name: string; hostname: string; port: number; protocol: string; token?: string; apiKey?: string; publicUrl?: string | null } | null
 }
 
 export function ServerForm({ type, server }: ServerFormProps) {
@@ -306,6 +306,7 @@ export function ServerForm({ type, server }: ServerFormProps) {
   const [formData, setFormData] = useState({
     name: server?.name || "",
     url: getServerUrl(),
+    publicUrl: server?.publicUrl || "",
     token: server?.token || "",
     apiKey: server?.apiKey || "",
   })
@@ -320,19 +321,22 @@ export function ServerForm({ type, server }: ServerFormProps) {
         result = await updatePlexServer({
           name: formData.name,
           url: formData.url,
-          token: formData.token,
+          token: formData.token!,
+          publicUrl: formData.publicUrl || undefined,
         })
       } else if (type === "tautulli") {
         result = await updateTautulli({
           name: formData.name,
           url: formData.url,
-          apiKey: formData.apiKey,
+          apiKey: formData.apiKey!,
+          publicUrl: formData.publicUrl || undefined,
         })
       } else {
         result = await updateOverseerr({
           name: formData.name,
           url: formData.url,
-          apiKey: formData.apiKey,
+          apiKey: formData.apiKey!,
+          publicUrl: formData.publicUrl || undefined,
         })
       }
 
@@ -350,14 +354,18 @@ export function ServerForm({ type, server }: ServerFormProps) {
       <div className="flex items-start justify-between gap-4">
         <div className="flex-1">
           {server ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
               <div>
                 <div className="text-xs text-slate-400 mb-1">Name</div>
                 <div className="text-white">{server.name}</div>
               </div>
               <div>
-                <div className="text-xs text-slate-400 mb-1">URL</div>
+                <div className="text-xs text-slate-400 mb-1">Local URL</div>
                 <div className="text-white font-mono text-xs">{getServerUrl()}</div>
+              </div>
+              <div>
+                <div className="text-xs text-slate-400 mb-1">Public URL</div>
+                <div className="text-white font-mono text-xs">{server.publicUrl || "Not set"}</div>
               </div>
             </div>
           ) : (
@@ -389,13 +397,25 @@ export function ServerForm({ type, server }: ServerFormProps) {
           />
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-400 mb-1">URL</label>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Local URL</label>
           <StyledInput
             type="text"
             value={formData.url}
             onChange={(e) => setFormData({ ...formData, url: e.target.value })}
             placeholder={type === "plex" ? "https://example.com:32400" : type === "tautulli" ? "http://example.com:8181" : "http://example.com:5055"}
             required
+            disabled={isPending}
+          />
+        </div>
+        <div className="md:col-span-2">
+          <label className="block text-xs font-medium text-slate-400 mb-1">
+            Public URL <span className="text-slate-500 font-normal">(optional, e.g. https://{type}.example.com)</span>
+          </label>
+          <StyledInput
+            type="text"
+            value={formData.publicUrl}
+            onChange={(e) => setFormData({ ...formData, publicUrl: e.target.value })}
+            placeholder={`https://${type}.example.com`}
             disabled={isPending}
           />
         </div>
@@ -438,7 +458,7 @@ export function ServerForm({ type, server }: ServerFormProps) {
         >
           {isPending ? "Saving..." : "Save"}
         </button>
-        <button
+          <button
           type="button"
           onClick={() => {
             setIsEditing(false)
@@ -446,6 +466,7 @@ export function ServerForm({ type, server }: ServerFormProps) {
             setFormData({
               name: server?.name || "",
               url: getServerUrl(),
+              publicUrl: server?.publicUrl || "",
               token: server?.token || "",
               apiKey: server?.apiKey || "",
             })

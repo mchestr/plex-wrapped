@@ -1,11 +1,12 @@
 import { render, screen } from '@testing-library/react'
-import { UsersStatsSummary } from '../admin/users/users-stats-summary'
+import { UsersStatsSummary } from '@/components/admin/users/users-stats-summary'
+import { makeAdminUserWithStats, makeLlmUsageStats } from '../../__tests__/utils/test-builders'
 
 describe('UsersStatsSummary', () => {
   it('should render total users count', () => {
     const users = [
-      { wrappedStatus: 'completed', totalLlmUsage: null },
-      { wrappedStatus: 'generating', totalLlmUsage: null },
+      makeAdminUserWithStats({ wrappedStatus: 'completed', totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: 'generating', totalLlmUsage: null }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -15,9 +16,9 @@ describe('UsersStatsSummary', () => {
 
   it('should count completed wrapped users', () => {
     const users = [
-      { wrappedStatus: 'completed', totalLlmUsage: null },
-      { wrappedStatus: 'completed', totalLlmUsage: null },
-      { wrappedStatus: 'generating', totalLlmUsage: null },
+      makeAdminUserWithStats({ wrappedStatus: 'completed', totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: 'completed', totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: 'generating', totalLlmUsage: null }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -27,9 +28,9 @@ describe('UsersStatsSummary', () => {
 
   it('should count generating users', () => {
     const users = [
-      { wrappedStatus: 'generating', totalLlmUsage: null },
-      { wrappedStatus: 'generating', totalLlmUsage: null },
-      { wrappedStatus: 'completed', totalLlmUsage: null },
+      makeAdminUserWithStats({ wrappedStatus: 'generating', totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: 'generating', totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: 'completed', totalLlmUsage: null }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -39,9 +40,9 @@ describe('UsersStatsSummary', () => {
 
   it('should count not generated users', () => {
     const users = [
-      { wrappedStatus: null, totalLlmUsage: null },
-      { wrappedStatus: null, totalLlmUsage: null },
-      { wrappedStatus: 'completed', totalLlmUsage: null },
+      makeAdminUserWithStats({ wrappedStatus: null, totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: null, totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: 'completed', totalLlmUsage: null }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -51,20 +52,14 @@ describe('UsersStatsSummary', () => {
 
   it('should calculate total tokens', () => {
     const users = [
-      {
+      makeAdminUserWithStats({
         wrappedStatus: 'completed',
-        totalLlmUsage: {
-          totalTokens: 1000,
-          cost: 0.01,
-        },
-      },
-      {
+        totalLlmUsage: makeLlmUsageStats({ totalTokens: 1000, cost: 0.01 }),
+      }),
+      makeAdminUserWithStats({
         wrappedStatus: 'completed',
-        totalLlmUsage: {
-          totalTokens: 2000,
-          cost: 0.02,
-        },
-      },
+        totalLlmUsage: makeLlmUsageStats({ totalTokens: 2000, cost: 0.02 }),
+      }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -74,20 +69,14 @@ describe('UsersStatsSummary', () => {
 
   it('should calculate total cost', () => {
     const users = [
-      {
+      makeAdminUserWithStats({
         wrappedStatus: 'completed',
-        totalLlmUsage: {
-          totalTokens: 1000,
-          cost: 0.015,
-        },
-      },
-      {
+        totalLlmUsage: makeLlmUsageStats({ totalTokens: 1000, cost: 0.015 }),
+      }),
+      makeAdminUserWithStats({
         wrappedStatus: 'completed',
-        totalLlmUsage: {
-          totalTokens: 2000,
-          cost: 0.025,
-        },
-      },
+        totalLlmUsage: makeLlmUsageStats({ totalTokens: 2000, cost: 0.025 }),
+      }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -97,8 +86,8 @@ describe('UsersStatsSummary', () => {
 
   it('should handle users without LLM usage', () => {
     const users = [
-      { wrappedStatus: 'completed', totalLlmUsage: null },
-      { wrappedStatus: 'generating', totalLlmUsage: null },
+      makeAdminUserWithStats({ wrappedStatus: 'completed', totalLlmUsage: null }),
+      makeAdminUserWithStats({ wrappedStatus: 'generating', totalLlmUsage: null }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -119,13 +108,10 @@ describe('UsersStatsSummary', () => {
 
   it('should format large token numbers with commas', () => {
     const users = [
-      {
+      makeAdminUserWithStats({
         wrappedStatus: 'completed',
-        totalLlmUsage: {
-          totalTokens: 1234567,
-          cost: 1.23,
-        },
-      },
+        totalLlmUsage: makeLlmUsageStats({ totalTokens: 1234567, cost: 1.23 }),
+      }),
     ]
     render(<UsersStatsSummary users={users} />)
 
@@ -134,13 +120,10 @@ describe('UsersStatsSummary', () => {
 
   it('should show helper text for tokens and cost', () => {
     const users = [
-      {
+      makeAdminUserWithStats({
         wrappedStatus: 'completed',
-        totalLlmUsage: {
-          totalTokens: 1000,
-          cost: 0.01,
-        },
-      },
+        totalLlmUsage: makeLlmUsageStats({ totalTokens: 1000, cost: 0.01 }),
+      }),
     ]
     render(<UsersStatsSummary users={users} />)
 

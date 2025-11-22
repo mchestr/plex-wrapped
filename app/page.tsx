@@ -4,6 +4,7 @@ import { WrappedHomeButton } from "@/components/wrapped/wrapped-home-button";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { getServerSession } from "next-auth";
+import { redirect } from "next/navigation";
 
 export const dynamic = 'force-dynamic'
 
@@ -12,9 +13,20 @@ export default async function Home() {
   const plexServer = await prisma.plexServer.findFirst({
     where: { isActive: true },
   });
-  const currentYear = new Date().getFullYear();
   const serverName = plexServer?.name || "Plex";
-  const heroTitle = `${serverName} ${currentYear} Wrapped`;
+  const heroTitle = `${serverName} Manager`;
+
+  // Handle redirect logic for authenticated users
+  if (session?.user?.id) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { onboardingCompleted: true }
+    });
+
+    if (user && !user.onboardingCompleted) {
+      redirect("/onboarding");
+    }
+  }
 
   return (
     <>

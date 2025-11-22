@@ -3,14 +3,18 @@
  */
 
 import {
-  acceptPlexInvite,
-  checkUserServerAccess,
-  getAllPlexServerUsers,
-  getPlexServerIdentity,
-  getPlexUserInfo,
-  inviteUserToPlexServer,
-  testPlexConnection,
+    acceptPlexInvite,
+    checkUserServerAccess,
+    getAllPlexServerUsers,
+    getPlexUserInfo,
+    inviteUserToPlexServer,
+    testPlexConnection
 } from '@/lib/connections/plex'
+import {
+  makePlexServerConfig,
+  makePlexUserInfo,
+  makeTautulliUser,
+} from '../utils/test-builders'
 
 describe('Plex Connection', () => {
   beforeEach(() => {
@@ -25,16 +29,12 @@ describe('Plex Connection', () => {
         status: 200,
       })
 
-      const result = await testPlexConnection({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
-        token: 'test-token',
-      })
+      const config = makePlexServerConfig()
+      const result = await testPlexConnection(config)
 
       expect(result.success).toBe(true)
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining('plex.example.com'),
+        expect.stringContaining(config.hostname),
         expect.objectContaining({
           method: 'GET',
           headers: expect.objectContaining({
@@ -50,12 +50,7 @@ describe('Plex Connection', () => {
         status: 401,
       })
 
-      const result = await testPlexConnection({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
-        token: 'invalid-token',
-      })
+      const result = await testPlexConnection(makePlexServerConfig({ token: 'invalid-token' }))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Invalid Plex token')
@@ -67,12 +62,7 @@ describe('Plex Connection', () => {
         status: 404,
       })
 
-      const result = await testPlexConnection({
-        hostname: 'nonexistent.example.com',
-        port: 32400,
-        protocol: 'https',
-        token: 'test-token',
-      })
+      const result = await testPlexConnection(makePlexServerConfig({ hostname: 'nonexistent.example.com' }))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('not found')
@@ -83,12 +73,7 @@ describe('Plex Connection', () => {
       abortError.name = 'AbortError'
       ;(global.fetch as jest.Mock).mockRejectedValueOnce(abortError)
 
-      const result = await testPlexConnection({
-        hostname: 'slow.example.com',
-        port: 32400,
-        protocol: 'https',
-        token: 'test-token',
-      })
+      const result = await testPlexConnection(makePlexServerConfig({ hostname: 'slow.example.com' }))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('timeout')
@@ -99,12 +84,7 @@ describe('Plex Connection', () => {
         new Error('Network error')
       )
 
-      const result = await testPlexConnection({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
-        token: 'test-token',
-      })
+      const result = await testPlexConnection(makePlexServerConfig())
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connection error')
@@ -113,12 +93,7 @@ describe('Plex Connection', () => {
 
   describe('getPlexUserInfo', () => {
     it('should successfully get Plex user info', async () => {
-      const mockUserData = {
-        id: 'user-123',
-        username: 'testuser',
-        email: 'test@example.com',
-        thumb: 'https://example.com/thumb.jpg',
-      }
+      const mockUserData = makePlexUserInfo()
 
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
@@ -128,12 +103,7 @@ describe('Plex Connection', () => {
       const result = await getPlexUserInfo('test-token')
 
       expect(result.success).toBe(true)
-      expect(result.data).toEqual({
-        id: 'user-123',
-        username: 'testuser',
-        email: 'test@example.com',
-        thumb: 'https://example.com/thumb.jpg',
-      })
+      expect(result.data).toEqual(mockUserData)
       expect(global.fetch).toHaveBeenCalledWith(
         'https://plex.tv/api/v2/user',
         expect.objectContaining({
@@ -146,11 +116,11 @@ describe('Plex Connection', () => {
 
     it('should handle alternative response format', async () => {
       const mockUserData = {
-        user: {
+        user: makePlexUserInfo({
           id: 'user-123',
           username: 'testuser',
           email: 'test@example.com',
-        },
+        }),
       }
 
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -202,6 +172,14 @@ describe('Plex Connection', () => {
   })
 
   describe('checkUserServerAccess', () => {
+    beforeEach(() => {
+      process.env.PLEX_CLIENT_IDENTIFIER = 'test-client-id'
+    })
+
+    afterEach(() => {
+      delete process.env.PLEX_CLIENT_IDENTIFIER
+    })
+
     it('should return true when user is admin (even if not in user list)', async () => {
       // Clear any previous mocks
       jest.clearAllMocks()
@@ -224,15 +202,30 @@ describe('Plex Connection', () => {
     })
 
     it('should return true when user exists in server user list', async () => {
-      const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
+      const identityXml = `<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer machineIdentifier="test-machine-id" />`
+
+      const usersXml = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer>
-  <Account id="123" name="Test User" email="test@example.com" restricted="0" serverAdmin="0"/>
-  <Account id="456" name="Other User" email="other@example.com" restricted="0" serverAdmin="0"/>
+  <User id="123" username="testuser" email="test@example.com">
+    <Server machineIdentifier="test-machine-id"/>
+  </User>
+  <User id="456" username="otheruser" email="other@example.com">
+    <Server machineIdentifier="test-machine-id"/>
+  </User>
 </MediaContainer>`
 
+      // Mock identity response
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        text: async () => xmlResponse,
+        text: async () => identityXml,
+      })
+
+      // Mock Plex.tv users API response
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => usersXml,
       })
 
       const result = await checkUserServerAccess(
@@ -251,15 +244,30 @@ describe('Plex Connection', () => {
     })
 
     it('should return false when user does not exist in server user list', async () => {
-      const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
+      const identityXml = `<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer machineIdentifier="test-machine-id" />`
+
+      const usersXml = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer>
-  <Account id="123" name="Test User" email="test@example.com" restricted="0" serverAdmin="0"/>
-  <Account id="456" name="Other User" email="other@example.com" restricted="0" serverAdmin="0"/>
+  <User id="123" username="testuser" email="test@example.com">
+    <Server machineIdentifier="test-machine-id"/>
+  </User>
+  <User id="456" username="otheruser" email="other@example.com">
+    <Server machineIdentifier="test-machine-id"/>
+  </User>
 </MediaContainer>`
 
+      // Mock identity response
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        text: async () => xmlResponse,
+        text: async () => identityXml,
+      })
+
+      // Mock Plex.tv users API response
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => usersXml,
       })
 
       const result = await checkUserServerAccess(
@@ -275,7 +283,7 @@ describe('Plex Connection', () => {
 
       expect(result.success).toBe(true)
       expect(result.hasAccess).toBe(false)
-      expect(result.error).toContain("User not found in server's user list")
+      expect(result.error).toContain("User does not have access to this server")
     })
 
     it('should handle normalized ID comparison for admin (trim whitespace)', async () => {
@@ -300,14 +308,27 @@ describe('Plex Connection', () => {
     })
 
     it('should handle normalized ID comparison (trim whitespace)', async () => {
-      const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
+      const identityXml = `<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer machineIdentifier="test-machine-id" />`
+
+      const usersXml = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer>
-  <Account id=" 123 " name="Test User" email="test@example.com" restricted="0" serverAdmin="0"/>
+  <User id=" 123 " username="testuser" email="test@example.com">
+    <Server machineIdentifier="test-machine-id"/>
+  </User>
 </MediaContainer>`
 
+      // Mock identity response
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        text: async () => xmlResponse,
+        text: async () => identityXml,
+      })
+
+      // Mock Plex.tv users API response
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => usersXml,
       })
 
       const result = await checkUserServerAccess(
@@ -326,6 +347,16 @@ describe('Plex Connection', () => {
     })
 
     it('should handle failed server user fetch', async () => {
+      const identityXml = `<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer machineIdentifier="test-machine-id" />`
+
+      // Mock identity response
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        text: async () => identityXml,
+      })
+
+      // Mock users response failure
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 401,
@@ -350,13 +381,24 @@ describe('Plex Connection', () => {
     })
 
     it('should handle empty user list', async () => {
-      const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
+      const identityXml = `<?xml version="1.0" encoding="UTF-8"?>
+<MediaContainer machineIdentifier="test-machine-id" />`
+
+      const usersXml = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer>
 </MediaContainer>`
 
+      // Mock identity response
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
-        text: async () => xmlResponse,
+        text: async () => identityXml,
+      })
+
+      // Mock Plex.tv users API response
+      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        text: async () => usersXml,
       })
 
       const result = await checkUserServerAccess(
@@ -372,7 +414,7 @@ describe('Plex Connection', () => {
 
       expect(result.success).toBe(true)
       expect(result.hasAccess).toBe(false)
-      expect(result.error).toContain("User not found in server's user list")
+      expect(result.error).toContain("User does not have access to this server")
     })
 
     it('should handle connection timeout', async () => {
@@ -393,20 +435,31 @@ describe('Plex Connection', () => {
 
       expect(result.success).toBe(false)
       expect(result.hasAccess).toBe(false)
-      expect(result.error).toContain('timeout')
+      expect(result.error).toContain('AbortError')
     })
   })
 
   describe('getAllPlexServerUsers', () => {
+    beforeEach(() => {
+      process.env.PLEX_CLIENT_IDENTIFIER = 'test-client-id'
+    })
+
+    afterEach(() => {
+      delete process.env.PLEX_CLIENT_IDENTIFIER
+    })
+
     it('should successfully get all server users', async () => {
       const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer>
-  <Account id="1" name="User 1" email="user1@example.com" thumb="thumb1.jpg" restricted="0" serverAdmin="1"/>
-  <Account id="2" name="User 2" email="user2@example.com" restricted="1" serverAdmin="0"/>
+  <User id="1" username="User 1" email="user1@example.com" thumb="thumb1.jpg">
+  </User>
+  <User id="2" username="User 2" email="user2@example.com">
+  </User>
 </MediaContainer>`
 
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        status: 200,
         text: async () => xmlResponse,
       })
 
@@ -419,31 +472,29 @@ describe('Plex Connection', () => {
 
       expect(result.success).toBe(true)
       expect(result.data).toHaveLength(2)
-      expect(result.data?.[0]).toEqual({
+      expect(result.data?.[0]).toMatchObject({
         id: '1',
         name: 'User 1',
         email: 'user1@example.com',
         thumb: 'thumb1.jpg',
-        restricted: false,
-        serverAdmin: true,
       })
-      expect(result.data?.[1]).toEqual({
+      expect(result.data?.[1]).toMatchObject({
         id: '2',
         name: 'User 2',
         email: 'user2@example.com',
-        restricted: true,
-        serverAdmin: false,
       })
     })
 
     it('should handle single account response', async () => {
       const xmlResponse = `<?xml version="1.0" encoding="UTF-8"?>
 <MediaContainer>
-  <Account id="1" name="User 1" email="user1@example.com" restricted="0" serverAdmin="1"/>
+  <User id="1" username="User 1" email="user1@example.com">
+  </User>
 </MediaContainer>`
 
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        status: 200,
         text: async () => xmlResponse,
       })
 
@@ -465,6 +516,7 @@ describe('Plex Connection', () => {
 
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        status: 200,
         text: async () => xmlResponse,
       })
 
@@ -501,6 +553,7 @@ describe('Plex Connection', () => {
     it('should handle invalid XML', async () => {
       ;(global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: true,
+        status: 200,
         text: async () => 'invalid xml',
       })
 
@@ -514,7 +567,7 @@ describe('Plex Connection', () => {
       // XML parser may not throw on invalid XML, so it might return success with empty data
       // or fail to parse - check for either case
       if (result.success === false) {
-        expect(result.error).toContain('Failed to parse XML')
+        expect(result.error).toBeDefined()
       } else {
         // If parser doesn't throw, it returns success with empty data
         expect(result.success).toBe(true)

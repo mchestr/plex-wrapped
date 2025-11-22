@@ -1,0 +1,74 @@
+import { PrismaClient } from '@prisma/client'
+
+const prisma = new PrismaClient()
+
+async function main() {
+  // Cleanup existing data
+  await prisma.lLMUsage.deleteMany()
+  await prisma.wrappedShareVisit.deleteMany()
+  await prisma.plexWrapped.deleteMany()
+  await prisma.user.deleteMany()
+  await prisma.plexServer.deleteMany()
+  await prisma.setup.deleteMany()
+  await prisma.lLMProvider.deleteMany()
+  await prisma.tautulli.deleteMany()
+  await prisma.overseerr.deleteMany()
+
+  // Create setup completed
+  await prisma.setup.create({
+    data: {
+      isComplete: true,
+      currentStep: 5,
+      completedAt: new Date(),
+    },
+  })
+
+  // Create dummy Plex server
+  await prisma.plexServer.create({
+    data: {
+      name: 'Test Server',
+      hostname: 'localhost',
+      port: 32400,
+      protocol: 'http',
+      token: 'test-token',
+      adminPlexUserId: 'admin-plex-id',
+      isActive: true,
+    },
+  })
+
+  // Create admin user
+  await prisma.user.create({
+    data: {
+      id: 'admin-user-id',
+      plexUserId: 'admin-plex-id',
+      name: 'Admin User',
+      email: 'admin@example.com',
+      isAdmin: true,
+      onboardingCompleted: true,
+    },
+  })
+
+  // Create regular user
+  await prisma.user.create({
+    data: {
+      id: 'regular-user-id',
+      plexUserId: 'regular-plex-id',
+      name: 'Regular User',
+      email: 'regular@example.com',
+      isAdmin: false,
+      onboardingCompleted: true,
+    },
+  })
+
+  console.log('Database seeded!')
+}
+
+main()
+  .catch((e) => {
+    console.error(e)
+    process.exit(1)
+  })
+  .finally(async () => {
+    await prisma.$disconnect()
+  })
+

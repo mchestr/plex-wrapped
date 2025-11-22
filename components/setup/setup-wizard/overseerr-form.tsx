@@ -20,6 +20,7 @@ export function OverseerrForm({ onComplete, onBack }: OverseerrFormProps) {
     name: "",
     url: "",
     apiKey: "",
+    publicUrl: "",
   })
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export function OverseerrForm({ onComplete, onBack }: OverseerrFormProps) {
           name: defaults.overseerr?.name ?? prev.name,
           url: url || prev.url,
           apiKey: defaults.overseerr?.apiKey ?? prev.apiKey,
+          publicUrl: prev.publicUrl,
         }))
       }
     })
@@ -123,6 +125,32 @@ export function OverseerrForm({ onComplete, onBack }: OverseerrFormProps) {
         </p>
         {errors.url && (
           <p className="mt-1 text-sm text-red-400">{errors.url}</p>
+        )}
+      </div>
+
+      <div>
+        <label
+          htmlFor="publicUrl"
+          className="block text-sm font-medium text-cyan-400 mb-2"
+        >
+          Public Server URL <span className="text-slate-500 font-normal">(optional)</span>
+        </label>
+        <StyledInput
+          type="text"
+          id="publicUrl"
+          name="publicUrl"
+          value={formData.publicUrl || ""}
+          onChange={handleChange}
+          placeholder="https://requests.example.com"
+          size="md"
+          className="mt-1"
+          error={!!errors.publicUrl}
+        />
+        <p className="mt-1 text-xs text-slate-400">
+          The public URL for Overseerr (for links/redirects)
+        </p>
+        {errors.publicUrl && (
+          <p className="mt-1 text-sm text-red-400">{errors.publicUrl}</p>
         )}
       </div>
 

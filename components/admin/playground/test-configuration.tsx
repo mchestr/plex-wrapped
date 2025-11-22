@@ -3,7 +3,7 @@
 import { StyledDropdown } from "@/components/ui/styled-dropdown"
 import { StyledInput } from "@/components/ui/styled-input"
 import { WrappedStatistics } from "@/types/wrapped"
-import { StatisticsViewer } from "./statistics-viewer"
+import { StatisticsViewer } from "@/components/admin/playground/statistics-viewer"
 
 interface PlexUser {
   id: string

@@ -5,7 +5,7 @@
 
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import AdminError from '../error'
+import AdminError from '@/app/admin/error'
 
 // Mock the error components
 jest.mock('@/components/admin/shared/unauthorized-error', () => ({

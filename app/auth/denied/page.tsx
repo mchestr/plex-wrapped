@@ -1,6 +1,6 @@
 import { getSetupStatus } from "@/actions/setup"
 import { redirect } from "next/navigation"
-import { DeniedAccessPageClient } from "./denied-client"
+import { DeniedAccessPageClient } from "@/app/auth/denied/denied-client"
 
 export const dynamic = 'force-dynamic'
 

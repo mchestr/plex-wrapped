@@ -15,6 +15,18 @@ export const tautulliSchema = z.object({
     { message: "Invalid URL format. Expected format: http://example.com:8181" }
   ),
   apiKey: z.string().min(1, "API key is required"),
+  publicUrl: z.string().optional().refine(
+    (url) => {
+      if (!url) return true
+      try {
+        new URL(url)
+        return true
+      } catch {
+        return false
+      }
+    },
+    { message: "Invalid URL format. Expected format: https://tautulli.example.com" }
+  ),
 }).transform((data) => {
   const { protocol, hostname, port } = parseServerUrl(data.url)
   return {
@@ -23,6 +35,7 @@ export const tautulliSchema = z.object({
     port,
     protocol,
     apiKey: data.apiKey,
+    publicUrl: data.publicUrl,
   }
 })
 

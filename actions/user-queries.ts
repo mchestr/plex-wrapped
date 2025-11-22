@@ -1,11 +1,19 @@
 "use server"
 
 import { requireAdmin } from "@/lib/admin"
-import { getPlexServerIdentity, getPlexUsers, unshareUserFromPlexServer } from "@/lib/connections/plex"
+import { checkUserServerAccess, getPlexServerIdentity, getPlexUsers, unshareUserFromPlexServer } from "@/lib/connections/plex"
 import { prisma } from "@/lib/prisma"
+import { aggregateLlmUsage } from "@/lib/utils"
 import { createLogger } from "@/lib/utils/logger"
+import {
+  AdminUserWithWrappedStats,
+  UserDetails,
+  WrappedSummary
+} from "@/types/admin"
 
-const logger = createLogger("USER_ACTIONS")
+const logger = createLogger("USER_QUERIES")
+
+// --- Exported Actions ---
 
 /**
  * Get user's Plex Wrapped
@@ -36,7 +44,7 @@ export async function getUserPlexWrapped(
 
     return wrapped
   } catch (error) {
-    console.error("[USERS ACTION] - Error getting user wrapped:", error)
+    logger.error("Error getting user wrapped", error)
     return null
   }
 }
@@ -44,37 +52,7 @@ export async function getUserPlexWrapped(
 /**
  * Get detailed user information including all wrapped, shares, visits, and LLM usage
  */
-export async function getUserDetails(userId: string): Promise<{
-  id: string
-  name: string | null
-  email: string | null
-  image: string | null
-  plexUserId: string | null
-  isAdmin: boolean
-  createdAt: Date
-  updatedAt: Date
-  hasPlexAccess: boolean | null
-  wrapped: Array<{
-    id: string
-    year: number
-    status: string
-    generatedAt: Date | null
-    createdAt: Date
-    shareToken: string | null
-    shareVisits: number
-  }>
-  totalShares: number
-  totalVisits: number
-  llmUsage: {
-    totalTokens: number
-    promptTokens: number
-    completionTokens: number
-    cost: number
-    provider: string | null
-    model: string | null
-    count: number
-  } | null
-} | null> {
+export async function getUserDetails(userId: string): Promise<UserDetails | null> {
   try {
     // Get active Plex server for access checking
     const plexServer = await prisma.plexServer.findFirst({
@@ -105,7 +83,6 @@ export async function getUserDetails(userId: string): Promise<{
     // Check Plex access
     let hasPlexAccess: boolean | null = null
     if (user.plexUserId && plexServer) {
-      const { checkUserServerAccess } = await import("@/lib/connections/plex")
       const accessResult = await checkUserServerAccess(
         {
           hostname: plexServer.hostname,
@@ -122,7 +99,7 @@ export async function getUserDetails(userId: string): Promise<{
     // Calculate share and visit stats
     let totalShares = 0
     let totalVisits = 0
-    const wrapped = user.plexWrapped.map((w) => {
+    const wrapped: WrappedSummary[] = user.plexWrapped.map((w) => {
       if (w.shareToken) {
         totalShares += 1
       }
@@ -139,18 +116,7 @@ export async function getUserDetails(userId: string): Promise<{
     })
 
     // Aggregate LLM usage
-    const allLlmUsageRecords = user.llmUsage || []
-    const llmUsage = allLlmUsageRecords.length > 0
-      ? {
-          totalTokens: allLlmUsageRecords.reduce((sum, usage) => sum + usage.totalTokens, 0),
-          promptTokens: allLlmUsageRecords.reduce((sum, usage) => sum + usage.promptTokens, 0),
-          completionTokens: allLlmUsageRecords.reduce((sum, usage) => sum + usage.completionTokens, 0),
-          cost: allLlmUsageRecords.reduce((sum, usage) => sum + usage.cost, 0),
-          provider: allLlmUsageRecords[allLlmUsageRecords.length - 1]?.provider || null,
-          model: allLlmUsageRecords[allLlmUsageRecords.length - 1]?.model || null,
-          count: allLlmUsageRecords.length,
-        }
-      : null
+    const llmUsage = aggregateLlmUsage(user.llmUsage || [])
 
     return {
       id: user.id,
@@ -168,7 +134,7 @@ export async function getUserDetails(userId: string): Promise<{
       llmUsage,
     }
   } catch (error) {
-    console.error("[USERS ACTION] - Error getting user details:", error)
+    logger.error("Error getting user details", error)
     return null
   }
 }
@@ -176,197 +142,32 @@ export async function getUserDetails(userId: string): Promise<{
 /**
  * Get all users with their wrapped status
  */
-export async function getAllUsersWithWrapped(year?: number): Promise<Array<{
-  id: string
-  name: string | null
-  email: string | null
-  image: string | null
-  plexUserId: string | null
-  isAdmin: boolean
-  createdAt: Date
-  updatedAt: Date
-  wrappedStatus: string | null
-  wrappedGeneratedAt: Date | null
-  totalWrappedCount: number
-  hasPlexAccess: boolean | null // null if no plexUserId or server not configured
-  llmUsage: {
-    totalTokens: number
-    promptTokens: number
-    completionTokens: number
-    cost: number
-    provider: string | null
-    model: string | null
-    count: number
-  } | null
-  totalLlmUsage: {
-    totalTokens: number
-    promptTokens: number
-    completionTokens: number
-    cost: number
-    provider: string | null
-    model: string | null
-    count: number
-  } | null
-}>> {
+export async function getAllUsersWithWrapped(year?: number): Promise<AdminUserWithWrappedStats[]> {
   try {
     const currentYear = year || new Date().getFullYear()
 
-    // Get active Plex server for access checking
-    const plexServer = await prisma.plexServer.findFirst({
-      where: { isActive: true },
-    })
+    // 1. Fetch users and their wrapped data
+    const users = await fetchUsersWithWrappedData(currentYear)
 
-    const users = await prisma.user.findMany({
-      orderBy: [
-        { isAdmin: "desc" },
-        { name: "asc" },
-      ],
-      include: {
-        plexWrapped: {
-          where: {
-            year: currentYear,
-          },
-          take: 1,
-          include: {
-            llmUsage: true,
-          },
-        },
-        llmUsage: true, // Include ALL LLM usage records for this user (across all years and regenerations)
-        _count: {
-          select: {
-            plexWrapped: true,
-          },
-        },
-      },
-    })
+    // 2. Build Plex access map
+    const accessMap = await buildPlexAccessMap(users)
 
-    // Check Plex access for all users efficiently
-    // Fetch all users from Plex.tv API once, then check access for each user
-    const accessMap = new Map<string, boolean | null>()
+    // 3. Fetch share statistics for all users
+    const shareStatsMap = await fetchShareStatsMap(users.map(u => u.id))
 
-    if (plexServer) {
-      try {
-        // Get the server's machine identifier once
-        const identityResult = await getPlexServerIdentity({
-          hostname: plexServer.hostname,
-          port: plexServer.port,
-          protocol: plexServer.protocol,
-          token: plexServer.token,
-        })
-
-        if (identityResult.success && identityResult.machineIdentifier) {
-          // Fetch all users from Plex.tv API once
-          const usersResult = await getPlexUsers(plexServer.token)
-
-          if (usersResult.success && usersResult.data) {
-            // Create a map of users by ID for efficient lookup
-            const plexUserMap = new Map<string, { id: string; username: string; servers: Array<{ machineIdentifier: string }> }>()
-            for (const plexUser of usersResult.data) {
-              plexUserMap.set(plexUser.id, plexUser)
-            }
-
-            const machineIdentifier = identityResult.machineIdentifier
-            const adminPlexUserId = plexServer.adminPlexUserId
-
-            // Ensure admin user has their server in their servers list
-            // The admin might not have a Server element in the XML response because they own the server
-            if (adminPlexUserId && machineIdentifier) {
-              const normalizedAdminId = String(adminPlexUserId).trim()
-              const adminUser = plexUserMap.get(normalizedAdminId)
-              if (adminUser) {
-                // Check if admin already has this server in their list
-                const hasServer = adminUser.servers.some((server) => server.machineIdentifier === machineIdentifier)
-                if (!hasServer) {
-                  // Add the server to admin's servers list
-                  adminUser.servers.push({ machineIdentifier })
-                }
-              }
-            }
-
-            // Check access for each user using the fetched data
-            for (const user of users) {
-              if (!user.plexUserId) {
-                accessMap.set(user.id, null)
-                continue
-              }
-
-              const normalizedPlexUserId = String(user.plexUserId).trim()
-
-              // Check if user is admin
-              if (adminPlexUserId && normalizedPlexUserId === String(adminPlexUserId).trim()) {
-                accessMap.set(user.id, true)
-                continue
-              }
-
-              // Check if user exists in the map
-              const plexUser = plexUserMap.get(normalizedPlexUserId)
-              if (!plexUser) {
-                accessMap.set(user.id, false)
-                continue
-              }
-
-              // Check if user has access to the server by machine identifier
-              const hasAccess = plexUser.servers.some((server) => server.machineIdentifier === machineIdentifier)
-              accessMap.set(user.id, hasAccess)
-            }
-          } else {
-            // If fetching users failed, set all to null
-            for (const user of users) {
-              accessMap.set(user.id, null)
-            }
-          }
-        } else {
-          // If getting machine identifier failed, set all to null
-          for (const user of users) {
-            accessMap.set(user.id, null)
-          }
-        }
-      } catch (error) {
-        logger.error("Error checking Plex access for users", error)
-        // On error, set all to null
-        for (const user of users) {
-          accessMap.set(user.id, null)
-        }
-      }
-    } else {
-      // No server configured, set all to null
-      for (const user of users) {
-        accessMap.set(user.id, null)
-      }
-    }
-
+    // 4. Map users to DTO
     return users.map((user) => {
       const wrapped = user.plexWrapped[0]
       const currentYearLlmUsageRecords = wrapped?.llmUsage || []
 
       // Aggregate all LLM usage records for current year's wrapped (includes regenerations)
-      const currentYearUsage = currentYearLlmUsageRecords.length > 0
-        ? {
-            totalTokens: currentYearLlmUsageRecords.reduce((sum, usage) => sum + usage.totalTokens, 0),
-            promptTokens: currentYearLlmUsageRecords.reduce((sum, usage) => sum + usage.promptTokens, 0),
-            completionTokens: currentYearLlmUsageRecords.reduce((sum, usage) => sum + usage.completionTokens, 0),
-            cost: currentYearLlmUsageRecords.reduce((sum, usage) => sum + usage.cost, 0),
-            provider: currentYearLlmUsageRecords[currentYearLlmUsageRecords.length - 1]?.provider || null,
-            model: currentYearLlmUsageRecords[currentYearLlmUsageRecords.length - 1]?.model || null,
-            count: currentYearLlmUsageRecords.length,
-          }
-        : null
+      const currentYearUsage = aggregateLlmUsage(currentYearLlmUsageRecords)
 
       // Aggregate ALL LLM usage records for this user (across all years and regenerations)
-      const allLlmUsageRecords = user.llmUsage || []
-      const totalUsage = allLlmUsageRecords.length > 0
-        ? {
-            totalTokens: allLlmUsageRecords.reduce((sum, usage) => sum + usage.totalTokens, 0),
-            promptTokens: allLlmUsageRecords.reduce((sum, usage) => sum + usage.promptTokens, 0),
-            completionTokens: allLlmUsageRecords.reduce((sum, usage) => sum + usage.completionTokens, 0),
-            cost: allLlmUsageRecords.reduce((sum, usage) => sum + usage.cost, 0),
-            provider: allLlmUsageRecords[allLlmUsageRecords.length - 1]?.provider || null, // Latest provider
-            model: allLlmUsageRecords[allLlmUsageRecords.length - 1]?.model || null, // Latest model
-            count: allLlmUsageRecords.length, // Total number of LLM calls across all years
-          }
-        : null
+      const totalUsage = aggregateLlmUsage(user.llmUsage || [])
 
       const hasPlexAccess = accessMap.get(user.id) ?? null
+      const shareStatsForUser = shareStatsMap.get(user.id) || { totalShares: 0, totalVisits: 0 }
 
       return {
         id: user.id,
@@ -380,13 +181,15 @@ export async function getAllUsersWithWrapped(year?: number): Promise<Array<{
         wrappedStatus: wrapped?.status || null,
         wrappedGeneratedAt: wrapped?.generatedAt || null,
         totalWrappedCount: user._count.plexWrapped,
+        totalShares: shareStatsForUser.totalShares,
+        totalVisits: shareStatsForUser.totalVisits,
         hasPlexAccess,
-        llmUsage: currentYearUsage, // Current year's usage (for backward compatibility)
-        totalLlmUsage: totalUsage, // Total usage across all years and regenerations
+        llmUsage: currentYearUsage, // Current year's usage
+        totalLlmUsage: totalUsage, // Total usage across all years
       }
     })
   } catch (error) {
-    console.error("[USERS ACTION] - Error getting all users:", error)
+    logger.error("Error getting all users", error)
     return []
   }
 }
@@ -466,3 +269,148 @@ export async function unshareUserLibrary(userId: string): Promise<{ success: boo
   }
 }
 
+// --- Internal Helpers (Exported for testing) ---
+
+export async function fetchUsersWithWrappedData(year: number) {
+  return prisma.user.findMany({
+    orderBy: [
+      { isAdmin: "desc" },
+      { name: "asc" },
+    ],
+    include: {
+      plexWrapped: {
+        where: {
+          year: year,
+        },
+        take: 1,
+        include: {
+          llmUsage: true,
+        },
+      },
+      llmUsage: true, // Include ALL LLM usage records for this user
+      _count: {
+        select: {
+          plexWrapped: true,
+        },
+      },
+    },
+  })
+}
+
+export async function buildPlexAccessMap(users: { id: string; plexUserId: string | null }[]): Promise<Map<string, boolean | null>> {
+  const accessMap = new Map<string, boolean | null>()
+
+  const plexServer = await prisma.plexServer.findFirst({
+    where: { isActive: true },
+  })
+
+  if (!plexServer) {
+    users.forEach(user => accessMap.set(user.id, null))
+    return accessMap
+  }
+
+  try {
+    // Get the server's machine identifier once
+    const identityResult = await getPlexServerIdentity({
+      hostname: plexServer.hostname,
+      port: plexServer.port,
+      protocol: plexServer.protocol,
+      token: plexServer.token,
+    })
+
+    if (identityResult.success && identityResult.machineIdentifier) {
+      // Fetch all users from Plex.tv API once
+      const usersResult = await getPlexUsers(plexServer.token)
+
+      if (usersResult.success && usersResult.data) {
+        // Create a map of users by ID for efficient lookup
+        const plexUserMap = new Map<string, { id: string; username: string; servers: Array<{ machineIdentifier: string }> }>()
+        for (const plexUser of usersResult.data) {
+          plexUserMap.set(plexUser.id, plexUser)
+        }
+
+        const machineIdentifier = identityResult.machineIdentifier
+        const adminPlexUserId = plexServer.adminPlexUserId
+
+        // Ensure admin user has their server in their servers list
+        if (adminPlexUserId && machineIdentifier) {
+          const normalizedAdminId = String(adminPlexUserId).trim()
+          const adminUser = plexUserMap.get(normalizedAdminId)
+          if (adminUser) {
+            const hasServer = adminUser.servers.some((server) => server.machineIdentifier === machineIdentifier)
+            if (!hasServer) {
+              adminUser.servers.push({ machineIdentifier })
+            }
+          }
+        }
+
+        // Check access for each user using the fetched data
+        for (const user of users) {
+          if (!user.plexUserId) {
+            accessMap.set(user.id, null)
+            continue
+          }
+
+          const normalizedPlexUserId = String(user.plexUserId).trim()
+
+          // Check if user is admin
+          if (adminPlexUserId && normalizedPlexUserId === String(adminPlexUserId).trim()) {
+            accessMap.set(user.id, true)
+            continue
+          }
+
+          // Check if user exists in the map
+          const plexUser = plexUserMap.get(normalizedPlexUserId)
+          if (!plexUser) {
+            accessMap.set(user.id, false)
+            continue
+          }
+
+          // Check if user has access to the server by machine identifier
+          const hasAccess = plexUser.servers.some((server) => server.machineIdentifier === machineIdentifier)
+          accessMap.set(user.id, hasAccess)
+        }
+      } else {
+        users.forEach(user => accessMap.set(user.id, null))
+      }
+    } else {
+      users.forEach(user => accessMap.set(user.id, null))
+    }
+  } catch (error) {
+    logger.error("Error checking Plex access for users", error)
+    users.forEach(user => accessMap.set(user.id, null))
+  }
+
+  return accessMap
+}
+
+export async function fetchShareStatsMap(userIds: string[]): Promise<Map<string, { totalShares: number; totalVisits: number }>> {
+  const shareStats = await prisma.plexWrapped.findMany({
+    where: {
+      userId: {
+        in: userIds,
+      },
+    },
+    select: {
+      userId: true,
+      shareToken: true,
+      _count: {
+        select: {
+          shareVisits: true,
+        },
+      },
+    },
+  })
+
+  const shareStatsMap = new Map<string, { totalShares: number; totalVisits: number }>()
+  for (const stat of shareStats) {
+    const existing = shareStatsMap.get(stat.userId) || { totalShares: 0, totalVisits: 0 }
+    if (stat.shareToken) {
+      existing.totalShares += 1
+    }
+    existing.totalVisits += stat._count.shareVisits
+    shareStatsMap.set(stat.userId, existing)
+  }
+
+  return shareStatsMap
+}

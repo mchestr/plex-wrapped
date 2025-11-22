@@ -15,7 +15,7 @@ export default function InvitePage() {
   const code = params.code as string
 
   const [loading, setLoading] = useState(true)
-  const [valid, setValid] = useState(false)
+  const [_valid, setValid] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [serverName, setServerName] = useState<string>("Plex")
 

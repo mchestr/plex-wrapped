@@ -26,7 +26,6 @@ export default async function CostAnalysisPage({ searchParams }: CostAnalysisPag
 
   // Calculate projections
   const projectionDays = 30
-  const projectionMonths = 12
   let projectedCost30Days = 0
   let projectedCost12Months = 0
 

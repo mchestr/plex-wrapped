@@ -327,8 +327,13 @@ describe('testPromptTemplate', () => {
 
       expect(result.success).toBe(true)
       expect(consoleErrorSpy).toHaveBeenCalledWith(
+        '[PROMPT_TEST]',
         expect.stringContaining('Failed to save LLM usage'),
-        expect.any(Error)
+        expect.objectContaining({
+          err: expect.objectContaining({
+            message: 'DB error'
+          })
+        })
       )
       consoleErrorSpy.mockRestore()
     })

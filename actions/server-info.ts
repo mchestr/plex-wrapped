@@ -1,6 +1,9 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { createLogger } from "@/lib/utils/logger"
+
+const logger = createLogger("SERVER_INFO")
 
 export interface LibrarySection {
   id: number
@@ -18,7 +21,7 @@ export async function getServerName(): Promise<string> {
     })
     return plexServer?.name || "Plex"
   } catch (error) {
-    console.error("[SERVER INFO] Error fetching server name:", error)
+    logger.error("Error fetching server name", error)
     return "Plex"
   }
 }
@@ -45,7 +48,7 @@ export async function getAvailableLibraries(): Promise<{
     const baseUrl = `${plexServer.protocol}://${plexServer.hostname}:${plexServer.port}`
     const sectionsUrl = `${baseUrl}/library/sections?X-Plex-Token=${plexServer.token}`
 
-    console.log("[SERVER INFO] Fetching libraries from local server:", sectionsUrl)
+    logger.debug("Fetching libraries from local server", { url: sectionsUrl })
 
     const response = await fetch(sectionsUrl, {
       headers: { Accept: "application/json" },
@@ -53,17 +56,17 @@ export async function getAvailableLibraries(): Promise<{
 
     if (!response.ok) {
       const errorText = await response.text()
-      console.error("[SERVER INFO] Failed to fetch library details:", response.status, errorText)
+      logger.error("Failed to fetch library details", undefined, { status: response.status, errorText })
       return { success: false, error: `Failed to fetch library details: ${response.statusText}` }
     }
 
     const data = await response.json()
-    console.log("[SERVER INFO] Library sections response:", JSON.stringify(data, null, 2))
+    logger.debug("Library sections response", { data })
 
     const sections = data.MediaContainer?.Directory || []
 
     if (!Array.isArray(sections)) {
-      console.error("[SERVER INFO] Invalid sections format:", sections)
+      logger.error("Invalid sections format", undefined, { sections })
       return { success: false, error: "Invalid response format from Plex server" }
     }
 
@@ -77,7 +80,7 @@ export async function getAvailableLibraries(): Promise<{
       .map((section: { key: string; title: string; type: string }) => {
         const key = parseInt(section.key)
         if (isNaN(key)) {
-          console.warn("[SERVER INFO] Invalid section key:", section.key)
+          logger.warn("Invalid section key", { sectionKey: section.key })
           return null
         }
         return {
@@ -88,7 +91,7 @@ export async function getAvailableLibraries(): Promise<{
       })
       .filter((lib): lib is LibrarySection => lib !== null)
 
-    console.log("[SERVER INFO] Final libraries list:", libraries)
+    logger.info("Retrieved libraries from Plex server", { count: libraries.length, libraries })
 
     if (libraries.length === 0) {
       return { success: false, error: "No libraries found on the server" }
@@ -96,7 +99,7 @@ export async function getAvailableLibraries(): Promise<{
 
     return { success: true, data: libraries }
   } catch (error) {
-    console.error("[SERVER INFO] Error fetching libraries:", error)
+    logger.error("Error fetching libraries", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to fetch libraries",

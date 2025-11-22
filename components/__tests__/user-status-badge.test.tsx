@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { UserStatusBadge } from '../admin/users/user-status-badge'
+import { UserStatusBadge } from '@/components/admin/users/user-status-badge'
 
 describe('UserStatusBadge', () => {
   it('should render "Not Generated" when status is null', () => {

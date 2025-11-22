@@ -4,8 +4,8 @@ import { generatePlexWrapped, getUserPlexWrapped } from "@/actions/users"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useCallback } from "react"
-import { WrappedGeneratingAnimation } from "../generator/wrapped-generating-animation"
-import { WrappedShareButton } from "./wrapped-share-button"
+import { WrappedGeneratingAnimation } from "@/components/generator/wrapped-generating-animation"
+import { WrappedShareButton } from "@/components/wrapped/wrapped-share-button"
 
 interface WrappedHomeButtonProps {
   userId: string
@@ -20,7 +20,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
   const [isLoading, setIsLoading] = useState(true)
 
   const currentYear = new Date().getFullYear()
-  const heroTitle = `${serverName} ${currentYear} Wrapped`
+  const heroTitle = `${serverName} Manager`
 
   const loadWrapped = useCallback(async () => {
     if (!userId) return

@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react"
-import { AdminNav } from "./admin-nav"
+import { AdminNav } from "@/components/admin/shared/admin-nav"
 
 export default function AdminLayoutClient({ children }: { children: React.ReactNode }) {
   return (

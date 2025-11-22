@@ -1,5 +1,5 @@
 /**
- * LLM prompt template for generating Plex Wrapped content
+ * Prompt generation and parsing for Plex Wrapped
  */
 
 import { WrappedData, WrappedStatistics } from "@/types/wrapped"
@@ -440,8 +440,9 @@ export function parseWrappedResponse(
       },
     }
   } catch (error) {
-    console.error("[PROMPT] Error parsing LLM response:", error)
-    // Return a fallback structure
+    // Log error to console for debugging
+    console.error("Error parsing LLM response:", error)
+    // Return a minimal valid response on error
     return {
       year,
       userId,
@@ -456,7 +457,6 @@ export function parseWrappedResponse(
         discoveryScore: 50,
         funFacts: [],
       },
-      summary: undefined,
       metadata: {
         totalSections: 0,
         generationTime: 0,

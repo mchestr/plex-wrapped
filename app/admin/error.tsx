@@ -6,7 +6,7 @@ import { UnauthenticatedError } from "@/components/admin/shared/unauthenticated-
 
 export default function AdminError({
   error,
-  reset,
+  reset: _reset,
 }: {
   error: Error & { digest?: string }
   reset: () => void

@@ -5,9 +5,9 @@
 import { prisma } from "@/lib/prisma"
 import { createLogger } from "@/lib/utils/logger"
 import { WrappedData, WrappedStatistics } from "@/types/wrapped"
-import { callOpenAI, LLMConfig } from "./api-calls"
-import { generateMockWrappedData } from "./mock-data"
-import { generateWrappedPrompt } from "./prompt-template"
+import { callOpenAI, LLMConfig } from "@/lib/wrapped/api-calls"
+import { generateMockWrappedData } from "@/lib/wrapped/mock-data"
+import { generateWrappedPrompt } from "@/lib/wrapped/prompt-template"
 
 const logger = createLogger("LLM")
 

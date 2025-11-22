@@ -3,13 +3,13 @@
  * Central export for all security-related utilities
  */
 
-export * from "./rate-limit"
-export * from "./error-handler"
-export * from "./ip-hash"
-export * from "./api-helpers"
-export * from "./csrf"
-export * from "./audit-log"
+export * from "@/lib/security/rate-limit"
+export * from "@/lib/security/error-handler"
+export * from "@/lib/security/ip-hash"
+export * from "@/lib/security/api-helpers"
+export * from "@/lib/security/csrf"
+export * from "@/lib/security/audit-log"
 
 // Import environment validation to ensure it runs on startup
-import "./env-validation"
+import "@/lib/security/env-validation"
 

@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion"
 import CountUp from "react-countup"
-import { FormattedText } from "../../shared/formatted-text"
+import { FormattedText } from "@/components/shared/formatted-text"
 import { WrappedSection } from "@/types/wrapped"
 
 interface HeroSectionProps {
@@ -23,7 +23,7 @@ export function HeroSection({ section, sectionIndex }: HeroSectionProps) {
           type: "spring",
           stiffness: 100
         }}
-        className="text-5xl md:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2"
+        className="text-4xl sm:text-5xl md:text-6xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-2"
       >
         {section.title}
       </motion.h1>
@@ -32,7 +32,7 @@ export function HeroSection({ section, sectionIndex }: HeroSectionProps) {
           initial={{ opacity: 0, y: 20, scale: 0.95 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="text-xl text-purple-200 mb-4"
+          className="text-lg sm:text-xl text-purple-200 mb-4"
         >
           {section.subtitle}
         </motion.p>
@@ -45,18 +45,18 @@ export function HeroSection({ section, sectionIndex }: HeroSectionProps) {
           className="mb-8"
         >
           <div className="flex flex-col items-center justify-center space-y-2">
-            <div className="text-7xl md:text-8xl lg:text-9xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+            <div className="text-5xl sm:text-7xl md:text-8xl lg:text-9xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
               {typeof prominentStat.value === "string" ? (
                 prominentStat.value
               ) : (
                 <CountUp key={`${sectionIndex}-${prominentStat.value}`} start={0} end={prominentStat.value} duration={2} delay={0.4} separator="," />
               )}
             </div>
-            <div className="text-2xl md:text-3xl font-semibold text-purple-300">
+            <div className="text-xl sm:text-2xl md:text-3xl font-semibold text-purple-300">
               {prominentStat.label}
             </div>
             {prominentStat.description && (
-              <div className="text-lg text-purple-200/80">
+              <div className="text-base sm:text-lg text-purple-200/80">
                 {prominentStat.description}
               </div>
             )}
@@ -67,7 +67,7 @@ export function HeroSection({ section, sectionIndex }: HeroSectionProps) {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: prominentStat ? 0.6 : 0.4 }}
-        className="text-2xl md:text-3xl lg:text-4xl text-white max-w-4xl mx-auto text-center leading-relaxed font-medium space-y-4"
+        className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white max-w-4xl mx-auto text-center leading-relaxed font-medium space-y-4"
       >
         <FormattedText text={section.content} />
       </motion.div>

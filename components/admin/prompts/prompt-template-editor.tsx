@@ -122,7 +122,6 @@ export function PromptTemplateEditor({ template, userWrapped, userName = "User" 
   const exampleStatistics = useMemo((): WrappedStatistics | null => {
     if (!userWrapped || userWrapped.status !== "completed" || !userWrapped.data) {
       // Generate default example statistics with all placeholder data
-      const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"]
 
       return {
         totalWatchTime: {

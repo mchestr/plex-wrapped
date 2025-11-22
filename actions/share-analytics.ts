@@ -1,6 +1,9 @@
 "use server"
 
 import { prisma } from "@/lib/prisma"
+import { createLogger } from "@/lib/utils/logger"
+
+const logger = createLogger("SHARE_ANALYTICS")
 
 export interface ShareAnalyticsStats {
   totalShares: number
@@ -54,7 +57,7 @@ export async function getShareAnalyticsStats(): Promise<ShareAnalyticsStats> {
       averageVisitsPerShare: Math.round(averageVisitsPerShare * 100) / 100,
     }
   } catch (error) {
-    console.error("[SHARE ANALYTICS] Error getting stats:", error)
+    logger.error("Error getting share analytics stats", error)
     return {
       totalShares: 0,
       totalVisits: 0,
@@ -138,7 +141,7 @@ export async function getShareTimeSeriesData(
       }))
       .sort((a, b) => a.date.localeCompare(b.date))
   } catch (error) {
-    console.error("[SHARE ANALYTICS] Error getting time series data:", error)
+    logger.error("Error getting share time series data", error)
     return []
   }
 }
@@ -197,7 +200,7 @@ export async function getTopSharedWraps(
         wrap.shareVisits.length > 0 ? wrap.shareVisits[0].createdAt : null,
     }))
   } catch (error) {
-    console.error("[SHARE ANALYTICS] Error getting top shared wraps:", error)
+    logger.error("Error getting top shared wraps", error)
     return []
   }
 }

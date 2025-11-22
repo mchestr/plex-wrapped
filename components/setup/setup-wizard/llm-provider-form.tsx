@@ -97,6 +97,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
       setAvailableModels([])
       setModelsError(null)
     }
+    return undefined
   }, [formData.provider, formData.apiKey, loadModels])
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -130,17 +131,6 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
       }
       return updated
     })
-  }
-
-  const handleModelChange = (e: React.ChangeEvent<HTMLSelectElement | HTMLInputElement>) => {
-    const value = e.target.value
-    if (value === "__custom__") {
-      setUseCustomModel(true)
-      setFormData((prev) => ({ ...prev, model: "" }))
-    } else {
-      setUseCustomModel(false)
-      setFormData((prev) => ({ ...prev, model: value }))
-    }
   }
 
   const providerInfo = {

@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { AnimatePresence, motion } from "framer-motion"
-import { WrappedViewer } from "./wrapped-viewer"
-import { WrappedTransition } from "./wrapped-transition"
+import { WrappedViewer } from "@/components/wrapped/wrapped-viewer"
+import { WrappedTransition } from "@/components/wrapped/wrapped-transition"
 import { WrappedData } from "@/types/wrapped"
 
 interface WrappedViewerWrapperProps {

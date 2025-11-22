@@ -1,5 +1,5 @@
 import { render, screen, waitFor } from '@testing-library/react'
-import { WrappedViewer } from '../wrapped/wrapped-viewer'
+import { WrappedViewer } from '@/components/wrapped/wrapped-viewer'
 import { WrappedData } from '@/types/wrapped'
 
 // Mock child components
@@ -301,6 +301,448 @@ describe('WrappedViewer', () => {
 
       // This test ensures getSectionDelay doesn't crash if section is undefined
       // The component should handle this gracefully
+      expect(() => {
+        render(<WrappedViewer wrappedData={wrappedData} />)
+      }).not.toThrow()
+    })
+  })
+
+  describe('Loading States', () => {
+    it('should render space background during loading', () => {
+      const wrappedData = createMockWrappedData()
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      expect(screen.getByTestId('space-background')).toBeInTheDocument()
+    })
+
+    it('should show progress bar when viewing sections', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Welcome',
+            content: 'Welcome to your wrapped',
+          },
+          {
+            id: 'stats-1',
+            type: 'total-watch-time',
+            title: 'Watch Time',
+            content: 'You watched a lot',
+          },
+        ],
+      })
+
+      const { container } = render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Progress component should be rendered
+      // Look for elements that would be in the progress component
+      expect(container.querySelector('.relative.z-10')).toBeInTheDocument()
+    })
+
+    it('should display first section immediately on load', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'First Section',
+            content: 'This is the first section',
+          },
+        ],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      expect(screen.getByText('First Section')).toBeInTheDocument()
+    })
+
+    it('should handle loading with multiple sections', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Section 1',
+            content: 'Content 1',
+          },
+          {
+            id: 'stats-1',
+            type: 'total-watch-time',
+            title: 'Section 2',
+            content: 'Content 2',
+          },
+          {
+            id: 'movies-1',
+            type: 'top-movies',
+            title: 'Section 3',
+            content: 'Content 3',
+          },
+        ],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Should show first section
+      expect(screen.getByText('Section 1')).toBeInTheDocument()
+      // Should not show other sections yet
+      expect(screen.queryByText('Section 2')).not.toBeInTheDocument()
+      expect(screen.queryByText('Section 3')).not.toBeInTheDocument()
+    })
+
+    it('should render with animation wrapper', () => {
+      const wrappedData = createMockWrappedData()
+
+      const { container } = render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Should have motion div with animation classes
+      const motionDiv = container.querySelector('.bg-slate-900\\/90')
+      expect(motionDiv).toBeInTheDocument()
+    })
+  })
+
+  describe('Empty State', () => {
+    it('should display empty message when no sections available', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      expect(screen.getByText('No sections available to display')).toBeInTheDocument()
+    })
+
+    it('should show space background in empty state', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      expect(screen.getByTestId('space-background')).toBeInTheDocument()
+    })
+
+    it('should have proper styling for empty state', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [],
+      })
+
+      const { container } = render(<WrappedViewer wrappedData={wrappedData} />)
+
+      const emptyStateContainer = screen.getByText('No sections available to display').parentElement
+      expect(emptyStateContainer).toHaveClass('bg-slate-900/90', 'border-cyan-500/20')
+    })
+
+    it('should center empty state message', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [],
+      })
+
+      const { container } = render(<WrappedViewer wrappedData={wrappedData} />)
+
+      const emptyStateContainer = screen.getByText('No sections available to display').parentElement
+      expect(emptyStateContainer).toHaveClass('text-center')
+    })
+
+    it('should show debug info in development when sections are filtered', () => {
+      const originalEnv = process.env.NODE_ENV
+      process.env.NODE_ENV = 'development'
+
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'service-stats-1',
+            type: 'service-stats',
+            title: 'Service Stats',
+            content: 'This should be filtered',
+          },
+        ],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      expect(screen.getByText('No sections available to display')).toBeInTheDocument()
+
+      process.env.NODE_ENV = originalEnv
+    })
+  })
+
+  describe('Error States', () => {
+    it('should handle current section being undefined gracefully', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Welcome',
+            content: 'Welcome',
+          },
+        ],
+      })
+
+      const { rerender } = render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Simulate section becoming unavailable
+      const emptyData = createMockWrappedData({ sections: [] })
+      rerender(<WrappedViewer wrappedData={emptyData} />)
+
+      expect(screen.getByText('No sections available to display')).toBeInTheDocument()
+    })
+
+    it('should render valid section without crashing', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Welcome',
+            content: 'Welcome to your wrapped',
+          },
+        ],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Component should render without crashing
+      expect(screen.getAllByText(/Welcome/i).length).toBeGreaterThan(0)
+    })
+
+    it('should show space background in error state', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      expect(screen.getByTestId('space-background')).toBeInTheDocument()
+    })
+
+    it('should have proper error state styling', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [],
+      })
+
+      const { container } = render(<WrappedViewer wrappedData={wrappedData} />)
+
+      const errorContainer = screen.getByText('No sections available to display').parentElement
+      expect(errorContainer).toHaveClass('bg-slate-900/90', 'border-cyan-500/20', 'rounded-lg')
+    })
+
+    it('should handle malformed wrapped data gracefully', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Welcome',
+            content: 'Welcome',
+          },
+          // Malformed section
+          {
+            id: null as any,
+            type: 'invalid',
+            title: 'Bad Section',
+            content: 'This is bad',
+          },
+        ],
+      })
+
+      expect(() => {
+        render(<WrappedViewer wrappedData={wrappedData} />)
+      }).not.toThrow()
+    })
+
+    it('should filter out invalid sections and show valid ones', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Valid Section',
+            content: 'This is valid',
+          },
+          undefined as any,
+          null as any,
+          {
+            id: 'hero-2',
+            type: 'hero',
+            title: 'Another Valid',
+            content: 'Also valid',
+          },
+        ],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Should show the first valid section
+      expect(screen.getByText('Valid Section')).toBeInTheDocument()
+    })
+  })
+
+  describe('Navigation States', () => {
+    it('should render navigation controls', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Section 1',
+            content: 'Content 1',
+          },
+          {
+            id: 'stats-1',
+            type: 'total-watch-time',
+            title: 'Section 2',
+            content: 'Content 2',
+          },
+        ],
+      })
+
+      const { container } = render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Navigation component should be rendered
+      expect(container.querySelector('.relative.z-10')).toBeInTheDocument()
+    })
+
+    it('should show all sections in show all mode', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Section 1',
+            content: 'Content 1',
+          },
+          {
+            id: 'stats-1',
+            type: 'total-watch-time',
+            title: 'Section 2',
+            content: 'Content 2',
+          },
+          {
+            id: 'movies-1',
+            type: 'top-movies',
+            title: 'Section 3',
+            content: 'Content 3',
+          },
+        ],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      // Initially should only show first section
+      expect(screen.getByText('Section 1')).toBeInTheDocument()
+    })
+
+    it('should handle navigation with single section', () => {
+      const wrappedData = createMockWrappedData({
+        sections: [
+          {
+            id: 'hero-1',
+            type: 'hero',
+            title: 'Only Section',
+            content: 'This is the only section',
+          },
+        ],
+      })
+
+      render(<WrappedViewer wrappedData={wrappedData} />)
+
+      expect(screen.getByText('Only Section')).toBeInTheDocument()
+    })
+  })
+
+  describe('Shared View States', () => {
+    it('should render in shared mode', () => {
+      const wrappedData = createMockWrappedData()
+
+      render(
+        <WrappedViewer
+          wrappedData={wrappedData}
+          isShared={true}
+          shareToken="test-token"
+        />
+      )
+
+      expect(screen.getByText('Welcome')).toBeInTheDocument()
+    })
+
+    it('should pass share token to navigation', () => {
+      const wrappedData = createMockWrappedData()
+
+      render(
+        <WrappedViewer
+          wrappedData={wrappedData}
+          isShared={true}
+          shareToken="test-token-123"
+        />
+      )
+
+      // Component should render without errors
+      expect(screen.getByText('Welcome')).toBeInTheDocument()
+    })
+
+    it('should handle shared view without share token', () => {
+      const wrappedData = createMockWrappedData()
+
+      render(
+        <WrappedViewer
+          wrappedData={wrappedData}
+          isShared={true}
+        />
+      )
+
+      expect(screen.getByText('Welcome')).toBeInTheDocument()
+    })
+
+    it('should handle userName prop in shared view', () => {
+      const wrappedData = createMockWrappedData()
+
+      render(
+        <WrappedViewer
+          wrappedData={wrappedData}
+          isShared={true}
+          userName="John Doe"
+        />
+      )
+
+      expect(screen.getByText('Welcome')).toBeInTheDocument()
+    })
+
+    it('should handle summary prop in shared view', () => {
+      const wrappedData = createMockWrappedData()
+
+      render(
+        <WrappedViewer
+          wrappedData={wrappedData}
+          isShared={true}
+          summary="This is a test summary"
+        />
+      )
+
+      expect(screen.getByText('Welcome')).toBeInTheDocument()
+    })
+  })
+
+  describe('Completion Callback', () => {
+    it('should accept onComplete callback', () => {
+      const mockOnComplete = jest.fn()
+      const wrappedData = createMockWrappedData()
+
+      render(
+        <WrappedViewer
+          wrappedData={wrappedData}
+          onComplete={mockOnComplete}
+        />
+      )
+
+      expect(screen.getByText('Welcome')).toBeInTheDocument()
+    })
+
+    it('should handle missing onComplete callback', () => {
+      const wrappedData = createMockWrappedData()
+
       expect(() => {
         render(<WrappedViewer wrappedData={wrappedData} />)
       }).not.toThrow()

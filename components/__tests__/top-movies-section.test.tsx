@@ -1,6 +1,6 @@
 import { WrappedSection } from '@/types/wrapped'
 import { render, screen } from '@testing-library/react'
-import { TopMoviesSection } from '../wrapped/wrapped-sections/top-movies-section'
+import { TopMoviesSection } from '@/components/wrapped/wrapped-sections/top-movies-section'
 
 // Mock child components
 jest.mock('../shared/formatted-text', () => ({

@@ -72,7 +72,7 @@ export function calculateCost(
   model: string | null | undefined,
   promptTokens: number,
   completionTokens: number,
-  provider: "openai"
+  _provider: "openai"
 ): number {
   // Use model-specific pricing
   const pricing = model ? MODEL_PRICING[model] : null

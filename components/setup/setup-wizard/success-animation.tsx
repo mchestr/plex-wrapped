@@ -5,9 +5,11 @@ import { useEffect, useState } from "react"
 
 interface SuccessAnimationProps {
   onComplete: () => void
+  title?: string
+  message?: string
 }
 
-export function SuccessAnimation({ onComplete }: SuccessAnimationProps) {
+export function SuccessAnimation({ onComplete, title = "Success!", message = "Configuration saved" }: SuccessAnimationProps) {
   const [particles, setParticles] = useState<Array<{ id: number; x: number; y: number }>>([])
 
   useEffect(() => {
@@ -95,7 +97,7 @@ export function SuccessAnimation({ onComplete }: SuccessAnimationProps) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.6 }}
           >
-            Success!
+            {title}
           </motion.p>
           <motion.p
             className="text-sm text-slate-300"
@@ -103,7 +105,7 @@ export function SuccessAnimation({ onComplete }: SuccessAnimationProps) {
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
           >
-            Configuration saved
+            {message}
           </motion.p>
         </motion.div>
 

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { InsightsSection } from '../wrapped/wrapped-sections/insights-section'
+import { InsightsSection } from '@/components/wrapped/wrapped-sections/insights-section'
 import { WrappedData, WrappedSection } from '@/types/wrapped'
 
 // Mock child components

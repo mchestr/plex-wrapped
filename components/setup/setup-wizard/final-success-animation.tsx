@@ -5,9 +5,11 @@ import { useEffect, useState } from "react"
 
 interface FinalSuccessAnimationProps {
   onComplete: () => void
+  title?: string
+  subtitle?: string
 }
 
-export function FinalSuccessAnimation({ onComplete }: FinalSuccessAnimationProps) {
+export function FinalSuccessAnimation({ onComplete, title = "Setup Complete!", subtitle = "Your Plex Wrapped is ready" }: FinalSuccessAnimationProps) {
   const [exhaustParticles, setExhaustParticles] = useState<Array<{ id: number }>>([])
   const [stars, setStars] = useState<Array<{ id: number; x: number; y: number; delay: number }>>([])
 
@@ -178,7 +180,7 @@ export function FinalSuccessAnimation({ onComplete }: FinalSuccessAnimationProps
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.7, type: "spring", stiffness: 200 }}
           >
-            Setup Complete!
+            {title}
           </motion.p>
           <motion.p
             className="text-lg text-slate-300 mb-2"
@@ -186,7 +188,7 @@ export function FinalSuccessAnimation({ onComplete }: FinalSuccessAnimationProps
             animate={{ opacity: 1 }}
             transition={{ delay: 0.9 }}
           >
-            Your Plex Wrapped is ready
+            {subtitle}
           </motion.p>
           <motion.p
             className="text-sm text-slate-400"

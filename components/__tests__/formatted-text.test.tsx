@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { FormattedText } from '../shared/formatted-text'
+import { FormattedText } from '@/components/shared/formatted-text'
 
 describe('FormattedText', () => {
   it('should render plain text without styling tags', () => {

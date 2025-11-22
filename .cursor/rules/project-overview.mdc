@@ -1,9 +1,9 @@
 ---
-description: Concise project overview and architecture guide for Plex Wrapped
+description: Concise project overview and architecture guide for Plex Wrapped / Plex Management System
 globs: **/*
 ---
 
-# Plex Wrapped - Project Overview
+# Plex Management System - Project Overview
 
 ## Tech Stack
 - **Framework**: Next.js 14+ (App Router)

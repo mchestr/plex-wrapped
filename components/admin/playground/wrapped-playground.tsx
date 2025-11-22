@@ -10,12 +10,12 @@ import { generateSystemPrompt } from "@/lib/wrapped/prompt-template"
 import { WrappedData, WrappedStatistics } from "@/types/wrapped"
 import { PromptTemplate } from "@prisma/client"
 import { useEffect, useMemo, useState } from "react"
-import { LLMResponse } from "./llm-response"
-import { PreviewModal } from "./preview-modal"
-import { RenderedPrompt } from "./rendered-prompt"
-import { StatisticsViewer } from "./statistics-viewer"
-import { TemplateSelector } from "./template-selector"
-import { TestConfiguration } from "./test-configuration"
+import { LLMResponse } from "@/components/admin/playground/llm-response"
+import { PreviewModal } from "@/components/admin/playground/preview-modal"
+import { RenderedPrompt } from "@/components/admin/playground/rendered-prompt"
+import { StatisticsViewer } from "@/components/admin/playground/statistics-viewer"
+import { TemplateSelector } from "@/components/admin/playground/template-selector"
+import { TestConfiguration } from "@/components/admin/playground/test-configuration"
 
 interface PlexUser {
   id: string

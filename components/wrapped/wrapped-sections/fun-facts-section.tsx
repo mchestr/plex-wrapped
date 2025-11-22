@@ -1,8 +1,8 @@
 "use client"
 
-import { FormattedText } from "../../shared/formatted-text"
-import { SectionHeader } from "./section-header"
-import { BarChart } from "../wrapped-charts"
+import { FormattedText } from "@/components/shared/formatted-text"
+import { SectionHeader } from "@/components/wrapped/wrapped-sections/section-header"
+import { BarChart } from "@/components/wrapped/wrapped-charts"
 import { WrappedData, WrappedSection } from "@/types/wrapped"
 
 interface FunFactsSectionProps {
@@ -11,9 +11,8 @@ interface FunFactsSectionProps {
   sectionIndex: number
 }
 
-export function FunFactsSection({ section, wrappedData, sectionIndex }: FunFactsSectionProps) {
+export function FunFactsSection({ section, wrappedData }: FunFactsSectionProps) {
   const facts = (section.data && "facts" in section.data ? section.data.facts : []) as string[]
-  const factsCount = facts.length
 
   return (
     <div className="text-center space-y-6">

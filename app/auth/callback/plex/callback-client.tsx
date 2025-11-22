@@ -22,6 +22,25 @@ export function PlexCallbackPageClient() {
 
       const pinId = searchParams.get("plexPinId")
       const inviteCode = searchParams.get("inviteCode")
+      const testToken = searchParams.get("testToken")
+
+      // TEST MODE BYPASS
+      if (testToken && (process.env.NODE_ENV === 'development' || process.env.NODE_ENV === 'test')) {
+        setStatus("Using test token...")
+        const result = await signIn("plex", {
+          authToken: testToken,
+          redirect: false,
+        })
+        if (result?.ok) {
+          router.push("/")
+          router.refresh()
+          return
+        } else {
+          setError(result?.error || "Failed to sign in with test token")
+          isProcessingRef.current = false
+          return
+        }
+      }
 
       if (!pinId) {
         setError("No PIN ID received from Plex")

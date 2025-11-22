@@ -17,7 +17,7 @@ export function HistoricalVersionsInline() {
   const pathname = usePathname()
   const router = useRouter()
   const [versions, setVersions] = useState<HistoricalVersion[]>([])
-  const [loading, setLoading] = useState(false)
+  const [_loading, setLoading] = useState(false)
   const [wrappedId, setWrappedId] = useState<string | null>(null)
   const [selectedVersion, setSelectedVersion] = useState<string>("current")
 

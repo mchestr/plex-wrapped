@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WrappedViewerNavigation } from '../wrapped/wrapped-viewer-navigation'
+import { WrappedViewerNavigation } from '@/components/wrapped/wrapped-viewer-navigation'
 
 // Mock WrappedShareButton
 jest.mock('../wrapped/wrapped-share-button', () => ({

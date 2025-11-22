@@ -10,7 +10,6 @@ interface WrappedShareButtonProps {
 
 export function WrappedShareButton({
   shareToken,
-  year,
 }: WrappedShareButtonProps) {
   const [copied, setCopied] = useState(false)
   const [showTooltip, setShowTooltip] = useState(false)

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { UnauthorizedError } from '../admin/shared/unauthorized-error'
+import { UnauthorizedError } from '@/components/admin/shared/unauthorized-error'
 
 describe('UnauthorizedError', () => {
   it('should render access denied message', () => {

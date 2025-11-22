@@ -20,6 +20,7 @@ export const PlexServerForm = memo(function PlexServerForm({ onComplete, onBack 
     name: "",
     url: "",
     token: "",
+    publicUrl: "",
   })
 
   useEffect(() => {
@@ -33,6 +34,7 @@ export const PlexServerForm = memo(function PlexServerForm({ onComplete, onBack 
           name: defaults.plex?.name ?? prev.name,
           url: url || prev.url,
           token: defaults.plex?.token ?? prev.token,
+          publicUrl: prev.publicUrl,
         }))
       }
     })
@@ -123,6 +125,32 @@ export const PlexServerForm = memo(function PlexServerForm({ onComplete, onBack 
         </p>
         {errors.url && (
           <p className="mt-1 text-sm text-red-400">{errors.url}</p>
+        )}
+      </div>
+
+      <div>
+        <label
+          htmlFor="publicUrl"
+          className="block text-sm font-medium text-cyan-400 mb-2"
+        >
+          Public Server URL <span className="text-slate-500 font-normal">(optional)</span>
+        </label>
+        <StyledInput
+          type="text"
+          id="publicUrl"
+          name="publicUrl"
+          value={formData.publicUrl || ""}
+          onChange={handleChange}
+          placeholder="https://plex.example.com"
+          size="md"
+          className="mt-1"
+          error={!!errors.publicUrl}
+        />
+        <p className="mt-1 text-xs text-slate-400">
+          The public URL your users use to access Plex (for links/redirects)
+        </p>
+        {errors.publicUrl && (
+          <p className="mt-1 text-sm text-red-400">{errors.publicUrl}</p>
         )}
       </div>
 

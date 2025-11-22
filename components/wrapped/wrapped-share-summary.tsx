@@ -2,8 +2,8 @@
 
 import { WrappedData } from "@/types/wrapped"
 import { motion } from "framer-motion"
-import { FormattedText } from "../shared/formatted-text"
-import { SpaceBackground } from "../setup/setup-wizard/space-background"
+import { FormattedText } from "@/components/shared/formatted-text"
+import { SpaceBackground } from "@/components/setup/setup-wizard/space-background"
 import Link from "next/link"
 
 interface WrappedShareSummaryProps {

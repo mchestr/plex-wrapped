@@ -1,12 +1,20 @@
-import type { Metadata } from "next";
-import "./globals.css";
+import type { Metadata, Viewport } from "next";
+import "@/app/globals.css";
 import { Providers } from "@/lib/providers";
 import { SetupGuard } from "@/components/setup/setup-guard";
 import { OnboardingGuard } from "@/components/onboarding/onboarding-guard";
 
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#0f172a",
+};
+
 export const metadata: Metadata = {
-  title: "Plex Wrapped",
-  description: "Your Plex media statistics",
+  title: "Plex Manager",
+  description: "Your Plex media manager",
   icons: {
     icon: "/icon.svg",
     apple: "/icon.svg",

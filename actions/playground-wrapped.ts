@@ -3,10 +3,13 @@
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateShareToken } from "@/lib/utils"
+import { createLogger } from "@/lib/utils/logger"
 import { parseWrappedResponse } from "@/lib/wrapped/prompt"
 import { WrappedStatistics } from "@/types/wrapped"
 import { getServerSession } from "next-auth"
 import { revalidatePath } from "next/cache"
+
+const logger = createLogger("PLAYGROUND_WRAPPED")
 
 interface SavePlaygroundWrappedInput {
   llmResponse: string
@@ -131,7 +134,7 @@ export async function savePlaygroundWrapped(input: SavePlaygroundWrappedInput): 
       userId: user.id,
     }
   } catch (error) {
-    console.error("[PLAYGROUND WRAPPED] Error saving wrapped:", error)
+    logger.error("Error saving wrapped", error)
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to save wrapped",

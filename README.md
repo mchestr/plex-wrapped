@@ -1,12 +1,12 @@
-# Plex Wrapped
+# Plex Management System
 
 > **WARNING: This project is a Work In Progress (WIP)**
 >
 > This project is currently under active development. Features may be incomplete, unstable, or subject to change. Use at your own risk.
 
-**Your year in movies and shows, beautifully wrapped.**
+**The ultimate companion for your Plex Media Server.**
 
-Plex Wrapped transforms your viewing history into a personalized, shareable year-end summary. Connect your Plex server, Tautulli, and Overseerr to discover your viewing habits, celebrate your favorite content, and share your stats with friends—all powered by AI to make your year feel special.
+Plex Management System transforms your Plex experience by combining powerful management tools, community features, and personalized insights into a single platform. It helps users configure their clients for optimal playback, manage media requests, report issues, and celebrate their viewing habits with "Plex Wrapped".
 
 ## Screenshots
 
@@ -53,29 +53,30 @@ Plex Wrapped transforms your viewing history into a personalized, shareable year
 
 ## Features
 
-### Comprehensive Statistics
+### 🚀 Onboarding & Configuration
+- **Guided Onboarding** for new users to the server
+- **Client Configuration Guides** to ensure Direct Play and best quality
+- **Issue Reporting** workflow to streamline support requests
+- **Media Request** integration (via Overseerr)
+
+### 📊 Plex Wrapped & Statistics
 - **Total watch time** breakdown (movies vs. shows)
 - **Top movies and shows** with play counts and ratings
 - **Server-wide leaderboards** to see how you rank
-- **Overseerr integration** for request statistics
 - **Visualizations** with animated charts and transitions
+- **AI-Powered Insights** for personalized viewing summaries
 
-### AI-Powered Personalization
-- **LLM-generated insights** based on your viewing data
-- **Fun facts and comparisons** (e.g., "That's like watching the entire Lord of the Rings trilogy 47 times!")
-- **Customizable** with OpenAI support (extensible for other providers)
-
-### Share & Discover
-- **One-click sharing** with secure, unguessable tokens
+### 🤝 Share & Discover
+- **One-click sharing** of wrapped stats
 - **Public share links** for easy social media sharing
-- **Analytics tracking** for shared wraps
+- **Analytics tracking** for shared content
 - **Responsive design** that works on any device
 
-### Admin Features
+### 🛠️ Admin Features
 - **User management** dashboard
 - **LLM usage tracking** and cost monitoring
 - **Share analytics** to see what's popular
-- **Regeneration controls** for updating wraps
+- **Centralized configuration** for server integrations
 
 ---
 
@@ -89,7 +90,7 @@ Plex Wrapped transforms your viewing history into a personalized, shareable year
   - A **Plex server** (with admin token)
   - **Tautulli** instance (for viewing statistics)
   - **Overseerr** (optional, for request stats)
-  - **OpenAI** API key (for AI generation)
+  - **OpenAI** API key (optional, for AI insights)
 
 ### Installation
 
@@ -110,7 +111,7 @@ cp example.env .env
 ```
 
 Edit `.env` and configure:
-- `DATABASE_URL` - PostgreSQL connection string (default: `postgresql://postgres:postgres@localhost:5432/plex_wrapped?schema=public`)
+- `DATABASE_URL` - SQLite database path (default: `file:./dev.db`)
 - `NEXT_PUBLIC_APP_URL` - Your public application URL (e.g., `http://localhost:3000` for dev, `https://yourdomain.com` for production)
 - `NEXTAUTH_URL` - Your application URL for NextAuth callbacks (should match `NEXT_PUBLIC_APP_URL` in production)
 - `NEXTAUTH_SECRET` - Generate with: `openssl rand -base64 32`
@@ -135,7 +136,7 @@ On first launch, you'll be guided through configuring:
 - Plex server connection (URL format: `https://example.com:32400`)
 - Tautulli integration (URL format: `http://example.com:8181`)
 - Overseerr integration (optional, URL format: `http://example.com:5055`)
-- LLM provider (OpenAI)
+- LLM provider (optional)
 
 ---
 
@@ -149,13 +150,15 @@ plex-wrapped/
 │   ├── admin/              # Admin dashboard pages
 │   ├── api/                # API routes
 │   ├── auth/               # Authentication pages
-│   ├── setup/              # Setup wizard
+│   ├── onboarding/         # User onboarding flow
+│   ├── setup/              # Initial server setup wizard
 │   └── wrapped/            # Wrapped viewer pages
 ├── actions/                 # Server Actions
 ├── components/             # React components
 │   ├── admin/              # Admin-specific components
+│   ├── onboarding/         # User onboarding components
 │   ├── setup-wizard/       # Setup wizard components
-│   └── wrapped-sections/   # Wrapped content sections
+│   └── wrapped/            # Wrapped content sections
 ├── hooks/                  # Custom React hooks
 ├── lib/                    # Utilities and helpers
 │   ├── connections/        # Plex/Tautulli/Overseerr clients
@@ -199,6 +202,10 @@ plex-wrapped/
 - **Jest** - Unit and integration tests
 - **Testing Library** - Component testing utilities
 - **Coverage** - Aim for comprehensive test coverage
+
+#### **Logging**
+- Use the `createLogger` utility from `@/lib/utils/logger`
+- See [Logging Guide](docs/logging.md) for details on log levels, metadata, and best practices
 
 ### Database Management
 
@@ -248,8 +255,8 @@ When deploying to production, ensure the following environment variables are set
    - Keep this secret and never commit it to version control
 
 4. **`DATABASE_URL`** - Your production database connection string
-   - PostgreSQL: `postgresql://user:password@host:port/database?schema=public`
-   - Example: `postgresql://postgres:password@db.example.com:5432/plex_wrapped?schema=public`
+   - For SQLite: `file:./prisma/production.db`
+   - For PostgreSQL: `postgresql://user:password@host:port/database`
 
 ### Important Notes
 
@@ -273,7 +280,7 @@ The project includes a `Dockerfile` for containerized deployments. When deployin
 |----------|-----------|
 | **Framework** | Next.js 14+ (App Router) |
 | **Language** | TypeScript (strict mode) |
-| **Database** | Prisma + PostgreSQL |
+| **Database** | Prisma + SQLite |
 | **Authentication** | NextAuth.js (Plex PIN-based authentication) |
 | **Data Fetching** | TanStack Query (React Query) |
 | **Styling** | Tailwind CSS |
@@ -286,11 +293,10 @@ The project includes a `Dockerfile` for containerized deployments. When deployin
 ## How It Works
 
 1. **User Authentication** - Sign in with your Plex account using PIN-based authentication
-2. **Data Collection** - Fetch viewing statistics from Tautulli and Plex
-3. **Statistics Processing** - Aggregate watch time, top content, and leaderboards
-4. **AI Generation** - Use LLM to generate personalized insights and fun facts
-5. **Wrapped Creation** - Generate shareable year-end summary with animated visualizations
-6. **Sharing** - Share your wrapped with secure, unique tokens
+2. **Onboarding** - New users are guided through server configuration and features
+3. **Data Collection** - Fetch viewing statistics from Tautulli and Plex
+4. **Dashboard** - View server info, request media, and explore content
+5. **Plex Wrapped** - Generate shareable year-end summaries (optional)
 
 ---
 

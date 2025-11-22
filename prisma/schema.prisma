@@ -47,6 +47,7 @@ model PlexServer {
   hostname        String
   port            Int      @default(32400)
   protocol        String   @default("https")
+  publicUrl       String?  // Public facing URL (e.g. https://plex.example.com)
   token           String
   adminPlexUserId String? // Plex user ID of the admin (user who configured this server)
   isActive        Boolean  @default(true)
@@ -63,6 +64,7 @@ model Tautulli {
   hostname  String
   port      Int      @default(8181)
   protocol  String   @default("http")
+  publicUrl String?  // Public facing URL (e.g. https://tautulli.example.com)
   apiKey    String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -77,6 +79,7 @@ model Overseerr {
   hostname  String
   port      Int      @default(5055)
   protocol  String   @default("http")
+  publicUrl String?  // Public facing URL (e.g. https://requests.example.com)
   apiKey    String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())

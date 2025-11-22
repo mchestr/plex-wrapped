@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WrappedHomeButton } from '../wrapped/wrapped-home-button'
+import { WrappedHomeButton } from '@/components/wrapped/wrapped-home-button'
 import * as userActions from '@/actions/users'
 
 // Mock the user actions
@@ -41,7 +41,7 @@ describe('WrappedHomeButton', () => {
     render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
 
     await waitFor(() => {
-      expect(screen.getByText(/My Server \d{4} Wrapped/i)).toBeInTheDocument()
+      expect(screen.getByText(/My Server Manager/i)).toBeInTheDocument()
       expect(screen.getByText('Generate My Wrapped')).toBeInTheDocument()
     })
   })

@@ -1,5 +1,5 @@
 import { render, screen } from '@testing-library/react'
-import { UnauthenticatedError } from '../admin/shared/unauthenticated-error'
+import { UnauthenticatedError } from '@/components/admin/shared/unauthenticated-error'
 
 describe('UnauthenticatedError', () => {
   it('should render only 401 text', () => {

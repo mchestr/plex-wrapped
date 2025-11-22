@@ -7,7 +7,7 @@ import qs from "qs"
 const logger = createLogger("PLEX_AUTH")
 
 const PLEX_API_ENDPOINT = "https://plex.tv/api/v2"
-const PLEX_PRODUCT_NAME = "Plex Wrapped"
+const PLEX_PRODUCT_NAME = "Plex Manager"
 
 interface PlexPinResponse {
   id: number

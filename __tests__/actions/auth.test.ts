@@ -1,6 +1,10 @@
 import { checkServerAccess } from '@/actions/auth'
 import { prisma } from '@/lib/prisma'
 import { checkUserServerAccess, getPlexUserInfo } from '@/lib/connections/plex'
+import {
+  makePrismaPlexServer,
+  makePlexUserInfo,
+} from '../utils/test-builders'
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -25,22 +29,10 @@ describe('checkServerAccess', () => {
   })
 
   it('should return success when user has access', async () => {
-    const mockPlexServer = {
-      id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https' as const,
-      token: 'server-token',
-      adminPlexUserId: 'admin-plex-id',
-      isActive: true,
-    }
-
-    const mockPlexUser = {
+    const mockPlexServer = makePrismaPlexServer()
+    const mockPlexUser = makePlexUserInfo({
       id: 'plex-user-1',
-      username: 'testuser',
-      email: 'test@example.com',
-      thumb: 'https://example.com/thumb.jpg',
-    }
+    })
 
     mockPrisma.plexServer.findFirst.mockResolvedValue(mockPlexServer as any)
     mockGetPlexUserInfo.mockResolvedValue({
@@ -61,11 +53,11 @@ describe('checkServerAccess', () => {
     expect(mockGetPlexUserInfo).toHaveBeenCalledWith('user-token')
     expect(mockCheckUserServerAccess).toHaveBeenCalledWith(
       {
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
-        token: 'server-token',
-        adminPlexUserId: 'admin-plex-id',
+        hostname: mockPlexServer.hostname,
+        port: mockPlexServer.port,
+        protocol: mockPlexServer.protocol,
+        token: mockPlexServer.token,
+        adminPlexUserId: mockPlexServer.adminPlexUserId,
       },
       'plex-user-1'
     )
@@ -85,15 +77,7 @@ describe('checkServerAccess', () => {
   })
 
   it('should return error when user info fetch fails', async () => {
-    const mockPlexServer = {
-      id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https' as const,
-      token: 'server-token',
-      adminPlexUserId: 'admin-plex-id',
-      isActive: true,
-    }
+    const mockPlexServer = makePrismaPlexServer()
 
     mockPrisma.plexServer.findFirst.mockResolvedValue(mockPlexServer as any)
     mockGetPlexUserInfo.mockResolvedValue({

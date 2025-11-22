@@ -1,5 +1,11 @@
 import { getUserPlexWrapped, getAllUsersWithWrapped } from '@/actions/user-queries'
 import { prisma } from '@/lib/prisma'
+import { aggregateLlmUsage } from '@/lib/utils'
+import { makePrismaUser, makePrismaWrapped, makePrismaLlmUsage } from '../utils/test-builders'
+
+jest.mock('@/lib/admin', () => ({
+  requireAdmin: jest.fn(),
+}))
 
 jest.mock('@/lib/prisma', () => ({
   prisma: {
@@ -10,33 +16,43 @@ jest.mock('@/lib/prisma', () => ({
     user: {
       findMany: jest.fn(),
     },
+    plexServer: {
+      findFirst: jest.fn(),
+    },
   },
+}))
+
+jest.mock('@/lib/connections/plex', () => ({
+  checkUserServerAccess: jest.fn(),
+  getPlexServerIdentity: jest.fn(),
+  getPlexUsers: jest.fn(),
+  unshareUserFromPlexServer: jest.fn(),
 }))
 
 const mockPrisma = prisma as jest.Mocked<typeof prisma>
 
 describe('getUserPlexWrapped', () => {
   beforeEach(() => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2024-06-01T12:00:00Z'))
     jest.clearAllMocks()
   })
 
+  afterEach(() => {
+    jest.useRealTimers()
+  })
+
   it('should return wrapped for user and year', async () => {
-    const mockWrapped = {
-      id: 'wrapped-1',
+    const mockWrapped = makePrismaWrapped({
       userId: 'user-1',
       year: 2024,
-      status: 'completed',
-      content: { hero: 'Test content' },
-      generatedAt: new Date(),
-      createdAt: new Date(),
-      updatedAt: new Date(),
       user: {
         id: 'user-1',
         name: 'Test User',
         email: 'test@example.com',
         image: null,
       },
-    }
+    })
 
     mockPrisma.plexWrapped.findUnique.mockResolvedValue(mockWrapped as any)
 
@@ -64,7 +80,7 @@ describe('getUserPlexWrapped', () => {
   })
 
   it('should use current year as default', async () => {
-    const currentYear = new Date().getFullYear()
+    const currentYear = 2024
     mockPrisma.plexWrapped.findUnique.mockResolvedValue(null)
 
     await getUserPlexWrapped('user-1')
@@ -108,52 +124,47 @@ describe('getUserPlexWrapped', () => {
 
 describe('getAllUsersWithWrapped', () => {
   beforeEach(() => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date('2024-06-01T12:00:00Z'))
     jest.clearAllMocks()
+  })
+
+  afterEach(() => {
+    jest.useRealTimers()
   })
 
   it('should return all users with wrapped status', async () => {
     const mockUsers = [
-      {
+      makePrismaUser({
         id: 'user-1',
         name: 'User 1',
         email: 'user1@example.com',
-        image: null,
         plexUserId: 'plex-1',
-        isAdmin: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         plexWrapped: [
-          {
+          makePrismaWrapped({
             id: 'wrapped-1',
             year: 2024,
             status: 'completed',
             generatedAt: new Date(),
             llmUsage: [
-              {
+              makePrismaLlmUsage({
                 totalTokens: 1000,
                 promptTokens: 500,
                 completionTokens: 500,
                 cost: 0.01,
-                provider: 'openai',
-                model: 'gpt-4',
-              },
+              }),
             ],
-          },
+          }),
         ],
         llmUsage: [
-          {
+          makePrismaLlmUsage({
             totalTokens: 1000,
             promptTokens: 500,
             completionTokens: 500,
             cost: 0.01,
-            provider: 'openai',
-            model: 'gpt-4',
-          },
+          }),
         ],
-        _count: {
-          plexWrapped: 1,
-        },
-      },
+      }),
     ]
 
     mockPrisma.user.findMany.mockResolvedValue(mockUsers as any)
@@ -190,7 +201,7 @@ describe('getAllUsersWithWrapped', () => {
   })
 
   it('should use current year as default', async () => {
-    const currentYear = new Date().getFullYear()
+    const currentYear = 2024
     mockPrisma.user.findMany.mockResolvedValue([])
     mockPrisma.plexWrapped.findMany.mockResolvedValue([])
 
@@ -223,21 +234,17 @@ describe('getAllUsersWithWrapped', () => {
 
   it('should handle users without wrapped', async () => {
     const mockUsers = [
-      {
+      makePrismaUser({
         id: 'user-1',
         name: 'User 1',
         email: 'user1@example.com',
-        image: null,
         plexUserId: 'plex-1',
-        isAdmin: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         plexWrapped: [],
         llmUsage: [],
         _count: {
           plexWrapped: 0,
         },
-      },
+      }),
     ]
 
     mockPrisma.user.findMany.mockResolvedValue(mockUsers as any)
@@ -259,63 +266,51 @@ describe('getAllUsersWithWrapped', () => {
 
   it('should aggregate multiple LLM usage records', async () => {
     const mockUsers = [
-      {
+      makePrismaUser({
         id: 'user-1',
         name: 'User 1',
         email: 'user1@example.com',
-        image: null,
         plexUserId: 'plex-1',
-        isAdmin: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         plexWrapped: [
-          {
+          makePrismaWrapped({
             id: 'wrapped-1',
             year: 2024,
             status: 'completed',
             generatedAt: new Date(),
             llmUsage: [
-              {
+              makePrismaLlmUsage({
                 totalTokens: 1000,
                 promptTokens: 500,
                 completionTokens: 500,
                 cost: 0.01,
-                provider: 'openai',
-                model: 'gpt-4',
-              },
-              {
+              }),
+              makePrismaLlmUsage({
                 totalTokens: 2000,
                 promptTokens: 1000,
                 completionTokens: 1000,
                 cost: 0.02,
-                provider: 'openai',
-                model: 'gpt-4',
-              },
+              }),
             ],
-          },
+          }),
         ],
         llmUsage: [
-          {
+          makePrismaLlmUsage({
             totalTokens: 1000,
             promptTokens: 500,
             completionTokens: 500,
             cost: 0.01,
-            provider: 'openai',
-            model: 'gpt-4',
-          },
-          {
+          }),
+          makePrismaLlmUsage({
             totalTokens: 2000,
             promptTokens: 1000,
             completionTokens: 1000,
             cost: 0.02,
-            provider: 'openai',
-            model: 'gpt-4',
-          },
+          }),
         ],
         _count: {
           plexWrapped: 1,
         },
-      },
+      }),
     ]
 
     mockPrisma.user.findMany.mockResolvedValue(mockUsers as any)
@@ -342,21 +337,17 @@ describe('getAllUsersWithWrapped', () => {
 
   it('should calculate share and visit counts correctly', async () => {
     const mockUsers = [
-      {
+      makePrismaUser({
         id: 'user-1',
         name: 'User 1',
         email: 'user1@example.com',
-        image: null,
         plexUserId: 'plex-1',
-        isAdmin: false,
-        createdAt: new Date(),
-        updatedAt: new Date(),
         plexWrapped: [],
         llmUsage: [],
         _count: {
           plexWrapped: 2,
         },
-      },
+      }),
     ]
 
     mockPrisma.user.findMany.mockResolvedValue(mockUsers as any)
@@ -391,3 +382,42 @@ describe('getAllUsersWithWrapped', () => {
   })
 })
 
+describe('aggregateLlmUsage', () => {
+  it('should return null for empty array', () => {
+    const result = aggregateLlmUsage([])
+    expect(result).toBeNull()
+  })
+
+  it('should correctly aggregate usage records', () => {
+    const usageRecords = [
+      {
+        totalTokens: 100,
+        promptTokens: 50,
+        completionTokens: 50,
+        cost: 0.01,
+        provider: 'openai',
+        model: 'gpt-3.5',
+      },
+      {
+        totalTokens: 200,
+        promptTokens: 100,
+        completionTokens: 100,
+        cost: 0.02,
+        provider: 'anthropic',
+        model: 'claude-3',
+      },
+    ]
+
+    const result = aggregateLlmUsage(usageRecords)
+
+    expect(result).toEqual({
+      totalTokens: 300,
+      promptTokens: 150,
+      completionTokens: 150,
+      cost: 0.03,
+      provider: 'anthropic',
+      model: 'claude-3',
+      count: 2,
+    })
+  })
+})

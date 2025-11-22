@@ -21,7 +21,7 @@ export function SectionHeader({
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: titleDelay }}
-        className="text-4xl font-bold text-white mb-2"
+        className="text-3xl sm:text-4xl font-bold text-white mb-2"
       >
         {title}
       </motion.h2>
@@ -30,7 +30,7 @@ export function SectionHeader({
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.6, delay: subtitleDelay }}
-          className="text-lg text-purple-200 mb-6"
+          className="text-base sm:text-lg text-purple-200 mb-6"
         >
           {subtitle}
         </motion.p>

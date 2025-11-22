@@ -9,6 +9,7 @@
     "start:prod": "node server.js",
     "lint": "next lint",
     "test": "jest",
+    "test:integration": "DATABASE_URL='postgresql://postgres:postgres@localhost:5432/plex_wrapped?schema=test_integration' npx prisma db push --accept-data-loss && DATABASE_URL='postgresql://postgres:postgres@localhost:5432/plex_wrapped?schema=test_integration' jest -c jest.integration.config.js",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "db:generate": "prisma generate",
@@ -32,9 +33,11 @@
     "react-countup": "^6.5.3",
     "react-dom": "^18.3.0",
     "tailwind-merge": "^3.4.0",
+    "winston": "^3.18.3",
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.56.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",

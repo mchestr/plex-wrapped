@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from "framer-motion"
 import { useEffect, useState } from "react"
-import { SpaceBackground } from "../setup/setup-wizard/space-background"
+import { SpaceBackground } from "@/components/setup/setup-wizard/space-background"
 
 interface WrappedTransitionProps {
   year: number
@@ -54,6 +54,7 @@ export function WrappedTransition({ year, onComplete }: WrappedTransitionProps) 
 
       return () => clearTimeout(revealTimer)
     }
+    return undefined
   }, [phase, onComplete])
 
   return (

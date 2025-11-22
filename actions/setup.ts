@@ -77,6 +77,7 @@ export async function savePlexServer(data: PlexServerInput) {
           port: validated.port,
           protocol: validated.protocol,
           token: validated.token,
+          publicUrl: validated.publicUrl,
           adminPlexUserId,
           isActive: true,
         },
@@ -138,6 +139,7 @@ export async function saveTautulli(data: TautulliInput) {
           port: validated.port,
           protocol: validated.protocol,
           apiKey: validated.apiKey,
+          publicUrl: validated.publicUrl,
           isActive: true,
         },
       })
@@ -198,6 +200,7 @@ export async function saveOverseerr(data: OverseerrInput) {
           port: validated.port,
           protocol: validated.protocol,
           apiKey: validated.apiKey,
+          publicUrl: validated.publicUrl,
           isActive: true,
         },
       })

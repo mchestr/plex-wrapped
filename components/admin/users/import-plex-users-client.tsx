@@ -1,6 +1,6 @@
 "use client"
 
-import { ImportPlexUsersButton } from "./import-plex-users-button"
+import { ImportPlexUsersButton } from "@/components/admin/users/import-plex-users-button"
 
 export function ImportPlexUsersClient() {
   return (

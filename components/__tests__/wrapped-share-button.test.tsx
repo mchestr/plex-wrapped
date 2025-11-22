@@ -10,7 +10,7 @@ jest.mock('framer-motion', () => ({
 
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WrappedShareButton } from '../wrapped/wrapped-share-button'
+import { WrappedShareButton } from '@/components/wrapped/wrapped-share-button'
 
 // Mock navigator.clipboard
 const mockWriteText = jest.fn()

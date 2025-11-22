@@ -34,10 +34,10 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
         </div>
 
         <h2 className="text-3xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
-          Welcome to Plex Wrapped!
+          Welcome to the Server!
         </h2>
         <p className="text-slate-300 text-lg leading-relaxed">
-          You&apos;ve been invited to join this Plex server. Let&apos;s get you set up with a quick tour of what you can do.
+          We're excited to have you. Before you dive in, here's a quick guide on how to get the best experience, request movies/shows, and get help.
         </p>
       </motion.div>
 
@@ -51,46 +51,32 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
             <div className="text-cyan-400 mb-2">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
             </div>
-            <h3 className="text-white font-semibold mb-1">Your Stats</h3>
-            <p className="text-slate-400 text-sm">View your watching statistics and insights</p>
+            <h3 className="text-white font-semibold mb-1">Best Quality</h3>
+            <p className="text-slate-400 text-sm">Learn how to configure your Plex client for the best playback.</p>
           </div>
 
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
             <div className="text-purple-400 mb-2">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
             </div>
-            <h3 className="text-white font-semibold mb-1">Share & Compare</h3>
-            <p className="text-slate-400 text-sm">Share your wrapped with friends</p>
+            <h3 className="text-white font-semibold mb-1">Request Media</h3>
+            <p className="text-slate-400 text-sm">Easily request movies and TV shows you want to watch.</p>
           </div>
 
           <div className="bg-slate-800/50 rounded-lg p-4 border border-slate-700">
             <div className="text-pink-400 mb-2">
               <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M13 10V3L4 14h7v7l9-11h-7z"
-                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
             </div>
-            <h3 className="text-white font-semibold mb-1">AI Insights</h3>
-            <p className="text-slate-400 text-sm">Get personalized insights powered by AI</p>
+            <h3 className="text-white font-semibold mb-1">Support</h3>
+            <p className="text-slate-400 text-sm">How to report playback issues or other problems.</p>
           </div>
         </div>
       </motion.div>
@@ -105,10 +91,9 @@ export function WelcomeStep({ onComplete }: WelcomeStepProps) {
           onClick={onComplete}
           className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-purple-600 hover:from-cyan-700 hover:to-purple-700 text-white font-medium rounded-lg transition-all shadow-lg shadow-cyan-500/20"
         >
-          Get Started
+          Let's Go
         </button>
       </motion.div>
     </div>
   )
 }
-

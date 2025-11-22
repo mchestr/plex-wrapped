@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { createSafeError, ErrorCode, getStatusCode } from "./error-handler"
+import { createSafeError, ErrorCode, getStatusCode } from "@/lib/security/error-handler"
 
 /**
  * CSRF protection for API routes

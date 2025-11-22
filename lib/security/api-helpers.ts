@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
-import { createSafeError, ErrorCode, getStatusCode, logError } from "./error-handler"
+import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/security/error-handler"
 
 /**
  * Require admin authentication for API routes
  * Returns session if admin, or error response if not
  */
 export async function requireAdminAPI(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<{ session: Awaited<ReturnType<typeof getServerSession>>; response: null } | { session: null; response: NextResponse }> {
   try {
     const session = await getServerSession(authOptions)
@@ -50,7 +50,7 @@ export async function requireAdminAPI(
  * Require authentication for API routes (non-admin)
  */
 export async function requireAuthAPI(
-  request: NextRequest
+  _request: NextRequest
 ): Promise<{ session: Awaited<ReturnType<typeof getServerSession>>; response: null } | { session: null; response: NextResponse }> {
   try {
     const session = await getServerSession(authOptions)

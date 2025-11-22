@@ -177,7 +177,7 @@ export function InvitesPageClient() {
 
       {loading ? (
         <div className="flex justify-center py-12">
-          <svg className="animate-spin h-8 w-8 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <svg className="animate-spin h-8 w-8 text-cyan-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" role="img" aria-label="Loading">
             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
@@ -286,10 +286,11 @@ export function InvitesPageClient() {
             </div>
             <form onSubmit={handleCreateInvite} className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
+                <label htmlFor="invite-code" className="block text-sm font-medium text-slate-400 mb-1">
                   Custom Code <span className="text-slate-500">(Optional)</span>
                 </label>
                 <input
+                  id="invite-code"
                   type="text"
                   value={formData.code}
                   onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
@@ -302,10 +303,11 @@ export function InvitesPageClient() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
+                <label htmlFor="max-uses" className="block text-sm font-medium text-slate-400 mb-1">
                   Max Uses
                 </label>
                 <input
+                  id="max-uses"
                   type="number"
                   min="1"
                   value={formData.maxUses}
@@ -315,10 +317,11 @@ export function InvitesPageClient() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-slate-400 mb-1">
+                <label htmlFor="expiration" className="block text-sm font-medium text-slate-400 mb-1">
                   Expiration
                 </label>
                 <select
+                  id="expiration"
                   value={formData.expiresIn}
                   onChange={(e) => setFormData({ ...formData, expiresIn: e.target.value })}
                   className="w-full bg-slate-800 border border-slate-700 rounded-lg px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
@@ -392,8 +395,9 @@ export function InvitesPageClient() {
 
               {/* Allow Downloads */}
               <div className="border-t border-slate-700 pt-4">
-                <label className="flex items-center space-x-2 cursor-pointer">
+                <label htmlFor="allow-downloads" className="flex items-center space-x-2 cursor-pointer">
                   <input
+                    id="allow-downloads"
                     type="checkbox"
                     checked={formData.allowDownloads}
                     onChange={(e) => setFormData({ ...formData, allowDownloads: e.target.checked })}

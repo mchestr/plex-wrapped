@@ -2,10 +2,10 @@
 
 import { WrappedData, WrappedSection } from "@/types/wrapped"
 import { motion } from "framer-motion"
-import { FormattedText } from "../../shared/formatted-text"
-import { BarChart, Sparkline } from "../wrapped-charts"
-import { SectionHeader } from "./section-header"
-import { formatWatchTime } from "./utils"
+import { FormattedText } from "@/components/shared/formatted-text"
+import { BarChart, Sparkline } from "@/components/wrapped/wrapped-charts"
+import { SectionHeader } from "@/components/wrapped/wrapped-sections/section-header"
+import { formatWatchTime } from "@/components/wrapped/wrapped-sections/utils"
 
 interface TotalWatchTimeSectionProps {
   section: WrappedSection
@@ -29,7 +29,7 @@ export function TotalWatchTimeSection({ section, wrappedData }: TotalWatchTimeSe
       >
         {/* Glow effect */}
         <div className="absolute inset-0 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 opacity-20 blur-3xl" />
-        <div className="relative text-6xl md:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
+        <div className="relative text-5xl sm:text-6xl md:text-7xl font-bold bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent mb-4">
           {formatWatchTime(wrappedData.statistics.totalWatchTime.total)}
         </div>
         {/* Monthly watch time visualization */}
@@ -93,7 +93,7 @@ export function TotalWatchTimeSection({ section, wrappedData }: TotalWatchTimeSe
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8, delay: 0.8 }}
-        className="text-lg text-slate-300 max-w-2xl mx-auto"
+        className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto"
       >
         <FormattedText text={section.content} />
       </motion.p>

@@ -142,6 +142,7 @@ describe('Setup Actions', () => {
       name: 'My Plex Server',
       url: 'https://plex.example.com:32400',
       token: 'plex-token',
+      publicUrl: 'https://plex.public.com',
     }
 
     it('should save Plex server configuration successfully', async () => {
@@ -184,6 +185,7 @@ describe('Setup Actions', () => {
           port: 32400,
           protocol: 'https',
           token: plexInput.token,
+          publicUrl: plexInput.publicUrl,
           adminPlexUserId: 'plex-user-123',
           isActive: true,
         }),
@@ -253,6 +255,7 @@ describe('Setup Actions', () => {
       name: 'Tautulli',
       url: 'http://tautulli.example.com:8181',
       apiKey: 'tautulli-key',
+      publicUrl: 'https://tautulli.public.com',
     }
 
     it('should save Tautulli configuration successfully', async () => {
@@ -283,6 +286,7 @@ describe('Setup Actions', () => {
           port: 8181,
           protocol: 'http',
           apiKey: tautulliInput.apiKey,
+          publicUrl: tautulliInput.publicUrl,
           isActive: true,
         }),
       })
@@ -306,6 +310,7 @@ describe('Setup Actions', () => {
       name: 'Overseerr',
       url: 'https://overseerr.example.com:5055',
       apiKey: 'overseerr-key',
+      publicUrl: 'https://requests.public.com',
     }
 
     it('should save Overseerr configuration successfully', async () => {
@@ -336,6 +341,7 @@ describe('Setup Actions', () => {
           port: 5055,
           protocol: 'https',
           apiKey: overseerrInput.apiKey,
+          publicUrl: overseerrInput.publicUrl,
           isActive: true,
         }),
       })

@@ -3,11 +3,11 @@
 import { WrappedData, WrappedSection } from "@/types/wrapped"
 import { AnimatePresence, motion } from "framer-motion"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { SpaceBackground } from "../setup/setup-wizard/space-background"
-import { filterSections } from "./wrapped-section-filter"
-import { SectionRenderer } from "./wrapped-sections"
-import { WrappedViewerNavigation } from "./wrapped-viewer-navigation"
-import { WrappedViewerProgress } from "./wrapped-viewer-progress"
+import { SpaceBackground } from "@/components/setup/setup-wizard/space-background"
+import { filterSections } from "@/components/wrapped/wrapped-section-filter"
+import { SectionRenderer } from "@/components/wrapped/wrapped-sections"
+import { WrappedViewerNavigation } from "@/components/wrapped/wrapped-viewer-navigation"
+import { WrappedViewerProgress } from "@/components/wrapped/wrapped-viewer-progress"
 
 interface WrappedViewerProps {
   wrappedData: WrappedData
@@ -22,8 +22,6 @@ export function WrappedViewer({
   wrappedData,
   onComplete,
   isShared = false,
-  userName,
-  summary,
   shareToken,
 }: WrappedViewerProps) {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0)
@@ -128,6 +126,7 @@ export function WrappedViewer({
       }, 10000)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [currentSectionIndex, sections.length, isAutoAdvancing, showAll, onComplete, getSectionDelay])
 
   const handleNext = () => {

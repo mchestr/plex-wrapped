@@ -1,9 +1,12 @@
 "use server"
 
-import { prisma } from "@/lib/prisma"
-import { getAllPlexServerUsers } from "@/lib/connections/plex"
 import { requireAdmin } from "@/lib/admin"
+import { getAllPlexServerUsers } from "@/lib/connections/plex"
+import { prisma } from "@/lib/prisma"
+import { createLogger } from "@/lib/utils/logger"
 import { revalidatePath } from "next/cache"
+
+const logger = createLogger("IMPORT_PLEX_USERS")
 
 /**
  * Import users from Plex server into the database
@@ -98,13 +101,12 @@ export async function importPlexUsers(): Promise<{
       errors,
     }
   } catch (error) {
-    console.error("[IMPORT PLEX USERS] - Error:", error)
+    logger.error("Error importing Plex users", error)
     return {
       success: false,
       imported: 0,
       skipped: 0,
-      errors: [error instanceof Error ? error.message : "Failed to import Plex users"],
+      errors: [error instanceof Error ? error.message : "Failed to import users"],
     }
   }
 }
-

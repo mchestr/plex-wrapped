@@ -1,8 +1,8 @@
 "use client"
 
 import { motion } from "framer-motion"
-import { FormattedText } from "../../shared/formatted-text"
-import { SectionHeader } from "./section-header"
+import { FormattedText } from "@/components/shared/formatted-text"
+import { SectionHeader } from "@/components/wrapped/wrapped-sections/section-header"
 import { WrappedData, WrappedSection } from "@/types/wrapped"
 
 interface InsightsSectionProps {

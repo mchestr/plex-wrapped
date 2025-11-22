@@ -2,10 +2,13 @@
 
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { createLogger } from "@/lib/utils/logger"
 import { callOpenAI, LLMConfig } from "@/lib/wrapped/api-calls"
 import { generateWrappedPrompt } from "@/lib/wrapped/prompt-template"
 import { WrappedStatistics } from "@/types/wrapped"
 import { getServerSession } from "next-auth"
+
+const logger = createLogger("PROMPT_TEST")
 
 interface TestPromptInput {
   userName: string
@@ -95,7 +98,7 @@ export async function testPromptTemplate(input: TestPromptInput) {
               },
             })
           } catch (dbError) {
-            console.error("[PROMPT TEST] Failed to save LLM usage to database:", dbError)
+            logger.error("Failed to save LLM usage to database", dbError)
             // Don't fail the whole operation if logging fails
           }
         }

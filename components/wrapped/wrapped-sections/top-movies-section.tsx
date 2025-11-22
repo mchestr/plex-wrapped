@@ -1,7 +1,7 @@
 "use client"
 
-import { FormattedText } from "../../shared/formatted-text"
-import { formatWatchTime } from "./utils"
+import { FormattedText } from "@/components/shared/formatted-text"
+import { formatWatchTime } from "@/components/wrapped/wrapped-sections/utils"
 import { WrappedSection } from "@/types/wrapped"
 
 interface TopMoviesSectionProps {
@@ -12,9 +12,9 @@ export function TopMoviesSection({ section }: TopMoviesSectionProps) {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h2 className="text-4xl font-bold text-white mb-2">{section.title}</h2>
+        <h2 className="text-3xl sm:text-4xl font-bold text-white mb-2">{section.title}</h2>
         {section.subtitle && (
-          <p className="text-lg text-purple-200">
+          <p className="text-base sm:text-lg text-purple-200">
             {section.subtitle}
           </p>
         )}
@@ -27,21 +27,21 @@ export function TopMoviesSection({ section }: TopMoviesSectionProps) {
           >
             <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-cyan-400 via-purple-400 to-pink-400" />
             <div className="flex items-center gap-4 relative pl-2">
-              <span className="text-2xl font-bold text-cyan-400 w-10 flex-shrink-0">
+              <span className="text-xl sm:text-2xl font-bold text-cyan-400 w-8 sm:w-10 flex-shrink-0">
                 #{idx + 1}
               </span>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-3 flex-wrap">
-                  <p className="text-white font-semibold text-lg">
+                  <p className="text-white font-semibold text-base sm:text-lg">
                     {movie.title}
                   </p>
                   {movie.year && (
-                    <span className="text-slate-400 text-sm">
+                    <span className="text-slate-400 text-xs sm:text-sm">
                       ({movie.year})
                     </span>
                   )}
                 </div>
-                <p className="text-slate-300 text-sm mt-1">
+                <p className="text-slate-300 text-xs sm:text-sm mt-1">
                   {formatWatchTime(movie.watchTime)} watched
                 </p>
               </div>
@@ -50,7 +50,7 @@ export function TopMoviesSection({ section }: TopMoviesSectionProps) {
         ))}
       </div>
       {section.content && (
-        <p className="text-lg text-slate-300 text-center max-w-2xl mx-auto">
+        <p className="text-base sm:text-lg text-slate-300 text-center max-w-2xl mx-auto">
           <FormattedText text={section.content} />
         </p>
       )}

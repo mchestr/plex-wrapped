@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from "clsx"
-import { twMerge } from "tailwind-merge"
 import { randomBytes } from "crypto"
+import { twMerge } from "tailwind-merge"
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -127,6 +127,43 @@ export function parseServerUrl(url: string): { protocol: "http" | "https"; hostn
       throw new Error(`Invalid URL format: ${error.message}. Expected format: https://example.com:32400`)
     }
     throw new Error(`Invalid URL format. Expected format: https://example.com:32400`)
+  }
+}
+
+/**
+ * Aggregate LLM usage records into a single summary
+ *
+ * @param usageRecords - Array of LLM usage records
+ * @returns Aggregated LLM usage stats or null if no records
+ */
+export function aggregateLlmUsage(usageRecords: {
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+  cost: number;
+  provider: string | null;
+  model: string | null;
+}[]): {
+  totalTokens: number;
+  promptTokens: number;
+  completionTokens: number;
+  cost: number;
+  provider: string | null;
+  model: string | null;
+  count: number;
+} | null {
+  if (usageRecords.length === 0) {
+    return null
+  }
+
+  return {
+    totalTokens: usageRecords.reduce((sum, usage) => sum + usage.totalTokens, 0),
+    promptTokens: usageRecords.reduce((sum, usage) => sum + usage.promptTokens, 0),
+    completionTokens: usageRecords.reduce((sum, usage) => sum + usage.completionTokens, 0),
+    cost: usageRecords.reduce((sum, usage) => sum + usage.cost, 0),
+    provider: usageRecords[usageRecords.length - 1]?.provider || null,
+    model: usageRecords[usageRecords.length - 1]?.model || null,
+    count: usageRecords.length,
   }
 }
 

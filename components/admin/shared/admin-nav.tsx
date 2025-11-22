@@ -132,7 +132,7 @@ export function AdminNav() {
             </div>
             <div>
               <div className="text-sm font-bold text-white">Admin Panel</div>
-              <div className="text-xs text-slate-400">Plex Wrapped</div>
+              <div className="text-xs text-slate-400">Plex Manager</div>
             </div>
           </Link>
         </div>

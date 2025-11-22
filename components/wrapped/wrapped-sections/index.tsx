@@ -1,17 +1,17 @@
 "use client"
 
 import { WrappedData, WrappedSection } from "@/types/wrapped"
-import { HeroSection } from "./hero-section"
-import { TotalWatchTimeSection } from "./total-watch-time-section"
-import { MoviesBreakdownSection } from "./movies-breakdown-section"
-import { ShowsBreakdownSection } from "./shows-breakdown-section"
-import { TopMoviesSection } from "./top-movies-section"
-import { TopShowsSection } from "./top-shows-section"
-import { ServerStatsSection } from "./server-stats-section"
-import { OverseerrStatsSection } from "./overseerr-stats-section"
-import { InsightsSection } from "./insights-section"
-import { FunFactsSection } from "./fun-facts-section"
-import { FormattedText } from "../../shared/formatted-text"
+import { HeroSection } from "@/components/wrapped/wrapped-sections/hero-section"
+import { TotalWatchTimeSection } from "@/components/wrapped/wrapped-sections/total-watch-time-section"
+import { MoviesBreakdownSection } from "@/components/wrapped/wrapped-sections/movies-breakdown-section"
+import { ShowsBreakdownSection } from "@/components/wrapped/wrapped-sections/shows-breakdown-section"
+import { TopMoviesSection } from "@/components/wrapped/wrapped-sections/top-movies-section"
+import { TopShowsSection } from "@/components/wrapped/wrapped-sections/top-shows-section"
+import { ServerStatsSection } from "@/components/wrapped/wrapped-sections/server-stats-section"
+import { OverseerrStatsSection } from "@/components/wrapped/wrapped-sections/overseerr-stats-section"
+import { InsightsSection } from "@/components/wrapped/wrapped-sections/insights-section"
+import { FunFactsSection } from "@/components/wrapped/wrapped-sections/fun-facts-section"
+import { FormattedText } from "@/components/shared/formatted-text"
 
 interface SectionRendererProps {
   section: WrappedSection | undefined

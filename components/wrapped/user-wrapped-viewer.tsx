@@ -1,6 +1,6 @@
 import { Prisma } from "@prisma/client"
 import Link from "next/link"
-import { WrappedGeneratingAnimation } from "../generator/wrapped-generating-animation"
+import { WrappedGeneratingAnimation } from "@/components/generator/wrapped-generating-animation"
 
 type WrappedWithUser = Prisma.PlexWrappedGetPayload<{
   include: {

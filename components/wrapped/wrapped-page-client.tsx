@@ -3,7 +3,7 @@
 import { getUserPlexWrapped } from "@/actions/users"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
-import { WrappedGeneratingAnimation } from "../generator/wrapped-generating-animation"
+import { WrappedGeneratingAnimation } from "@/components/generator/wrapped-generating-animation"
 
 interface WrappedPageClientProps {
   userId: string

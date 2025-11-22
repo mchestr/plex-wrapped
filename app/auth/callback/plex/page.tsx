@@ -1,6 +1,6 @@
 import { getSetupStatus } from "@/actions/setup"
 import { redirect } from "next/navigation"
-import { PlexCallbackPageClient } from "./callback-client"
+import { PlexCallbackPageClient } from "@/app/auth/callback/plex/callback-client"
 
 export const dynamic = 'force-dynamic'
 
