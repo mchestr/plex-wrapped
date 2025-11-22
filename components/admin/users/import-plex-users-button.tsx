@@ -1,24 +1,40 @@
 "use client"
 
-import { useState, useTransition } from "react"
 import { importPlexUsers } from "@/actions/import-plex-users"
+import { useToast } from "@/components/ui/toast"
+import { useTransition } from "react"
 
-interface ImportPlexUsersButtonProps {
-  onResult?: (result: {
-    success: boolean
-    imported: number
-    skipped: number
-    errors: string[]
-  }) => void
-}
-
-export function ImportPlexUsersButton({ onResult }: ImportPlexUsersButtonProps) {
+export function ImportPlexUsersButton() {
   const [isPending, startTransition] = useTransition()
+  const toast = useToast()
 
   const handleImport = () => {
     startTransition(async () => {
       const importResult = await importPlexUsers()
-      onResult?.(importResult)
+
+      if (importResult.success) {
+        const parts = [`Imported ${importResult.imported} user${importResult.imported !== 1 ? "s" : ""}`]
+        if (importResult.skipped > 0) {
+          parts.push(`${importResult.skipped} skipped (already exist)`)
+        }
+        if (importResult.errors.length > 0) {
+          parts.push(`${importResult.errors.length} error${importResult.errors.length !== 1 ? "s" : ""}`)
+        }
+
+        toast.showSuccess(parts.join(", "), 5000)
+
+        // Show errors separately if any
+        if (importResult.errors.length > 0) {
+          importResult.errors.forEach((error) => {
+            toast.showError(error, 6000)
+          })
+        }
+      } else {
+        const errorMessage = importResult.errors.length > 0
+          ? importResult.errors[0]
+          : "Failed to import Plex users"
+        toast.showError(errorMessage)
+      }
     })
   }
 
@@ -30,55 +46,6 @@ export function ImportPlexUsersButton({ onResult }: ImportPlexUsersButtonProps) 
     >
       {isPending ? "Importing..." : "Import Plex Users"}
     </button>
-  )
-}
-
-export function ImportResultMessage({
-  result,
-}: {
-  result: {
-    success: boolean
-    imported: number
-    skipped: number
-    errors: string[]
-  } | null
-}) {
-  if (!result) return null
-
-  return (
-    <div
-      className={`p-4 rounded-md ${
-        result.success
-          ? "bg-green-900/30 border border-green-500/50"
-          : "bg-red-900/30 border border-red-500/50"
-      }`}
-    >
-      <p
-        className={`text-sm font-medium mb-2 ${
-          result.success ? "text-green-300" : "text-red-300"
-        }`}
-      >
-        {result.success ? "Import Complete!" : "Import Failed"}
-      </p>
-      <div className="text-sm text-slate-300 space-y-1">
-        <p>Imported: {result.imported} user{result.imported !== 1 ? "s" : ""}</p>
-        {result.skipped > 0 && (
-          <p>Skipped: {result.skipped} user{result.skipped !== 1 ? "s" : ""} (already exist)</p>
-        )}
-        {result.errors.length > 0 && (
-          <div className="mt-2">
-            <p className={`font-medium ${result.success ? "text-yellow-300" : "text-red-300"}`}>
-              {result.success ? "Warnings:" : "Errors:"}
-            </p>
-            <ul className={`list-disc list-inside ${result.success ? "text-yellow-200" : "text-red-200"} max-h-32 overflow-y-auto`}>
-              {result.errors.map((error, idx) => (
-                <li key={idx}>{error}</li>
-              ))}
-            </ul>
-          </div>
-        )}
-      </div>
-    </div>
   )
 }
 

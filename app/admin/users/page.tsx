@@ -1,10 +1,9 @@
 import { getAllUsersWithWrapped } from "@/actions/users"
 import AdminLayoutClient from "@/components/admin/shared/admin-layout-client"
-import { UserTableRow } from "@/components/admin/users/user-table-row"
-import { UsersStatsSummary } from "@/components/admin/users/users-stats-summary"
-import { ImportPlexUsersButton, ImportResultMessage } from "@/components/admin/users/import-plex-users-button"
-import { requireAdmin } from "@/lib/admin"
 import { ImportPlexUsersClient } from "@/components/admin/users/import-plex-users-client"
+import { UsersListClient } from "@/components/admin/users/users-list-client"
+import { UsersStatsSummary } from "@/components/admin/users/users-stats-summary"
+import { requireAdmin } from "@/lib/admin"
 
 export const dynamic = 'force-dynamic'
 
@@ -12,7 +11,7 @@ export default async function UsersPage() {
   await requireAdmin()
 
   const currentYear = new Date().getFullYear()
-  const users = await getAllUsersWithWrapped(currentYear)
+  const allUsers = await getAllUsersWithWrapped(currentYear)
 
   return (
     <AdminLayoutClient>
@@ -23,74 +22,16 @@ export default async function UsersPage() {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Users</h1>
                 <p className="text-sm text-slate-400">
-                  {users.length} user{users.length !== 1 ? "s" : ""} in database
+                  {allUsers.length} user{allUsers.length !== 1 ? "s" : ""} in database
                 </p>
               </div>
               <ImportPlexUsersClient />
             </div>
           </div>
 
-        {/* Users Table */}
-        <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full table-fixed">
-              <thead className="bg-slate-700/30 border-b border-slate-700">
-                <tr>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-40">
-                    User
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-24">
-                    Plex ID
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-16">
-                    Role
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-28">
-                    {currentYear} Wrapped
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-20">
-                    Total
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-16">
-                    Shares
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-20">
-                    Visits
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-28">
-                    <div>Tokens</div>
-                    <div className="text-xs font-normal text-slate-500">(All Time)</div>
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-24">
-                    <div>Cost</div>
-                    <div className="text-xs font-normal text-slate-500">(All Time)</div>
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-24">
-                    Created
-                  </th>
-                  <th className="px-2 py-2 text-left text-xs font-medium text-slate-400 uppercase tracking-wider w-32">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700">
-                {users.length === 0 ? (
-                  <tr>
-                    <td colSpan={11} className="px-2 py-8 text-center text-slate-400">
-                      No users found. Users will appear here after they sign in with their Plex account.
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((user) => (
-                    <UserTableRow key={user.id} user={user} currentYear={currentYear} />
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
+          <UsersListClient users={allUsers} currentYear={currentYear} />
 
-          <UsersStatsSummary users={users} />
+          <UsersStatsSummary users={allUsers} />
         </div>
       </div>
     </AdminLayoutClient>

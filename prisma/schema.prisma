@@ -12,21 +12,23 @@ datasource db {
 
 // User model
 model User {
-  id            String        @id @default(cuid())
-  name          String?
-  email         String?       @unique
-  emailVerified DateTime?
-  image         String?
-  plexUserId    String?       @unique
-  isAdmin       Boolean       @default(false)
-  plexWrapped   PlexWrapped[]
-  llmUsage      LLMUsage[]
-  inviteUsages  InviteUsage[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id                  String        @id @default(cuid())
+  name                String?
+  email               String?       @unique
+  emailVerified       DateTime?
+  image               String?
+  plexUserId          String?       @unique
+  isAdmin             Boolean       @default(false)
+  onboardingCompleted Boolean       @default(false)
+  plexWrapped         PlexWrapped[]
+  llmUsage            LLMUsage[]
+  inviteUsages        InviteUsage[]
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   @@index([plexUserId])
   @@index([isAdmin])
+  @@index([onboardingCompleted])
 }
 
 // Setup and Configuration models
@@ -84,15 +86,15 @@ model Overseerr {
 }
 
 model LLMProvider {
-  id         String   @id @default(cuid())
-  provider   String // Currently "openai", but extensible for other providers
-  apiKey     String
-  model      String?
+  id          String   @id @default(cuid())
+  provider    String // Currently "openai", but extensible for other providers
+  apiKey      String
+  model       String?
   temperature Float? // Temperature setting (0.0-2.0), null uses model default
-  maxTokens  Int? // Max tokens for completion, null uses default (6000)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  maxTokens   Int? // Max tokens for completion, null uses default (6000)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@index([isActive])
   @@index([provider])
@@ -172,14 +174,14 @@ model Config {
 // Prompt Template for LLM generation
 model PromptTemplate {
   id          String   @id @default(cuid())
-  name        String   // Human-readable name for the template
-  description String?  // Optional description
-  template    String   // The prompt template with placeholders like {{userName}}, {{year}}, etc.
+  name        String // Human-readable name for the template
+  description String? // Optional description
+  template    String // The prompt template with placeholders like {{userName}}, {{year}}, etc.
   isActive    Boolean  @default(false) // Only one active template at a time
   version     Int      @default(1) // Version number for tracking changes
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  updatedBy   String?  // User ID who last updated this template
+  updatedBy   String? // User ID who last updated this template
 
   @@index([isActive])
   @@index([name])
@@ -188,31 +190,31 @@ model PromptTemplate {
 // Server Statistics are now calculated on the fly - no database caching needed
 
 model Invite {
-  id          String    @id @default(cuid())
-  code        String    @unique
-  maxUses     Int       @default(1)
-  useCount    Int       @default(0)
-  expiresAt   DateTime?
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  createdBy   String?   // Admin User ID who created the invite
+  id        String    @id @default(cuid())
+  code      String    @unique
+  maxUses   Int       @default(1)
+  useCount  Int       @default(0)
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  createdBy String? // Admin User ID who created the invite
 
   // Library access settings
   librarySectionIds String? // JSON array of library section IDs to share (null = all libraries)
-  allowDownloads Boolean @default(false) // Allow downloads (allowSync)
+  allowDownloads    Boolean @default(false) // Allow downloads (allowSync)
 
-  usages      InviteUsage[]
+  usages InviteUsage[]
 
   @@index([code])
 }
 
 model InviteUsage {
-  id        String   @id @default(cuid())
-  inviteId  String
-  invite    Invite   @relation(fields: [inviteId], references: [id], onDelete: Cascade)
-  userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  usedAt    DateTime @default(now())
+  id       String   @id @default(cuid())
+  inviteId String
+  invite   Invite   @relation(fields: [inviteId], references: [id], onDelete: Cascade)
+  userId   String
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  usedAt   DateTime @default(now())
 
   @@index([inviteId])
   @@index([userId])

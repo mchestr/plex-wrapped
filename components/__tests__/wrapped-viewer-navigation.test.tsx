@@ -81,8 +81,6 @@ describe('WrappedViewerNavigation', () => {
         {...defaultProps}
         currentSectionIndex={4}
         shareToken="test-token"
-        userName="John"
-        summary="Test summary"
       />
     )
     expect(screen.getByTestId('share-button')).toBeInTheDocument()
@@ -134,8 +132,6 @@ describe('WrappedViewerNavigation', () => {
         {...defaultProps}
         currentSectionIndex={4}
         shareToken="test-token-123"
-        userName="Jane Doe"
-        summary="My wrapped summary"
         year={2023}
       />
     )

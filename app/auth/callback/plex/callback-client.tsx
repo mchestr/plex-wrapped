@@ -88,6 +88,16 @@ export function PlexCallbackPageClient() {
             })
 
             if (result?.ok) {
+              // Check if user needs to complete onboarding (for invite flows)
+              if (inviteCode) {
+                const { getOnboardingStatus } = await import("@/actions/onboarding")
+                const { isComplete } = await getOnboardingStatus()
+                if (!isComplete) {
+                  router.push("/onboarding")
+                  router.refresh()
+                  return
+                }
+              }
               router.push("/")
               router.refresh()
             } else {

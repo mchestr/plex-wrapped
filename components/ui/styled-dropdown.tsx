@@ -126,7 +126,7 @@ export function StyledDropdown({
             onClick={() => setIsOpen(false)}
           />
           {/* Dropdown menu */}
-          <div className="absolute top-full left-0 right-0 mt-2 z-50 bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto">
+          <div className="absolute top-full left-0 right-0 mt-2 z-[200] bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto">
             <div className="p-1">
               {options.map((option) => {
                 const isSelected = option.value === value

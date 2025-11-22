@@ -20,6 +20,54 @@ export interface PlexServerUser {
   serverAdmin: boolean
 }
 
+export interface PlexUserServer {
+  machineIdentifier: string
+}
+
+export interface PlexUser {
+  id: string
+  username: string
+  email?: string
+  thumb?: string
+  servers: PlexUserServer[]
+}
+
+interface ParsedXmlUser {
+  "@_id": string
+  "@_username"?: string
+  "@_name"?: string
+  "@_email"?: string
+  "@_thumb"?: string
+  Server?: ParsedXmlServer | ParsedXmlServer[]
+}
+
+interface ParsedXmlServer {
+  "@_machineIdentifier": string
+}
+
+interface ParsedXmlUsersResponse {
+  MediaContainer?: {
+    User?: ParsedXmlUser | ParsedXmlUser[]
+  }
+}
+
+interface ParsedXmlServerUser {
+  "@_id": string
+  "@_title"?: string
+  "@_name"?: string
+  "@_username"?: string
+  "@_email"?: string
+  "@_thumb"?: string
+  "@_restricted"?: string
+  "@_serverAdmin"?: string
+}
+
+interface ParsedXmlServerUsersResponse {
+  MediaContainer?: {
+    User?: ParsedXmlServerUser | ParsedXmlServerUser[]
+  }
+}
+
 export async function testPlexConnection(config: PlexServerParsed): Promise<{ success: boolean; error?: string }> {
   try {
     const url = `${config.protocol}://${config.hostname}:${config.port}/status/sessions?X-Plex-Token=${config.token}`
@@ -122,10 +170,199 @@ export async function getPlexUserInfo(token: string): Promise<{ success: boolean
 }
 
 /**
+ * Gets all Plex users from Plex.tv API with their server access information
+ * Returns users with their servers (machine identifiers)
+ */
+export async function getPlexUsers(
+  token: string
+): Promise<{ success: boolean; data?: PlexUser[]; error?: string }> {
+  const fetchStartTime = Date.now()
+  const url = "https://clients.plex.tv/api/users"
+
+  // Get client identifier for Plex.tv API calls
+  let clientIdentifier: string
+  try {
+    clientIdentifier = getClientIdentifier()
+  } catch (error) {
+    return { success: false, error: "PLEX_CLIENT_IDENTIFIER is not configured" }
+  }
+
+  logger.debug("Fetching Plex users from Plex.tv API")
+
+  try {
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 15000) // 15 second timeout
+
+    const requestStart = Date.now()
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/xml",
+        "X-Plex-Token": token,
+        "X-Plex-Client-Identifier": clientIdentifier,
+      },
+      signal: controller.signal,
+    })
+    const requestDuration = Date.now() - requestStart
+    logger.debug("Fetch request completed", { duration: requestDuration, status: response.status })
+
+    clearTimeout(timeoutId)
+
+    if (response.status !== 200) {
+      const errorText = await response.text()
+      logger.debug("Get users failed", {
+        status: response.status,
+        statusText: response.statusText,
+        response: errorText.substring(0, 500),
+      })
+      if (response.status === 401) {
+        return { success: false, error: "Unauthorized - invalid token" }
+      }
+      return { success: false, error: `API returned error status: ${response.status} ${response.statusText}` }
+    }
+
+    const xmlText = await response.text()
+    logger.debug("Received XML response", { length: xmlText.length })
+
+    // Parse XML response
+    // Plex.tv API /api/users returns XML with <MediaContainer><User><Server>...</Server></User></MediaContainer>
+    const parser = new XMLParser({
+      ignoreAttributes: false,
+      attributeNamePrefix: "@_",
+    })
+
+    let parsedData: ParsedXmlUsersResponse
+    const parseStart = Date.now()
+    try {
+      parsedData = parser.parse(xmlText) as ParsedXmlUsersResponse
+      const parseDuration = Date.now() - parseStart
+      logger.debug("XML parsed successfully", { duration: parseDuration })
+    } catch (parseError) {
+      const parseDuration = Date.now() - parseStart
+      const responseSample = xmlText.substring(0, Math.min(500, xmlText.length))
+      logger.debug("Failed to unmarshal XML response", {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+        duration: parseDuration,
+        response_sample: responseSample,
+      })
+      return {
+        success: false,
+        error: `Failed to parse XML response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+      }
+    }
+
+    // Handle Plex.tv API response structure: <MediaContainer><User>...</User></MediaContainer>
+    const mediaContainer = parsedData.MediaContainer
+    if (!mediaContainer?.User) {
+      const duration = Date.now() - fetchStartTime
+      logger.debug("No users found in response", { duration })
+      return { success: true, data: [] } // No users found
+    }
+
+    // Handle both single user and array of users
+    const userElements: ParsedXmlUser[] = Array.isArray(mediaContainer.User)
+      ? mediaContainer.User
+      : [mediaContainer.User]
+
+    logger.debug("Found users in response", { count: userElements.length })
+
+    const users: PlexUser[] = []
+
+    for (const [index, user] of userElements.entries()) {
+      const rawId = user["@_id"]
+      const username = user["@_username"] ?? user["@_name"]
+      const email = user["@_email"]
+      const thumb = user["@_thumb"]
+
+      if (!rawId || !username) {
+        logger.warn("Skipping user - missing id or username", { index: index + 1 })
+        continue
+      }
+
+      // Parse servers - each user can have multiple servers
+      const servers: PlexUserServer[] = []
+      if (user.Server) {
+        const serverElements: ParsedXmlServer[] = Array.isArray(user.Server) ? user.Server : [user.Server]
+        for (const server of serverElements) {
+          const machineIdentifier = server["@_machineIdentifier"]
+          if (machineIdentifier) {
+            servers.push({ machineIdentifier })
+          }
+        }
+      }
+
+      logger.debug("Processing user", {
+        index: index + 1,
+        id: rawId,
+        username,
+        serverCount: servers.length,
+        // Email is sanitized by logger
+      })
+
+      users.push({
+        id: rawId.toString(),
+        username,
+        email,
+        thumb,
+        servers,
+      })
+    }
+
+    const duration = Date.now() - fetchStartTime
+    logger.info("getPlexUsers completed", { userCount: users.length, duration })
+
+    return { success: true, data: users }
+  } catch (error) {
+    const duration = Date.now() - fetchStartTime
+    logger.error("Error in getPlexUsers", error, { duration })
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        logger.error("Request timed out", undefined, { duration })
+        return { success: false, error: "Connection timeout" }
+      }
+      return { success: false, error: `Error fetching users: ${error.message}` }
+    }
+    return { success: false, error: "Failed to fetch Plex users" }
+  }
+}
+
+/**
+ * Checks if a user has access to a server based on their servers list
+ */
+function checkUserHasAccess(
+  users: ReadonlyMap<string, PlexUser>,
+  userId: string,
+  machineIdentifier: string,
+  adminUserId?: string | null
+): boolean {
+  // Check if user is admin
+  if (adminUserId && userId === adminUserId) {
+    return true
+  }
+
+  // Check if user exists in the map
+  const user = users.get(userId)
+  if (!user) {
+    return false
+  }
+
+  // Check if user has access to the server by machine identifier
+  const hasAccess = user.servers.some((server) => server.machineIdentifier === machineIdentifier)
+
+  if (!hasAccess) {
+    logger.debug("User found but doesn't have access to server", {
+      userId,
+      username: user.username,
+      machineIdentifier,
+    })
+  }
+
+  return hasAccess
+}
+
+/**
  * Checks if a user has access to a configured Plex server
- * Uses the server's admin token to check if the user exists in the server's user list
- * Also checks if the user is the admin (admin users may not be in the user list)
- * This is more reliable than using the user's token directly
+ * Uses the Plex.tv API to get users and check if the user has access to the server
  */
 export async function checkUserServerAccess(
   serverConfig: { hostname: string; port: number; protocol: string; token: string; adminPlexUserId?: string | null },
@@ -139,64 +376,66 @@ export async function checkUserServerAccess(
     const normalizedPlexUserId = String(plexUserId).trim()
     logger.debug("Normalized Plex user ID", { normalizedPlexUserId })
 
-    // First, check if the user is the admin (admin users may not be in the server's user list)
-    if (serverConfig.adminPlexUserId) {
-      const normalizedAdminPlexUserId = String(serverConfig.adminPlexUserId).trim()
-      logger.debug("Checking admin access", { normalizedAdminPlexUserId })
-      if (normalizedPlexUserId === normalizedAdminPlexUserId) {
-        const duration = Date.now() - checkStartTime
-        logger.info("User is admin, granting access", { duration })
-        return { success: true, hasAccess: true }
-      }
-    } else {
-      logger.debug("No admin Plex user ID configured")
-    }
-
-    // Then, get the list of users from the server using the admin token
-    logger.debug("Fetching all users from server")
-    const usersFetchStart = Date.now()
-    const usersResult = await getAllPlexServerUsers({
+    // Get the server's machine identifier
+    logger.debug("Fetching server machine identifier")
+    const identityResult = await getPlexServerIdentity({
       hostname: serverConfig.hostname,
       port: serverConfig.port,
       protocol: serverConfig.protocol,
       token: serverConfig.token,
     })
+
+    if (!identityResult.success || !identityResult.machineIdentifier) {
+      const duration = Date.now() - checkStartTime
+      logger.warn("Failed to get server machine identifier", { error: identityResult.error, duration })
+      return {
+        success: false,
+        hasAccess: false,
+        error: identityResult.error ?? "Failed to get server machine identifier",
+      }
+    }
+
+    const machineIdentifier = identityResult.machineIdentifier
+    logger.debug("Got machine identifier", { machineIdentifier })
+
+    // Get all users from Plex.tv API
+    logger.debug("Fetching all users from Plex.tv API")
+    const usersFetchStart = Date.now()
+    const usersResult = await getPlexUsers(serverConfig.token)
     const usersFetchDuration = Date.now() - usersFetchStart
-    logger.debug("Fetched users", { duration: usersFetchDuration, success: usersResult.success })
+    logger.debug("Fetched users", { duration: usersFetchDuration, success: usersResult.success, count: usersResult.data?.length })
 
     if (!usersResult.success) {
       const duration = Date.now() - checkStartTime
       logger.warn("Failed to fetch users", { error: usersResult.error, duration })
-      return { success: false, hasAccess: false, error: usersResult.error || "Failed to fetch server users" }
+      return { success: false, hasAccess: false, error: usersResult.error ?? "Failed to fetch users" }
     }
 
     if (!usersResult.data) {
       const duration = Date.now() - checkStartTime
-      logger.warn("No user data returned from server", { duration })
-      return { success: false, hasAccess: false, error: "No user data returned from server" }
+      logger.warn("No user data returned", { duration })
+      return { success: false, hasAccess: false, error: "No user data returned" }
     }
 
-    logger.debug("Found users on server", { count: usersResult.data.length })
+    logger.debug("Found users", { count: usersResult.data.length })
 
-    // Check if the user's Plex ID exists in the server's user list
-    const userExists = usersResult.data.some((user) => {
-      const normalizedServerUserId = String(user.id).trim()
-      const matches = normalizedServerUserId === normalizedPlexUserId
-      if (matches) {
-        logger.debug("Found matching user", { username: user.name, userId: user.id })
-      }
-      return matches
-    })
+    // Create a map of users by ID for efficient lookup
+    const userMap = new Map<string, PlexUser>()
+    for (const user of usersResult.data) {
+      userMap.set(user.id, user)
+    }
+
+    // Check if user has access
+    const hasAccess = checkUserHasAccess(userMap, normalizedPlexUserId, machineIdentifier, serverConfig.adminPlexUserId)
 
     const duration = Date.now() - checkStartTime
-    if (userExists) {
+    if (hasAccess) {
       logger.info("User has access", { duration })
       return { success: true, hasAccess: true }
     }
 
-    // User not found in server's user list
-    logger.info("User not found in server's user list", { duration })
-    return { success: true, hasAccess: false, error: "User not found in server's user list" }
+    logger.info("User does not have access", { duration })
+    return { success: true, hasAccess: false, error: "User does not have access to this server" }
   } catch (error) {
     const duration = Date.now() - checkStartTime
     logger.error("Error checking server access", error, { duration })
@@ -209,13 +448,21 @@ export async function checkUserServerAccess(
 
 /**
  * Fetches all users from a Plex server
- * Uses the /accounts/ endpoint which returns XML
+ * Uses the Plex.tv API /api/users endpoint which returns XML
  */
 export async function getAllPlexServerUsers(
   serverConfig: { hostname: string; port: number; protocol: string; token: string }
 ): Promise<{ success: boolean; data?: PlexServerUser[]; error?: string }> {
   const fetchStartTime = Date.now()
-  const url = `${serverConfig.protocol}://${serverConfig.hostname}:${serverConfig.port}/accounts?X-Plex-Token=${serverConfig.token}`
+  const url = "https://clients.plex.tv/api/users"
+
+  // Get client identifier for Plex.tv API calls
+  let clientIdentifier: string
+  try {
+    clientIdentifier = getClientIdentifier()
+  } catch (error) {
+    return { success: false, error: "PLEX_CLIENT_IDENTIFIER is not configured" }
+  }
 
   logger.debug("Fetching all Plex server users", {
     hostname: serverConfig.hostname,
@@ -233,6 +480,8 @@ export async function getAllPlexServerUsers(
       method: "GET",
       headers: {
         "Accept": "application/xml",
+        "X-Plex-Token": serverConfig.token,
+        "X-Plex-Client-Identifier": clientIdentifier,
       },
       signal: controller.signal,
     })
@@ -241,65 +490,80 @@ export async function getAllPlexServerUsers(
 
     clearTimeout(timeoutId)
 
-    if (!response.ok) {
+    if (response.status !== 200) {
       const errorText = await response.text()
-      logger.error("Failed to fetch users", undefined, {
+      logger.debug("Get users failed", {
         status: response.status,
-        errorPreview: errorText.substring(0, 100),
+        statusText: response.statusText,
+        response: errorText.substring(0, 500),
       })
       if (response.status === 401) {
         return { success: false, error: "Unauthorized - invalid server token" }
       }
-      return { success: false, error: `Failed to fetch users: ${response.statusText}` }
+      return { success: false, error: `API returned error status: ${response.status} ${response.statusText}` }
     }
 
     const xmlText = await response.text()
     logger.debug("Received XML response", { length: xmlText.length })
 
     // Parse XML response
-    // Plex API returns XML with <MediaContainer><Account>...</Account></MediaContainer>
+    // Plex.tv API /api/users returns XML with <MediaContainer><User>...</User></MediaContainer>
     const parser = new XMLParser({
       ignoreAttributes: false,
       attributeNamePrefix: "@_",
     })
 
-    let parsedData
+    let parsedData: ParsedXmlServerUsersResponse
     const parseStart = Date.now()
     try {
-      parsedData = parser.parse(xmlText)
+      parsedData = parser.parse(xmlText) as ParsedXmlServerUsersResponse
       const parseDuration = Date.now() - parseStart
       logger.debug("XML parsed successfully", { duration: parseDuration })
     } catch (parseError) {
       const parseDuration = Date.now() - parseStart
-      logger.error("Failed to parse XML", parseError, { duration: parseDuration })
-      return { success: false, error: "Failed to parse XML response" }
+      const responseSample = xmlText.substring(0, Math.min(500, xmlText.length))
+      logger.debug("Failed to unmarshal XML response", {
+        error: parseError instanceof Error ? parseError.message : String(parseError),
+        duration: parseDuration,
+        response_sample: responseSample,
+      })
+      return {
+        success: false,
+        error: `Failed to parse XML response: ${parseError instanceof Error ? parseError.message : String(parseError)}`,
+      }
     }
 
+    // Handle Plex.tv API response structure: <MediaContainer><User>...</User></MediaContainer>
     const mediaContainer = parsedData.MediaContainer
-    if (!mediaContainer || !mediaContainer.Account) {
+    if (!mediaContainer?.User) {
       const duration = Date.now() - fetchStartTime
-      logger.debug("No accounts found in response", { duration })
+      logger.debug("No users found in response", { duration })
       return { success: true, data: [] } // No users found
     }
 
-    // Handle both single account and array of accounts
-    const accounts = Array.isArray(mediaContainer.Account)
-      ? mediaContainer.Account
-      : [mediaContainer.Account]
+    // Handle both single user and array of users
+    const userElements: ParsedXmlServerUser[] = Array.isArray(mediaContainer.User)
+      ? mediaContainer.User
+      : [mediaContainer.User]
 
-    logger.debug("Found accounts in response", { count: accounts.length })
+    logger.debug("Found users in response", { count: userElements.length })
 
     const users: PlexServerUser[] = []
 
-    accounts.forEach((account: any, index: number) => {
-      const rawId = account["@_id"]
-      const name = account["@_name"]
-      const email = account["@_email"] || undefined
-      const thumb = account["@_thumb"] || undefined
-      const restricted = account["@_restricted"] === "1"
-      const serverAdmin = account["@_serverAdmin"] === "1"
+    for (const [index, user] of userElements.entries()) {
+      const rawId = user["@_id"]
+      const name = user["@_username"] ?? user["@_title"] ?? user["@_name"]
+      const email = user["@_email"]
+      const thumb = user["@_thumb"]
+      const restricted = user["@_restricted"] === "1" || user["@_restricted"] === "true"
+      const serverAdmin = user["@_serverAdmin"] === "1" || user["@_serverAdmin"] === "true"
 
-      logger.debug("Processing account", {
+      if (!rawId || !name) {
+        logger.warn("Skipping user - missing id or name", { index: index + 1 })
+        continue
+      }
+
+      logger.debug("Processing user", {
         index: index + 1,
         id: rawId,
         name,
@@ -308,19 +572,15 @@ export async function getAllPlexServerUsers(
         // Email is sanitized by logger
       })
 
-      if (rawId && name) {
-        users.push({
-          id: rawId.toString(),
-          name,
-          email,
-          thumb,
-          restricted,
-          serverAdmin,
-        })
-      } else {
-        logger.warn("Skipping account - missing id or name", { index: index + 1 })
-      }
-    })
+      users.push({
+        id: rawId.toString(),
+        name,
+        email,
+        thumb,
+        restricted,
+        serverAdmin,
+      })
+    }
 
     const duration = Date.now() - fetchStartTime
     logger.info("getAllPlexServerUsers completed", { userCount: users.length, duration })
@@ -683,6 +943,80 @@ export async function acceptPlexInvite(
       return { success: false, error: `Error accepting invite: ${error.message}` }
     }
     return { success: false, error: "Failed to accept Plex invite" }
+  }
+}
+
+/**
+ * Unshare library access for a user from the Plex server
+ * Removes the user's access to the shared server
+ * Uses the Plex API v2 sharings endpoint
+ */
+export async function unshareUserFromPlexServer(
+  serverConfig: { hostname: string; port: number; protocol: string; token: string },
+  plexUserId: string
+): Promise<{ success: boolean; error?: string }> {
+  const unshareStartTime = Date.now()
+  logger.debug("Unsharing user from Plex server", { plexUserId, hostname: serverConfig.hostname })
+
+  try {
+    // 1. Get client identifier
+    let clientIdentifier: string
+    try {
+      clientIdentifier = getClientIdentifier()
+    } catch (error) {
+      return { success: false, error: "PLEX_CLIENT_IDENTIFIER is not configured" }
+    }
+
+    // 2. The sharing ID is the Plex user ID - use it directly
+    const sharingId = plexUserId
+    logger.debug("Using Plex user ID as sharing ID", { sharingId })
+
+    // 3. Delete the sharing using the /api/v2/sharings/{sharingId} endpoint
+    // The sharing ID is the Plex user ID
+    const deleteUrl = `https://plex.tv/api/v2/sharings/${sharingId}`
+    logger.debug("Deleting sharing", { sharingId, deleteUrl: sanitizeUrlForLogging(deleteUrl) })
+
+    const deleteResponse = await fetch(deleteUrl, {
+      method: "DELETE",
+      headers: {
+        "Accept": "application/json",
+        "X-Plex-Token": serverConfig.token,
+        "X-Plex-Client-Identifier": clientIdentifier,
+      },
+    })
+
+    if (deleteResponse.status !== 200 && deleteResponse.status !== 204) {
+      const errorText = await deleteResponse.text()
+      logger.error("Failed to delete sharing", undefined, {
+        status: deleteResponse.status,
+        statusText: deleteResponse.statusText,
+        errorPreview: errorText.substring(0, 100),
+        sharingId,
+      })
+
+      // Try to parse structured error if available
+      try {
+        const errorData = JSON.parse(errorText)
+        if (errorData.errors && Array.isArray(errorData.errors) && errorData.errors.length > 0) {
+          return { success: false, error: errorData.errors[0].message || `Unshare API returned error status: ${deleteResponse.status} ${deleteResponse.statusText}` }
+        }
+      } catch {
+        // If JSON parsing fails, use the text as-is
+      }
+
+      return { success: false, error: `Unshare API returned error status: ${deleteResponse.status} ${deleteResponse.statusText}` }
+    }
+
+    const duration = Date.now() - unshareStartTime
+    logger.info("Successfully unshared user from server", { duration, plexUserId, sharingId })
+    return { success: true }
+  } catch (error) {
+    const duration = Date.now() - unshareStartTime
+    logger.error("Error unsharing user from server", error, { duration, plexUserId })
+    if (error instanceof Error) {
+      return { success: false, error: `Error unsharing user: ${error.message}` }
+    }
+    return { success: false, error: "Failed to unshare user from Plex server" }
   }
 }
 

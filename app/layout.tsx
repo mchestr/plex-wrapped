@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "@/lib/providers";
 import { SetupGuard } from "@/components/setup/setup-guard";
+import { OnboardingGuard } from "@/components/onboarding/onboarding-guard";
 
 export const metadata: Metadata = {
   title: "Plex Wrapped",
@@ -22,7 +23,9 @@ export default function RootLayout({
       <body>
         <Providers>
           <SetupGuard>
-            {children}
+            <OnboardingGuard>
+              {children}
+            </OnboardingGuard>
           </SetupGuard>
         </Providers>
       </body>

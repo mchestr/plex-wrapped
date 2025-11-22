@@ -1,6 +1,6 @@
+import { WrappedData, WrappedSection } from '@/types/wrapped'
 import { render, screen } from '@testing-library/react'
 import { TotalWatchTimeSection } from '../wrapped/wrapped-sections/total-watch-time-section'
-import { WrappedData, WrappedSection } from '@/types/wrapped'
 
 // Mock child components
 jest.mock('../shared/formatted-text', () => ({
@@ -116,8 +116,8 @@ describe('TotalWatchTimeSection', () => {
         topMovies: [],
         topShows: [],
         watchTimeByMonth: [
-          { month: 1, watchTime: 100 },
-          { month: 2, watchTime: 150 },
+          { month: 1, monthName: 'January', watchTime: 100 },
+          { month: 2, monthName: 'February', watchTime: 150 },
         ],
       },
     })
@@ -168,8 +168,8 @@ describe('TotalWatchTimeSection', () => {
         topMovies: [],
         topShows: [],
         watchTimeByMonth: [
-          { month: 1, watchTime: 100 },
-          { month: 6, watchTime: 200 },
+          { month: 1, monthName: 'January', watchTime: 100 },
+          { month: 6, monthName: 'June', watchTime: 200 },
         ],
       },
     })
