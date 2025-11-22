@@ -1,8 +1,9 @@
 import { getAdminSettings } from "@/actions/admin"
+import { DatabaseManagement } from "@/components/admin/settings/database-management"
+import { LLMProviderForm, LLMToggle, ServerForm } from "@/components/admin/settings/settings-edit-forms"
 import AdminLayoutClient from "@/components/admin/shared/admin-layout-client"
-import { LLMProviderForm, ServerForm, LLMToggle } from "@/components/admin/settings/settings-edit-forms"
 import { requireAdmin } from "@/lib/admin"
-import { constructServerUrl, getBaseUrl } from "@/lib/utils"
+import { getBaseUrl } from "@/lib/utils"
 
 export const dynamic = 'force-dynamic'
 
@@ -212,6 +213,22 @@ export default async function SettingsPage() {
                     </div>
                   </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Database Management */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-slate-700">
+                <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                  <svg className="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                  </svg>
+                  Database Management
+                </h2>
+                <p className="text-xs text-slate-400 mt-1">Export and import database dumps</p>
+              </div>
+              <div className="p-4">
+                <DatabaseManagement />
               </div>
             </div>
           </div>

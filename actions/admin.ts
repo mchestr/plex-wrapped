@@ -726,3 +726,121 @@ export async function updateOverseerr(data: { name: string; url: string; apiKey:
   }
 }
 
+/**
+ * Export database dump (admin only)
+ */
+export async function exportDatabaseDump() {
+  await requireAdmin()
+
+  try {
+    const [
+      users,
+      setups,
+      plexServers,
+      tautullis,
+      overseerrs,
+      llmProviders,
+      plexWrappeds,
+      wrappedShareVisits,
+      llmUsages,
+      configs,
+      promptTemplates,
+    ] = await Promise.all([
+      prisma.user.findMany(),
+      prisma.setup.findMany(),
+      prisma.plexServer.findMany(),
+      prisma.tautulli.findMany(),
+      prisma.overseerr.findMany(),
+      prisma.lLMProvider.findMany(),
+      prisma.plexWrapped.findMany(),
+      prisma.wrappedShareVisit.findMany(),
+      prisma.lLMUsage.findMany(),
+      prisma.config.findMany(),
+      prisma.promptTemplate.findMany(),
+    ])
+
+    const dump = {
+      version: 1,
+      timestamp: new Date().toISOString(),
+      data: {
+        users,
+        setups,
+        plexServers,
+        tautullis,
+        overseerrs,
+        llmProviders,
+        plexWrappeds,
+        wrappedShareVisits,
+        llmUsages,
+        configs,
+        promptTemplates,
+      },
+    }
+
+    return { success: true, data: dump }
+  } catch (error) {
+    console.error("[ADMIN] Failed to export database dump:", error)
+    return { success: false, error: "Failed to export database dump" }
+  }
+}
+
+/**
+ * Import database dump (admin only)
+ */
+export async function importDatabaseDump(dump: any) {
+  await requireAdmin()
+
+  try {
+    if (!dump || !dump.data || dump.version !== 1) {
+      return { success: false, error: "Invalid dump format" }
+    }
+
+    const {
+      users,
+      setups,
+      plexServers,
+      tautullis,
+      overseerrs,
+      llmProviders,
+      plexWrappeds,
+      wrappedShareVisits,
+      llmUsages,
+      configs,
+      promptTemplates,
+    } = dump.data
+
+    await prisma.$transaction(async (tx) => {
+      // Delete existing data in reverse dependency order
+      await tx.wrappedShareVisit.deleteMany()
+      await tx.lLMUsage.deleteMany()
+      await tx.plexWrapped.deleteMany()
+      await tx.promptTemplate.deleteMany()
+      await tx.config.deleteMany()
+      await tx.lLMProvider.deleteMany()
+      await tx.overseerr.deleteMany()
+      await tx.tautulli.deleteMany()
+      await tx.plexServer.deleteMany()
+      await tx.setup.deleteMany()
+      await tx.user.deleteMany()
+
+      // Insert new data in dependency order
+      if (users?.length) await tx.user.createMany({ data: users })
+      if (setups?.length) await tx.setup.createMany({ data: setups })
+      if (plexServers?.length) await tx.plexServer.createMany({ data: plexServers })
+      if (tautullis?.length) await tx.tautulli.createMany({ data: tautullis })
+      if (overseerrs?.length) await tx.overseerr.createMany({ data: overseerrs })
+      if (llmProviders?.length) await tx.lLMProvider.createMany({ data: llmProviders })
+      if (configs?.length) await tx.config.createMany({ data: configs })
+      if (promptTemplates?.length) await tx.promptTemplate.createMany({ data: promptTemplates })
+      if (plexWrappeds?.length) await tx.plexWrapped.createMany({ data: plexWrappeds })
+      if (llmUsages?.length) await tx.lLMUsage.createMany({ data: llmUsages })
+      if (wrappedShareVisits?.length) await tx.wrappedShareVisit.createMany({ data: wrappedShareVisits })
+    })
+
+    return { success: true }
+  } catch (error) {
+    console.error("[ADMIN] Failed to import database dump:", error)
+    return { success: false, error: error instanceof Error ? error.message : "Failed to import database dump" }
+  }
+}
+
