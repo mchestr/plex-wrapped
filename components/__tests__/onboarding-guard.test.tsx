@@ -1,5 +1,5 @@
-import { OnboardingGuard } from '@/components/onboarding/onboarding-guard'
 import { getOnboardingStatus } from '@/actions/onboarding'
+import { OnboardingGuard } from '@/components/onboarding/onboarding-guard'
 import { render, screen, waitFor } from '@testing-library/react'
 import { usePathname, useRouter } from 'next/navigation'
 

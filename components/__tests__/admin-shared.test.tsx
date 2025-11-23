@@ -1,8 +1,6 @@
+import { AdminNav } from '@/components/admin/shared/admin-nav'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { usePathname, useRouter } from 'next/navigation'
-import { signOut } from 'next-auth/react'
-import { AdminNav } from '@/components/admin/shared/admin-nav'
 
 // Mock Next.js navigation
 const mockPush = jest.fn()

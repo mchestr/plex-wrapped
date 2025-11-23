@@ -1,6 +1,6 @@
-import { render, screen, waitFor } from '@testing-library/react'
-import { SetupGuard } from '@/components/setup/setup-guard'
 import * as setupActions from '@/actions/setup'
+import { SetupGuard } from '@/components/setup/setup-guard'
+import { render, screen, waitFor } from '@testing-library/react'
 
 // Mock next/navigation
 const mockReplace = jest.fn()

@@ -1,31 +1,23 @@
 import { expect, test } from '@playwright/test';
 import { PrismaClient } from '@prisma/client';
-import { waitForLoadingGone } from './helpers/test-utils';
+import { navigateAndVerify, waitForLoadingGone } from './helpers/test-utils';
 
 test.describe('Public Flows', () => {
   test('home page has sign in button and initiates flow', async ({ page }) => {
-    await page.goto('/');
+    await navigateAndVerify(page, '/');
 
     // Check for Sign In button
     const signInButton = page.getByRole('button', { name: /Sign in with Plex/i });
-    await expect(signInButton).toBeVisible();
-
-    // Get the href or onclick behavior?
-    // The button is likely a client-side handler calling signIn('plex').
-    // We can test that clicking it doesn't crash and triggers navigation.
-
-    // Note: actually clicking might redirect to plex.tv which we don't want to full automated test against (rate limits, etc).
-    // But we can verify the button is there and enabled.
+    await expect(signInButton).toBeVisible({ timeout: 10000 });
     await expect(signInButton).toBeEnabled();
   });
 
   test('invite page shows invalid state for unknown code', async ({ page }) => {
     const inviteCode = 'test-invite-code';
-    await page.goto(`/invite/${inviteCode}`);
+    await navigateAndVerify(page, `/invite/${inviteCode}`, {
+      waitForSelector: 'h1, h2, [role="heading"]'
+    });
 
-    // The loading state "Validating invite" is transient and may finish before Playwright checks it.
-    // We verify the page loaded and processed the invite by checking the final state.
-    // Since 'test-invite-code' is invalid, we expect the error state.
     await expect(page.getByRole('heading', { name: 'Invalid Invite' })).toBeVisible({ timeout: 10000 });
   });
 
@@ -38,9 +30,6 @@ test.describe('Public Flows', () => {
     // Wait for loading screen to disappear
     await waitForLoadingGone(page);
 
-    // Check for home page content (based on screenshot provided by user)
-    // Note: The exact text "MikeFlix Manager" might vary based on test seed data,
-    // but "Manager" and "Sign in with Plex" should be present.
     await expect(page.getByRole('heading', { name: /Manager/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Sign in with Plex/i })).toBeVisible();
   });
@@ -55,11 +44,6 @@ test.describe('Public Flows', () => {
   });
 
   test('onboarding page accessibility check', async ({ page }) => {
-    // Behavior for unauthenticated users on /onboarding:
-    // Based on code analysis, it might render or redirect.
-    // Let's observe the behavior.
-    // If it renders, we check for wizard elements.
-    // If it redirects to signin/home, we accept that too (as "secure").
 
     await page.goto('/onboarding');
 

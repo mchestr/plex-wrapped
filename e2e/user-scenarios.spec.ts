@@ -1,6 +1,8 @@
-import { expect, test } from './fixtures/auth';
+import { PrismaClient } from '@prisma/client';
+import { expect, test, TEST_USERS } from './fixtures/auth';
 import {
-  verifyNoAdminAccess
+  verifyNoAdminAccess,
+  waitForLoadingGone
 } from './helpers/test-utils';
 
 test.describe('User Scenarios', () => {
@@ -35,14 +37,195 @@ test.describe('User Scenarios', () => {
 
   test.describe('Regular User Wrapped Experience', () => {
     test('regular user can access their wrapped content', async ({ regularUserPage }) => {
-      // Navigate to wrapped page
-      await regularUserPage.goto('/wrapped');
-      await regularUserPage.waitForLoadState('networkidle');
+      const prisma = new PrismaClient();
+      const currentYear = new Date().getFullYear();
 
-      // Page should load (even if no wrapped data exists yet)
-      // We just verify no 401 error
-      const unauthorizedError = regularUserPage.getByText('401', { exact: true });
-      await expect(unauthorizedError).not.toBeVisible();
+      // Mock wrapped data matching the WrappedData type structure
+      const mockWrappedData = {
+        year: currentYear,
+        userId: TEST_USERS.REGULAR.id,
+        userName: TEST_USERS.REGULAR.name,
+        generatedAt: new Date().toISOString(),
+        statistics: {
+          totalWatchTime: { total: 1000, movies: 600, shows: 400 },
+          moviesWatched: 10,
+          showsWatched: 5,
+          episodesWatched: 20,
+          topMovies: [{ title: 'Test Movie', watchTime: 120, playCount: 1 }],
+          topShows: [{ title: 'Test Show', watchTime: 200, playCount: 2, episodesWatched: 4 }]
+        },
+        sections: [
+          {
+            id: 'hero',
+            type: 'hero',
+            title: `Your ${currentYear} Wrapped`,
+            content: 'Welcome to your wrapped!',
+            data: { prominentStat: { value: '1000', label: 'Minutes', description: 'Total Watch Time' } }
+          }
+        ],
+        insights: {
+          personality: 'Movie Buff',
+          topGenre: 'Action',
+          bingeWatcher: false,
+          discoveryScore: 80,
+          funFacts: ['You watched a lot!']
+        },
+        metadata: {
+          totalSections: 1,
+          generationTime: 5
+        }
+      };
+
+      try {
+        // Create mock wrapped data for the regular user
+        await prisma.plexWrapped.create({
+          data: {
+            userId: TEST_USERS.REGULAR.id,
+            year: currentYear,
+            status: 'completed',
+            data: JSON.stringify(mockWrappedData),
+            generatedAt: new Date(),
+          }
+        });
+
+        // Navigate to wrapped page
+        await regularUserPage.goto('/wrapped');
+        await regularUserPage.waitForLoadState('networkidle');
+        await waitForLoadingGone(regularUserPage);
+
+        // Verify no 401 error
+        const unauthorizedError = regularUserPage.getByText('401', { exact: true });
+        await expect(unauthorizedError).not.toBeVisible();
+
+        // Verify wrapped content is actually displayed (not "No Wrapped Found")
+        const noWrappedFound = regularUserPage.getByText('No Wrapped Found');
+        await expect(noWrappedFound).not.toBeVisible();
+
+        // Verify some wrapped content is visible (check for year in heading or content)
+        const wrappedContent = regularUserPage.getByText(new RegExp(`${currentYear}`, 'i'));
+        await expect(wrappedContent).toBeVisible({ timeout: 10000 });
+
+      } finally {
+        // Cleanup: delete the mock wrapped data
+        await prisma.plexWrapped.deleteMany({
+          where: {
+            userId: TEST_USERS.REGULAR.id,
+            year: currentYear,
+          }
+        });
+        await prisma.$disconnect();
+      }
+    });
+
+    test('anonymous user can access shared wrapped via share link', async ({ browser }) => {
+      const prisma = new PrismaClient();
+      const currentYear = new Date().getFullYear();
+      const shareToken = `test-share-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+      // Mock wrapped data matching the WrappedData type structure
+      const mockWrappedData = {
+        year: currentYear,
+        userId: TEST_USERS.REGULAR.id,
+        userName: TEST_USERS.REGULAR.name,
+        generatedAt: new Date().toISOString(),
+        statistics: {
+          totalWatchTime: { total: 1000, movies: 600, shows: 400 },
+          moviesWatched: 10,
+          showsWatched: 5,
+          episodesWatched: 20,
+          topMovies: [{ title: 'Test Movie', watchTime: 120, playCount: 1 }],
+          topShows: [{ title: 'Test Show', watchTime: 200, playCount: 2, episodesWatched: 4 }]
+        },
+        sections: [
+          {
+            id: 'hero',
+            type: 'hero',
+            title: `Your ${currentYear} Wrapped`,
+            content: 'Welcome to your wrapped!',
+            data: { prominentStat: { value: '1000', label: 'Minutes', description: 'Total Watch Time' } }
+          }
+        ],
+        insights: {
+          personality: 'Movie Buff',
+          topGenre: 'Action',
+          bingeWatcher: false,
+          discoveryScore: 80,
+          funFacts: ['You watched a lot!']
+        },
+        metadata: {
+          totalSections: 1,
+          generationTime: 5
+        }
+      };
+
+      // Create an anonymous (unauthenticated) page context
+      const context = await browser.newContext();
+      const anonymousPage = await context.newPage();
+
+      try {
+        // Create mock wrapped data with shareToken for the regular user
+        await prisma.plexWrapped.create({
+          data: {
+            userId: TEST_USERS.REGULAR.id,
+            year: currentYear,
+            status: 'completed',
+            data: JSON.stringify(mockWrappedData),
+            shareToken: shareToken,
+            summary: `Check out ${TEST_USERS.REGULAR.name}'s ${currentYear} Plex Wrapped!`,
+            generatedAt: new Date(),
+          }
+        });
+
+        // Navigate to share page as anonymous user
+        await anonymousPage.goto(`/wrapped/share/${shareToken}`);
+        await anonymousPage.waitForLoadState('networkidle');
+        await waitForLoadingGone(anonymousPage);
+
+        // Wait for animations to complete (framer-motion animations)
+        await anonymousPage.waitForTimeout(2000);
+
+        // Verify no 401 or 404 errors
+        const unauthorizedError = anonymousPage.getByText('401', { exact: true });
+        await expect(unauthorizedError).not.toBeVisible();
+
+        const notFoundError = anonymousPage.getByText('404', { exact: true });
+        await expect(notFoundError).not.toBeVisible();
+
+        // Verify shared wrapped content is displayed
+        // Check for the user's name and year in the heading
+        // The heading format is: "{userName}'s {year} Plex Wrapped"
+        const headingText = `${TEST_USERS.REGULAR.name}'s ${currentYear} Plex Wrapped`;
+        const wrappedHeading = anonymousPage.getByRole('heading', { name: headingText });
+        await expect(wrappedHeading).toBeVisible({ timeout: 15000 });
+
+        // Verify statistics are visible (1000 minutes = 16 hours)
+        // The formatWatchTimeHours function formats 1000 minutes as "16 hours"
+        const watchTime = anonymousPage.getByText(/16 hour/i);
+        await expect(watchTime).toBeVisible({ timeout: 15000 });
+
+        // Verify "Total Watch Time" label is visible
+        const totalWatchTimeLabel = anonymousPage.getByText('Total Watch Time');
+        await expect(totalWatchTimeLabel).toBeVisible({ timeout: 15000 });
+
+        // Verify "Movies Watched" label is visible
+        const moviesWatchedLabel = anonymousPage.getByText('Movies Watched');
+        await expect(moviesWatchedLabel).toBeVisible({ timeout: 15000 });
+
+        // Verify "Shows Watched" label is visible
+        const showsWatchedLabel = anonymousPage.getByText('Shows Watched');
+        await expect(showsWatchedLabel).toBeVisible({ timeout: 15000 });
+
+        // Verify we're on the share page URL
+        expect(anonymousPage.url()).toContain(`/wrapped/share/${shareToken}`);
+
+      } finally {
+        // Cleanup: delete the mock wrapped data
+        await prisma.plexWrapped.deleteMany({
+          where: { shareToken: shareToken }
+        });
+        await prisma.$disconnect();
+        await context.close();
+      }
     });
   });
 });
