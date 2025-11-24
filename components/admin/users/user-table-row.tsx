@@ -3,6 +3,7 @@
 import { UserActionsMenu } from "@/components/admin/users/user-actions-menu"
 import { AdminUserWithWrappedStats } from "@/types/admin"
 import Link from "next/link"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 
 interface UserTableRowProps {
@@ -27,11 +28,12 @@ export function UserTableRow({ user }: UserTableRowProps) {
         <div className="flex items-center gap-2 min-w-0">
           {user.image ? (
             <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+              <Image
                 src={user.image}
                 alt={user.name || "User"}
-                className="w-full h-full object-cover"
+                fill
+                className="object-cover"
+                sizes="32px"
               />
             </div>
           ) : (

@@ -503,6 +503,9 @@ export async function updateChatLLMProvider(data: { provider: string; apiKey: st
       return { success: false, error: connectionTest.error || "Failed to connect to LLM provider" }
     }
 
+    // Type assertion: we've already checked that data.model exists
+    const model = validated.model!
+
     await prisma.$transaction(async (tx) => {
       // Deactivate any existing chat providers
       await tx.lLMProvider.updateMany({
@@ -516,7 +519,7 @@ export async function updateChatLLMProvider(data: { provider: string; apiKey: st
           provider: validated.provider,
           purpose: "chat",
           apiKey: validated.apiKey,
-          model: validated.model,
+          model: model,
         },
       })
 
@@ -537,7 +540,7 @@ export async function updateChatLLMProvider(data: { provider: string; apiKey: st
             provider: validated.provider,
             purpose: "chat",
             apiKey: validated.apiKey,
-            model: validated.model,
+            model: model,
             temperature: validated.temperature ?? null,
             maxTokens: validated.maxTokens ?? null,
             isActive: true,
@@ -580,6 +583,9 @@ export async function updateWrappedLLMProvider(data: { provider: string; apiKey:
       return { success: false, error: connectionTest.error || "Failed to connect to LLM provider" }
     }
 
+    // Type assertion: we've already checked that data.model exists
+    const model = validated.model!
+
     await prisma.$transaction(async (tx) => {
       // Deactivate any existing wrapped providers
       await tx.lLMProvider.updateMany({
@@ -593,7 +599,7 @@ export async function updateWrappedLLMProvider(data: { provider: string; apiKey:
           provider: validated.provider,
           purpose: "wrapped",
           apiKey: validated.apiKey,
-          model: validated.model,
+          model: model,
         },
       })
 
@@ -614,7 +620,7 @@ export async function updateWrappedLLMProvider(data: { provider: string; apiKey:
             provider: validated.provider,
             purpose: "wrapped",
             apiKey: validated.apiKey,
-            model: validated.model,
+            model: model,
             temperature: validated.temperature ?? null,
             maxTokens: validated.maxTokens ?? null,
             isActive: true,
