@@ -99,8 +99,6 @@ export default async function SettingsPage() {
                   <LLMProviderForm
                     provider={settings.chatLLMProvider}
                     purpose="chat"
-                    title="Chat Assistant"
-                    description="Configuration for the admin troubleshooting chatbot"
                   />
                 </div>
 
@@ -118,8 +116,6 @@ export default async function SettingsPage() {
                   <LLMProviderForm
                     provider={settings.wrappedLLMProvider}
                     purpose="wrapped"
-                    title="Wrapped Generation"
-                    description="Configuration for generating Plex Wrapped content"
                   />
                 </div>
               </div>

@@ -9,11 +9,9 @@ import { useEffect, useState, useTransition } from "react"
 interface LLMProviderFormProps {
   provider: { provider: string; model: string | null; apiKey: string; temperature: number | null; maxTokens: number | null } | null
   purpose: "chat" | "wrapped"
-  title: string
-  description: string
 }
 
-export function LLMProviderForm({ provider, purpose, title, description }: LLMProviderFormProps) {
+export function LLMProviderForm({ provider, purpose }: LLMProviderFormProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)

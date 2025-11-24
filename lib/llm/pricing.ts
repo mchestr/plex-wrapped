@@ -83,7 +83,7 @@ export function calculateCost(
   model: string | null | undefined,
   promptTokens: number,
   completionTokens: number,
-  provider: "openai" = "openai"
+  _provider: "openai" = "openai"
 ): number {
   if (!model) {
     // Fallback to GPT-4 pricing if model not found
