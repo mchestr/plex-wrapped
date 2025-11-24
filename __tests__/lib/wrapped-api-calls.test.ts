@@ -238,37 +238,12 @@ describe('LLM API Calls', () => {
       expect(result.error).toContain('No content')
     })
 
-    it('should use default model if not provided', async () => {
-      const mockResponse = {
-        choices: [
-          {
-            message: {
-              content: JSON.stringify({ sections: [] }),
-            },
-            finish_reason: 'stop',
-          },
-        ],
-        usage: {
-          prompt_tokens: 1000,
-          completion_tokens: 500,
-          total_tokens: 1500,
-        },
-      }
-
-      ;(global.fetch as jest.Mock).mockResolvedValueOnce({
-        ok: true,
-        json: async () => mockResponse,
-      })
-
-      ;(parseWrappedResponse as jest.Mock).mockReturnValue({
-        sections: [],
-      })
-
-      await callOpenAI(
+    it('should return error when model is not provided', async () => {
+      const result = await callOpenAI(
         {
           provider: 'openai',
           apiKey: 'test-key',
-        },
+        } as any, // TypeScript will complain, but we're testing runtime behavior
         'test prompt',
         mockStatistics,
         2024,
@@ -276,9 +251,9 @@ describe('LLM API Calls', () => {
         'Test User'
       )
 
-      const fetchCall = (global.fetch as jest.Mock).mock.calls[0]
-      const body = JSON.parse(fetchCall[1].body)
-      expect(body.model).toBe('gpt-4') // Default model
+      expect(result.success).toBe(false)
+      expect(result.error).toContain('Model is required')
+      expect(global.fetch).not.toHaveBeenCalled()
     })
 
     it('should send correct request format', async () => {
@@ -324,8 +299,9 @@ describe('LLM API Calls', () => {
       const body = JSON.parse(fetchCall[1].body)
 
       expect(body.model).toBe('gpt-4')
-      expect(body.temperature).toBe(0.8) // Default temperature
-      expect(body.max_tokens).toBe(6000) // Default maxTokens
+      // Temperature and max_tokens are only included if provided
+      expect(body.temperature).toBeUndefined()
+      expect(body.max_tokens).toBeUndefined()
       expect(body.messages).toHaveLength(2)
       expect(body.messages[0].role).toBe('system')
       expect(body.messages[1].role).toBe('user')

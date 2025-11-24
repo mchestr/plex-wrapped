@@ -58,7 +58,7 @@ const analyticsNavItems = [
   },
 ]
 
-// Group 3: Configuration & Tools
+// Group 3: Prompts & Testing
 const configNavItems = [
   {
     href: "/admin/prompts",
@@ -124,6 +124,57 @@ export function AdminNav() {
     return pathname.startsWith(href)
   }
 
+  const renderNavItem = (item: { href: string; label: string; icon: React.ReactNode }, mobile = false) => {
+    const active = isActive(item.href)
+
+    if (mobile) {
+      return (
+        <Link
+          key={item.href}
+          href={item.href}
+          className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all min-w-0 flex-1 ${
+            active ? "text-cyan-400" : "text-slate-400"
+          }`}
+        >
+          <div className={`transition-colors ${active ? "text-cyan-400" : "text-slate-500"}`}>
+            {item.icon}
+          </div>
+          <span className="text-xs font-medium truncate w-full text-center">
+            {item.label.split(" ")[0]}
+          </span>
+          {active && (
+            <div className="w-1 h-1 rounded-full bg-cyan-400"></div>
+          )}
+        </Link>
+      )
+    }
+
+    // Desktop
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
+          active
+            ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 text-cyan-400"
+            : "text-slate-400 hover:text-white hover:bg-slate-800/50"
+        }`}
+      >
+        <div
+          className={`transition-colors ${
+            active ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"
+          }`}
+        >
+          {item.icon}
+        </div>
+        <span className="font-medium text-sm">{item.label}</span>
+        {active && (
+          <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
+        )}
+      </Link>
+    )
+  }
+
   return (
     <>
       {/* Desktop Sidebar */}
@@ -145,32 +196,7 @@ export function AdminNav() {
         <nav className="flex-1 p-4 space-y-6 overflow-y-auto">
           {/* Core Management */}
           <div className="space-y-1">
-            {coreNavItems.map((item) => {
-              const active = isActive(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
-                    active
-                      ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 text-cyan-400"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                  }`}
-                >
-                  <div
-                    className={`transition-colors ${
-                      active ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  <span className="font-medium text-sm">{item.label}</span>
-                  {active && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
-                  )}
-                </Link>
-              )
-            })}
+            {coreNavItems.map((item) => renderNavItem(item))}
           </div>
 
           {/* Monitoring & Analytics */}
@@ -180,101 +206,22 @@ export function AdminNav() {
                 Analytics
               </span>
             </div>
-            {analyticsNavItems.map((item) => {
-              const active = isActive(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
-                    active
-                      ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 text-cyan-400"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                  }`}
-                >
-                  <div
-                    className={`transition-colors ${
-                      active ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  <span className="font-medium text-sm">{item.label}</span>
-                  {active && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
-                  )}
-                </Link>
-              )
-            })}
+            {analyticsNavItems.map((item) => renderNavItem(item))}
           </div>
 
-          {/* Configuration & Tools */}
+          {/* Prompts & Testing */}
           <div className="space-y-1">
             <div className="px-4 mb-2">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Configuration
+                Prompts & Testing
               </span>
             </div>
-            {configNavItems.map((item) => {
-              const active = isActive(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
-                    active
-                      ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 text-cyan-400"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                  }`}
-                >
-                  <div
-                    className={`transition-colors ${
-                      active ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  <span className="font-medium text-sm">{item.label}</span>
-                  {active && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
-                  )}
-                </Link>
-              )
-            })}
-          </div>
-
-          {/* System */}
-          <div className="space-y-1">
-            {systemNavItems.map((item) => {
-              const active = isActive(item.href)
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
-                    active
-                      ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 text-cyan-400"
-                      : "text-slate-400 hover:text-white hover:bg-slate-800/50"
-                  }`}
-                >
-                  <div
-                    className={`transition-colors ${
-                      active ? "text-cyan-400" : "text-slate-500 group-hover:text-slate-300"
-                    }`}
-                  >
-                    {item.icon}
-                  </div>
-                  <span className="font-medium text-sm">{item.label}</span>
-                  {active && (
-                    <div className="ml-auto w-1.5 h-1.5 rounded-full bg-cyan-400"></div>
-                  )}
-                </Link>
-              )
-            })}
+            {configNavItems.map((item) => renderNavItem(item))}
           </div>
         </nav>
 
         <div className="p-4 border-t border-slate-700 space-y-1">
+          {systemNavItems.map((item) => renderNavItem(item))}
           <Link
             href="/"
             className="flex items-center gap-3 px-4 py-3 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all group"
@@ -299,38 +246,10 @@ export function AdminNav() {
       {/* Mobile Bottom Navigation */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-slate-900/95 backdrop-blur-sm border-t border-slate-700 z-50 pb-2">
         <div className="flex items-center justify-around px-2 py-2">
-          {navItems.map((item) => {
-            const active = isActive(item.href)
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all min-w-0 flex-1 ${
-                  active
-                    ? "text-cyan-400"
-                    : "text-slate-400"
-                }`}
-              >
-                <div
-                  className={`transition-colors ${
-                    active ? "text-cyan-400" : "text-slate-500"
-                  }`}
-                >
-                  {item.icon}
-                </div>
-                <span className="text-xs font-medium truncate w-full text-center">
-                  {item.label.split(" ")[0]}
-                </span>
-                {active && (
-                  <div className="w-1 h-1 rounded-full bg-cyan-400"></div>
-                )}
-              </Link>
-            )
-          })}
+          {navItems.map((item) => renderNavItem(item, true))}
         </div>
       </nav>
 
     </>
   )
 }
-

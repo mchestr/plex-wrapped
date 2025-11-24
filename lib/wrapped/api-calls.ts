@@ -3,17 +3,14 @@
  * Currently supports OpenAI, but designed to be extensible for other providers
  */
 
+import { calculateCost } from "@/lib/llm/pricing"
 import { createLogger } from "@/lib/utils/logger"
-import { WrappedData, WrappedStatistics } from "@/types/wrapped"
-import { calculateCost } from "@/lib/wrapped/pricing"
 import { parseWrappedResponse } from "@/lib/wrapped/prompt"
 import { generateSystemPrompt } from "@/lib/wrapped/prompt-template"
+import { WrappedData, WrappedStatistics } from "@/types/wrapped"
 
 const logger = createLogger("LLM")
 
-const DEFAULT_MODEL = "gpt-4"
-const DEFAULT_TEMPERATURE = 0.8
-const DEFAULT_MAX_TOKENS = 6000
 // Default timeout: 5 minutes (300 seconds)
 // Can be overridden via LLM_REQUEST_TIMEOUT_MS environment variable
 const REQUEST_TIMEOUT_MS = process.env.LLM_REQUEST_TIMEOUT_MS
@@ -23,7 +20,7 @@ const REQUEST_TIMEOUT_MS = process.env.LLM_REQUEST_TIMEOUT_MS
 export interface LLMConfig {
   provider: "openai"
   apiKey: string
-  model?: string
+  model: string // Required - no default model allowed
   temperature?: number
   maxTokens?: number
 }
@@ -66,7 +63,14 @@ export async function callOpenAI(
   userId: string,
   userName: string
 ): Promise<LLMResponse> {
-  const model = config.model ?? DEFAULT_MODEL
+  if (!config.model) {
+    return {
+      success: false,
+      error: "Model is required. Please configure a model in admin settings.",
+    }
+  }
+
+  const model = config.model
 
   // Build request body with appropriate token limit parameter
   const requestBody: Record<string, unknown> = {
@@ -81,15 +85,21 @@ export async function callOpenAI(
         content: prompt,
       },
     ],
-    temperature: config.temperature ?? DEFAULT_TEMPERATURE,
+  }
+
+  // Only set temperature if provided
+  if (config.temperature !== undefined) {
+    requestBody.temperature = config.temperature
   }
 
   // Use max_completion_tokens for newer models, max_tokens for older models
-  const maxTokensValue = config.maxTokens ?? DEFAULT_MAX_TOKENS
-  if (requiresMaxCompletionTokens(model)) {
-    requestBody.max_completion_tokens = maxTokensValue
-  } else {
-    requestBody.max_tokens = maxTokensValue
+  // Only set if provided
+  if (config.maxTokens !== undefined) {
+    if (requiresMaxCompletionTokens(model)) {
+      requestBody.max_completion_tokens = config.maxTokens
+    } else {
+      requestBody.max_tokens = config.maxTokens
+    }
   }
 
   try {

@@ -1,5 +1,5 @@
-import React from "react"
 import { getLLMUsageRecords, getLLMUsageStats, getUserById } from "@/actions/admin"
+import { aggregateLlmUsage } from "@/lib/utils"
 import Link from "next/link"
 
 export const dynamic = 'force-dynamic'
@@ -7,36 +7,78 @@ export const dynamic = 'force-dynamic'
 export default async function LLMUsagePage({
   searchParams,
 }: {
-  searchParams: { page?: string; userId?: string }
+  searchParams: { page?: string; userId?: string; conversationId?: string }
 }) {
   const page = parseInt(searchParams.page || "1", 10)
   const userId = searchParams.userId
+  const conversationId = searchParams.conversationId
 
-  const { records, pagination } = await getLLMUsageRecords(page, 50, userId)
+  const { records, pagination } = await getLLMUsageRecords(page, 50, userId, conversationId)
   const stats = await getLLMUsageStats(undefined, undefined, userId)
   const filteredUser = userId ? await getUserById(userId) : null
 
-  const formatDate = (date: Date) => {
-    return new Date(date).toLocaleString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    })
-  }
+  const conversationGroups = (() => {
+    const groups = new Map<
+      string,
+      {
+        records: typeof records
+      }
+    >()
 
-  const getProviderBadge = (provider: string) => {
-    const colors = {
-      openai: "bg-green-500/20 text-green-400",
-      mock: "bg-slate-500/20 text-slate-400",
+    for (const record of records) {
+      const key = record.chatConversationId ?? `single:${record.id}`
+      const existing = groups.get(key) || { records: [] as typeof records }
+      existing.records.push(record)
+      groups.set(key, existing)
     }
-    return (
-      <span className={`px-2 py-1 ${colors[provider as keyof typeof colors] || "bg-slate-700/50 text-slate-300"} text-xs font-medium rounded`}>
-        {provider}
-      </span>
-    )
-  }
+
+    return Array.from(groups.entries()).map(([key, group]) => {
+      const usageSummary = aggregateLlmUsage(
+        group.records.map((r) => ({
+          totalTokens: r.totalTokens,
+          promptTokens: r.promptTokens,
+          completionTokens: r.completionTokens,
+          cost: r.cost,
+          provider: r.provider,
+          model: r.model,
+        }))
+      )
+
+      const first = group.records.reduce(
+        (earliest, r) => (r.createdAt < earliest.createdAt ? r : earliest),
+        group.records[0]
+      )
+
+      const sampleUsageId = first.id
+      const isChat = !!first.chatConversationId
+      const hasWrapped = !!first.wrapped
+
+      let contextLabel = "Standalone"
+      if (isChat) {
+        const calls = group.records.length
+        contextLabel = `Chat conversation (${calls} call${calls === 1 ? "" : "s"})`
+      } else if (hasWrapped && first.wrapped) {
+        contextLabel = `Wrapped ${first.wrapped.year} (${first.wrapped.status})`
+      }
+
+      return {
+        id: key,
+        user: first.user,
+        createdAt: first.createdAt,
+        totalTokens: usageSummary?.totalTokens ?? 0,
+        promptTokens: usageSummary?.promptTokens ?? 0,
+        completionTokens: usageSummary?.completionTokens ?? 0,
+        cost: usageSummary?.cost ?? 0,
+        provider: usageSummary?.provider ?? null,
+        model: usageSummary?.model ?? null,
+        isChat,
+        conversationId: first.chatConversationId as string | undefined,
+        contextLabel,
+        sampleUsageId,
+        hasWrapped,
+      }
+    })
+  })()
 
   return (
     <div className="p-4 sm:p-6">
@@ -136,131 +178,136 @@ export default async function LLMUsagePage({
           </div>
         </div>
 
-        {/* Usage Records Table */}
+        {/* Usage Records Table (grouped by conversation / standalone) */}
         <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-slate-700/30 border-b border-slate-700">
-                <tr>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    Date
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden md:table-cell">
-                    User
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    Provider
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden lg:table-cell">
-                    Model
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    Tokens
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    Cost
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden lg:table-cell">
-                    Wrapped
-                  </th>
-                  <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-700">
-                {records.length === 0 ? (
+                <thead className="bg-slate-700/30 border-b border-slate-700">
                   <tr>
-                    <td colSpan={8} className="px-6 py-8 text-center text-slate-400">
-                      No LLM requests found.
-                    </td>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Started
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden md:table-cell">
+                      User
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider hidden lg:table-cell">
+                      Model
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Tokens
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Cost
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Context
+                    </th>
+                    <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                      Actions
+                    </th>
                   </tr>
-                ) : (
-                  records.map((record) => (
-                    <tr key={record.id} className="hover:bg-slate-700/20 transition-colors">
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <div className="text-xs sm:text-sm text-slate-300">
-                          <div className="md:hidden">
-                            {new Date(record.createdAt).toLocaleDateString("en-US", {
-                              month: "short",
-                              day: "numeric",
-                            })}
-                          </div>
-                          <div className="hidden md:block">{formatDate(record.createdAt)}</div>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
-                        <div className="flex items-center gap-2">
-                          {record.user.image ? (
-                            <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-700">
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={record.user.image}
-                                alt={record.user.name || "User"}
-                                className="w-full h-full object-cover"
-                              />
-                            </div>
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
-                              <span className="text-slate-400 text-xs font-medium">
-                                {(record.user.name || record.user.email || "U")[0].toUpperCase()}
-                              </span>
-                            </div>
-                          )}
-                          <div>
-                            <div className="text-sm font-medium text-white">
-                              {record.user.name || "Unknown"}
-                            </div>
-                            {record.user.email && (
-                              <div className="text-xs text-slate-400">{record.user.email}</div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">{getProviderBadge(record.provider)}</td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                        <div className="text-sm text-slate-300 font-mono truncate max-w-[120px]">
-                          {record.model || <span className="text-slate-500">—</span>}
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm">
-                          <div className="text-white font-medium">{record.totalTokens.toLocaleString()}</div>
-                          <div className="text-xs text-slate-400 hidden sm:block">
-                            {record.promptTokens.toLocaleString()} + {record.completionTokens.toLocaleString()}
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-green-400 font-medium">
-                          ${record.cost.toFixed(4)}
-                        </div>
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                        {record.wrapped ? (
-                          <Link
-                            href={`/admin/users/${record.userId}/wrapped`}
-                            className="text-sm text-cyan-400 hover:text-cyan-300 underline"
-                          >
-                            {record.wrapped.year} ({record.wrapped.status})
-                          </Link>
-                        ) : (
-                          <span className="text-sm text-slate-500">—</span>
-                        )}
-                      </td>
-                      <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                        <Link
-                          href={`/admin/llm-usage/${record.id}`}
-                          className="px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors inline-block"
-                        >
-                          <span className="hidden sm:inline">View Details</span>
-                          <span className="sm:hidden">View</span>
-                        </Link>
+                </thead>
+                <tbody className="divide-y divide-slate-700">
+                  {conversationGroups.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="px-6 py-8 text-center text-slate-400">
+                      No LLM usage found.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
+                  ) : (
+                    conversationGroups
+                      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+                      .map((group) => (
+                        <tr key={group.id} className="hover:bg-slate-700/20 transition-colors">
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-xs sm:text-sm text-slate-300">
+                              <div className="md:hidden">
+                                {new Date(group.createdAt).toLocaleDateString("en-US", {
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </div>
+                              <div className="hidden md:block">
+                                {new Date(group.createdAt).toLocaleString("en-US", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden md:table-cell">
+                            <div className="flex items-center gap-2">
+                              {group.user.image ? (
+                                <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-700">
+                                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                                  <img
+                                    src={group.user.image}
+                                    alt={group.user.name || "User"}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              ) : (
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center">
+                                  <span className="text-slate-400 text-xs font-medium">
+                                    {(group.user.name || group.user.email || "U")[0].toUpperCase()}
+                                  </span>
+                                </div>
+                              )}
+                              <div>
+                                <div className="text-sm font-medium text-white">
+                                  {group.user.name || "Unknown"}
+                                </div>
+                                {group.user.email && (
+                                  <div className="text-xs text-slate-400">{group.user.email}</div>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
+                            <div className="text-sm text-slate-300 font-mono truncate max-w-[140px]">
+                              {group.model || <span className="text-slate-500">—</span>}
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm">
+                              <div className="text-white font-medium">
+                                {group.totalTokens.toLocaleString()}
+                              </div>
+                              <div className="text-xs text-slate-400 hidden sm:block">
+                                {group.promptTokens.toLocaleString()} +{" "}
+                                {group.completionTokens.toLocaleString()}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-green-400 font-medium">
+                              ${group.cost.toFixed(4)}
+                            </div>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                            <span className="text-xs font-medium text-slate-300">
+                            {group.contextLabel}
+                            </span>
+                          </td>
+                          <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
+                          <Link
+                            href={
+                              group.isChat && group.conversationId
+                                ? `/admin/llm-usage/conversation/${group.conversationId}`
+                                : `/admin/llm-usage/${group.sampleUsageId}`
+                            }
+                            className="px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors inline-block"
+                          >
+                            {group.isChat ? "View Calls" : "View Details"}
+                          </Link>
+                          </td>
+                        </tr>
+                      ))
+                  )}
+                </tbody>
             </table>
           </div>
 

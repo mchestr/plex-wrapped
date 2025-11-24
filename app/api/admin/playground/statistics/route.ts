@@ -85,9 +85,7 @@ export async function GET(request: NextRequest) {
     // Fetch statistics from Tautulli
     const tautulliStats = await fetchTautulliStatistics(
       {
-        hostname: tautulli.hostname,
-        port: tautulli.port,
-        protocol: tautulli.protocol,
+        url: tautulli.url,
         apiKey: tautulli.apiKey,
       },
       user.plexUserId,
@@ -113,15 +111,11 @@ export async function GET(request: NextRequest) {
     if (plexServer && tautulli) {
       const serverStatsResult = await fetchPlexServerStatistics(
         {
-          hostname: plexServer.hostname,
-          port: plexServer.port,
-          protocol: plexServer.protocol,
+          url: plexServer.url,
           token: plexServer.token,
         },
         {
-          hostname: tautulli.hostname,
-          port: tautulli.port,
-          protocol: tautulli.protocol,
+          url: tautulli.url,
           apiKey: tautulli.apiKey,
         }
       )
@@ -145,9 +139,7 @@ export async function GET(request: NextRequest) {
     if (overseerr) {
       const overseerrData = await fetchOverseerrStatistics(
         {
-          hostname: overseerr.hostname,
-          port: overseerr.port,
-          protocol: overseerr.protocol,
+          url: overseerr.url,
           apiKey: overseerr.apiKey,
         },
         user.email,
@@ -164,9 +156,7 @@ export async function GET(request: NextRequest) {
       const [topContentLeaderboards, watchTimeLeaderboard] = await Promise.all([
         fetchTopContentLeaderboards(
           {
-            hostname: tautulli.hostname,
-            port: tautulli.port,
-            protocol: tautulli.protocol,
+            url: tautulli.url,
             apiKey: tautulli.apiKey,
           },
           tautulliStatsData.topMovies,
@@ -176,9 +166,7 @@ export async function GET(request: NextRequest) {
         ),
         fetchWatchTimeLeaderboard(
           {
-            hostname: tautulli.hostname,
-            port: tautulli.port,
-            protocol: tautulli.protocol,
+            url: tautulli.url,
             apiKey: tautulli.apiKey,
           },
           year

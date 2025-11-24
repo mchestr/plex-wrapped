@@ -13,7 +13,15 @@ export const overseerrSchema = z.object({
       }
     },
     { message: "Invalid URL format. Expected format: http://example.com:5055" }
-  ),
+  ).transform((url) => {
+    // Normalize URL by parsing and reconstructing it
+    const parsed = parseServerUrl(url)
+    const defaultPort = parsed.protocol === "https" ? 443 : 80
+    if (parsed.port === defaultPort) {
+      return `${parsed.protocol}://${parsed.hostname}`
+    }
+    return `${parsed.protocol}://${parsed.hostname}:${parsed.port}`
+  }),
   apiKey: z.string().min(1, "API key is required"),
   publicUrl: z.string().optional().refine(
     (url) => {
@@ -27,16 +35,6 @@ export const overseerrSchema = z.object({
     },
     { message: "Invalid URL format. Expected format: https://requests.example.com" }
   ),
-}).transform((data) => {
-  const { protocol, hostname, port } = parseServerUrl(data.url)
-  return {
-    name: data.name,
-    hostname,
-    port,
-    protocol,
-    apiKey: data.apiKey,
-    publicUrl: data.publicUrl,
-  }
 })
 
 export type OverseerrInput = z.input<typeof overseerrSchema>

@@ -4,11 +4,15 @@ import { requireAdmin } from "@/lib/admin"
 import { testLLMProviderConnection } from "@/lib/connections/llm-provider"
 import { testOverseerrConnection } from "@/lib/connections/overseerr"
 import { testPlexConnection } from "@/lib/connections/plex"
+import { testRadarrConnection } from "@/lib/connections/radarr"
+import { testSonarrConnection } from "@/lib/connections/sonarr"
 import { testTautulliConnection } from "@/lib/connections/tautulli"
 import { prisma } from "@/lib/prisma"
 import { llmProviderSchema, type LLMProviderInput } from "@/lib/validations/llm-provider"
 import { overseerrSchema, type OverseerrInput, type OverseerrParsed } from "@/lib/validations/overseerr"
 import { plexServerSchema, type PlexServerInput, type PlexServerParsed } from "@/lib/validations/plex"
+import { radarrSchema, type RadarrInput, type RadarrParsed } from "@/lib/validations/radarr"
+import { sonarrSchema, type SonarrInput, type SonarrParsed } from "@/lib/validations/sonarr"
 import { tautulliSchema, type TautulliInput, type TautulliParsed } from "@/lib/validations/tautulli"
 import { revalidatePath } from "next/cache"
 
@@ -73,9 +77,7 @@ export async function savePlexServer(data: PlexServerInput) {
       await tx.plexServer.create({
         data: {
           name: validated.name,
-          hostname: validated.hostname,
-          port: validated.port,
-          protocol: validated.protocol,
+          url: validated.url,
           token: validated.token,
           publicUrl: validated.publicUrl,
           adminPlexUserId,
@@ -135,9 +137,7 @@ export async function saveTautulli(data: TautulliInput) {
       await tx.tautulli.create({
         data: {
           name: validated.name,
-          hostname: validated.hostname,
-          port: validated.port,
-          protocol: validated.protocol,
+          url: validated.url,
           apiKey: validated.apiKey,
           publicUrl: validated.publicUrl,
           isActive: true,
@@ -196,9 +196,7 @@ export async function saveOverseerr(data: OverseerrInput) {
       await tx.overseerr.create({
         data: {
           name: validated.name,
-          hostname: validated.hostname,
-          port: validated.port,
-          protocol: validated.protocol,
+          url: validated.url,
           apiKey: validated.apiKey,
           publicUrl: validated.publicUrl,
           isActive: true,
@@ -213,6 +211,124 @@ export async function saveOverseerr(data: OverseerrInput) {
       return { success: false, error: error.message }
     }
     return { success: false, error: "Failed to save Overseerr configuration" }
+  }
+}
+
+export async function saveSonarr(data: SonarrInput) {
+  try {
+    // Require admin if setup is already complete
+    const setupStatus = await getSetupStatus()
+    if (setupStatus.isComplete) {
+      await requireAdmin()
+    }
+
+    const validated: SonarrParsed = sonarrSchema.parse(data)
+
+    // Test connection before saving
+    const connectionTest = await testSonarrConnection(validated)
+    if (!connectionTest.success) {
+      return { success: false, error: connectionTest.error || "Failed to connect to Sonarr server" }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Update setup record
+      const setup = await tx.setup.findFirst({
+        orderBy: { createdAt: "desc" },
+      })
+
+      if (setup) {
+        await tx.setup.update({
+          where: { id: setup.id },
+          data: {
+            currentStep: 5,
+          },
+        })
+      } else {
+        await tx.setup.create({
+          data: {
+            currentStep: 5,
+          },
+        })
+      }
+
+      // Create Sonarr configuration
+      await tx.sonarr.create({
+        data: {
+          name: validated.name,
+          url: validated.url,
+          apiKey: validated.apiKey,
+          publicUrl: validated.publicUrl,
+          isActive: true,
+        },
+      })
+    })
+
+    revalidatePath("/setup")
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: "Failed to save Sonarr configuration" }
+  }
+}
+
+export async function saveRadarr(data: RadarrInput) {
+  try {
+    // Require admin if setup is already complete
+    const setupStatus = await getSetupStatus()
+    if (setupStatus.isComplete) {
+      await requireAdmin()
+    }
+
+    const validated: RadarrParsed = radarrSchema.parse(data)
+
+    // Test connection before saving
+    const connectionTest = await testRadarrConnection(validated)
+    if (!connectionTest.success) {
+      return { success: false, error: connectionTest.error || "Failed to connect to Radarr server" }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Update setup record
+      const setup = await tx.setup.findFirst({
+        orderBy: { createdAt: "desc" },
+      })
+
+      if (setup) {
+        await tx.setup.update({
+          where: { id: setup.id },
+          data: {
+            currentStep: 6,
+          },
+        })
+      } else {
+        await tx.setup.create({
+          data: {
+            currentStep: 6,
+          },
+        })
+      }
+
+      // Create Radarr configuration
+      await tx.radarr.create({
+        data: {
+          name: validated.name,
+          url: validated.url,
+          apiKey: validated.apiKey,
+          publicUrl: validated.publicUrl,
+          isActive: true,
+        },
+      })
+    })
+
+    revalidatePath("/setup")
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: "Failed to save Radarr configuration" }
   }
 }
 
@@ -242,30 +358,32 @@ export async function saveLLMProvider(data: LLMProviderInput) {
         await tx.setup.update({
           where: { id: setup.id },
           data: {
-            currentStep: 5,
+            currentStep: 7,
           },
         })
       } else {
         await tx.setup.create({
           data: {
-            currentStep: 5,
+            currentStep: 7,
           },
         })
       }
 
       // Create or update LLM provider configuration (only one active provider at a time)
-      // First, deactivate any existing providers
+      // First, deactivate any existing wrapped providers
       await tx.lLMProvider.updateMany({
-        where: { isActive: true },
+        where: { isActive: true, purpose: "wrapped" },
         data: { isActive: false },
       })
 
-      // Create new LLM provider configuration
+      // Create new LLM provider configuration for wrapped generation
+      // Model is required - use default if not provided
       await tx.lLMProvider.create({
         data: {
           provider: validated.provider,
+          purpose: "wrapped",
           apiKey: validated.apiKey,
-          model: validated.model || null,
+          model: validated.model || "gpt-4o-mini",
           temperature: validated.temperature ?? null,
           maxTokens: validated.maxTokens ?? null,
           isActive: true,

@@ -3,15 +3,15 @@ import { navigateAndVerify, verifyPageAccessible, waitForAdminContent, waitForAd
 
 test.describe('Admin Functionality', () => {
   test('should access admin dashboard', async ({ adminPage }) => {
-    // Navigate directly to /admin/users (the actual admin dashboard)
-    await adminPage.goto('/admin/users', { waitUntil: 'networkidle', timeout: 30000 });
+    // After authentication, adminPage starts on /admin/users (dashboard)
     await waitForAdminContent(adminPage, [
       { type: 'heading', value: /Users/i }
     ], { timeout: 30000 });
   });
 
   test('should access admin settings', async ({ adminPage }) => {
-    await navigateAndVerify(adminPage, '/admin/settings', { timeout: 30000 });
+    // Use in-app navigation instead of forcing a new navigation
+    await adminPage.getByRole('link', { name: 'Settings' }).click();
     await waitForAdminContent(adminPage, [
       { type: 'heading', value: 'Settings' },
       { type: 'text', value: 'Application Settings' },
@@ -20,7 +20,7 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin users list', async ({ adminPage }) => {
-    await navigateAndVerify(adminPage, '/admin/users', { timeout: 30000 });
+    // Already on /admin/users; just verify content
     await waitForAdminContent(adminPage, [
       { type: 'heading', value: 'Users' },
       { type: 'text', value: 'Admin User' },
@@ -31,14 +31,14 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin cost analysis', async ({ adminPage }) => {
-    await navigateAndVerify(adminPage, '/admin/cost-analysis', { timeout: 30000 });
+    await adminPage.getByRole('link', { name: 'Cost Analysis' }).click();
     await waitForAdminContent(adminPage, [
       { type: 'heading', value: 'Cost Analysis' }
     ], { timeout: 30000 });
   });
 
   test('should access admin LLM usage', async ({ adminPage }) => {
-    await navigateAndVerify(adminPage, '/admin/llm-usage', { timeout: 30000 });
+    await adminPage.getByRole('link', { name: 'LLM Usage' }).click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)
@@ -46,7 +46,7 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin playground', async ({ adminPage }) => {
-    await navigateAndVerify(adminPage, '/admin/playground', { timeout: 30000 });
+    await adminPage.getByRole('link', { name: 'Playground' }).click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)
@@ -54,7 +54,7 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin invites', async ({ adminPage }) => {
-    await navigateAndVerify(adminPage, '/admin/invites', { timeout: 30000 });
+    await adminPage.getByRole('link', { name: 'Invites' }).click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)
@@ -62,7 +62,7 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin shares', async ({ adminPage }) => {
-    await navigateAndVerify(adminPage, '/admin/shares', { timeout: 30000 });
+    await adminPage.getByRole('link', { name: 'Share Analytics' }).click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)

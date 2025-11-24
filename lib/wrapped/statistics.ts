@@ -8,23 +8,17 @@ const logger = createLogger("STATISTICS")
 
 
 export interface TautulliConfig {
-  hostname: string
-  port: number
-  protocol: string
+  url: string
   apiKey: string
 }
 
 export interface PlexConfig {
-  hostname: string
-  port: number
-  protocol: string
+  url: string
   token: string
 }
 
 export interface OverseerrConfig {
-  hostname: string
-  port: number
-  protocol: string
+  url: string
   apiKey: string
 }
 
@@ -88,7 +82,7 @@ export async function fetchTautulliStatistics(
   error?: string
 }> {
   try {
-    const baseUrl = `${config.protocol}://${config.hostname}:${config.port}/api/v2`
+    const baseUrl = `${config.url}/api/v2`
     const apiKey = config.apiKey
 
     // Get user ID from Tautulli (we need to match by Plex user ID)
@@ -479,7 +473,7 @@ async function fetchPlexServerStatisticsFromPlex(
   error?: string
 }> {
   try {
-    const baseUrl = `${config.protocol}://${config.hostname}:${config.port}`
+    const baseUrl = `${config.url}`
     const token = config.token
 
     // Get all library sections
@@ -680,7 +674,7 @@ async function fetchTautulliLibraryCounts(
   error?: string
 }> {
   try {
-    const baseUrl = `${config.protocol}://${config.hostname}:${config.port}/api/v2`
+    const baseUrl = `${config.url}/api/v2`
     const apiKey = config.apiKey
 
     // Get libraries - this provides counts including child_count (episodes)
@@ -770,7 +764,7 @@ export async function fetchOverseerrStatistics(
   error?: string
 }> {
   try {
-    const baseUrl = `${config.protocol}://${config.hostname}:${config.port}/api/v1`
+    const baseUrl = `${config.url}/api/v1`
     const apiKey = config.apiKey
 
     // First, find the user in Overseerr by email
@@ -943,7 +937,7 @@ export async function fetchItemLeaderboard(
   error?: string
 }> {
   try {
-    const baseUrl = `${config.protocol}://${config.hostname}:${config.port}/api/v2`
+    const baseUrl = `${config.url}/api/v2`
     const apiKey = config.apiKey
 
     // Use Unix timestamps for date filtering
@@ -1028,7 +1022,7 @@ export async function fetchWatchTimeLeaderboard(
   error?: string
 }> {
   try {
-    const baseUrl = `${config.protocol}://${config.hostname}:${config.port}/api/v2`
+    const baseUrl = `${config.url}/api/v2`
     const apiKey = config.apiKey
 
     // Calculate days from beginning of year to now

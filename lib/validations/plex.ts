@@ -13,7 +13,15 @@ export const plexServerSchema = z.object({
       }
     },
     { message: "Invalid URL format. Expected format: https://example.com:32400" }
-  ),
+  ).transform((url) => {
+    // Normalize URL by parsing and reconstructing it
+    const parsed = parseServerUrl(url)
+    const defaultPort = parsed.protocol === "https" ? 443 : 80
+    if (parsed.port === defaultPort) {
+      return `${parsed.protocol}://${parsed.hostname}`
+    }
+    return `${parsed.protocol}://${parsed.hostname}:${parsed.port}`
+  }),
   token: z.string().min(1, "Plex token is required"),
   publicUrl: z.string().optional().refine(
     (url) => {
@@ -27,16 +35,6 @@ export const plexServerSchema = z.object({
     },
     { message: "Invalid URL format. Expected format: https://plex.example.com" }
   ),
-}).transform((data) => {
-  const { protocol, hostname, port } = parseServerUrl(data.url)
-  return {
-    name: data.name,
-    hostname,
-    port,
-    protocol,
-    token: data.token,
-    publicUrl: data.publicUrl,
-  }
 })
 
 export type PlexServerInput = z.input<typeof plexServerSchema>

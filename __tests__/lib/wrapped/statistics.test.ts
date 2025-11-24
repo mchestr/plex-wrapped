@@ -45,9 +45,7 @@ describe('Statistics Functions', () => {
 
   describe('fetchTautulliStatistics', () => {
     const config = {
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'test-key',
     }
 
@@ -1180,16 +1178,12 @@ describe('Statistics Functions', () => {
 
   describe('fetchPlexServerStatistics', () => {
     const plexConfig = {
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'plex-token',
     }
 
     const tautulliConfig = {
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'test-key',
     }
 
@@ -1353,9 +1347,7 @@ describe('Statistics Functions', () => {
 
   describe('fetchOverseerrStatistics', () => {
     const config = {
-      hostname: 'overseerr.example.com',
-      port: 5055,
-      protocol: 'https',
+      url: 'https://overseerr.example.com:5055',
       apiKey: 'test-key',
     }
 
@@ -1507,9 +1499,7 @@ describe('Statistics Functions', () => {
 
   describe('fetchWatchTimeLeaderboard', () => {
     const config = {
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'test-key',
     }
 
@@ -2233,9 +2223,7 @@ describe('Statistics Functions', () => {
 
   describe('fetchTopContentLeaderboards', () => {
     const config = {
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'test-key',
     }
 

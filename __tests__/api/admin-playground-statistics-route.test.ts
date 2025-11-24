@@ -86,9 +86,7 @@ describe('GET /api/admin/playground/statistics', () => {
   }
 
   const mockTautulli = {
-    hostname: 'localhost',
-    port: 8181,
-    protocol: 'http',
+    url: 'http://localhost:8181',
     apiKey: 'test-key',
     isActive: true,
   }
@@ -263,9 +261,7 @@ describe('GET /api/admin/playground/statistics', () => {
   it('should include server stats when Plex server is configured', async () => {
     const mockPlexServer = {
       name: 'My Plex Server',
-      hostname: 'localhost',
-      port: 32400,
-      protocol: 'http',
+      url: 'http://localhost:32400',
       token: 'test-token',
       isActive: true,
     }

@@ -47,23 +47,31 @@ export async function testPromptTemplate(input: TestPromptInput) {
 
     // If sendToAI is true, use the configured LLM provider from database
     if (input.sendToAI) {
-      // Get active LLM provider
+      // Get active LLM provider for wrapped generation
       const llmProvider = await prisma.lLMProvider.findFirst({
-        where: { isActive: true },
+        where: { isActive: true, purpose: "wrapped" },
       })
 
       if (!llmProvider) {
         return {
           success: false,
           renderedPrompt,
-          error: "No active LLM provider configured. Please configure an LLM provider in settings.",
+          error: "No active LLM provider configured for wrapped generation. Please configure an LLM provider in settings.",
+        }
+      }
+
+      if (!llmProvider.model && !input.model) {
+        return {
+          success: false,
+          renderedPrompt,
+          error: "No model configured. Please configure a model in admin settings or provide one in the test.",
         }
       }
 
       const config: LLMConfig = {
         provider: llmProvider.provider as "openai",
         apiKey: llmProvider.apiKey,
-        model: input.model ?? llmProvider.model ?? undefined,
+        model: input.model ?? llmProvider.model!,
         temperature: input.temperature ?? llmProvider.temperature ?? undefined,
         maxTokens: input.maxTokens ?? llmProvider.maxTokens ?? undefined,
       }

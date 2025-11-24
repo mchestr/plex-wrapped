@@ -82,10 +82,46 @@ export default async function SettingsPage() {
                   </svg>
                   LLM Configuration
                 </h2>
-                <p className="text-xs text-slate-400 mt-1">AI provider and model settings</p>
+                <p className="text-xs text-slate-400 mt-1">AI provider and model settings for chat assistant and wrapped generation</p>
               </div>
-              <div className="p-4">
-                <LLMProviderForm provider={settings.llmProvider} />
+              <div className="p-4 space-y-6">
+                {/* Chat Assistant Configuration */}
+                <div className="border border-slate-700 rounded-lg p-4">
+                  <div className="mb-3">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <svg className="w-4 h-4 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                      </svg>
+                      Chat Assistant
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">Configuration for the admin troubleshooting chatbot</p>
+                  </div>
+                  <LLMProviderForm
+                    provider={settings.chatLLMProvider}
+                    purpose="chat"
+                    title="Chat Assistant"
+                    description="Configuration for the admin troubleshooting chatbot"
+                  />
+                </div>
+
+                {/* Wrapped Generation Configuration */}
+                <div className="border border-slate-700 rounded-lg p-4">
+                  <div className="mb-3">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Wrapped Generation
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-1">Configuration for generating Plex Wrapped content</p>
+                  </div>
+                  <LLMProviderForm
+                    provider={settings.wrappedLLMProvider}
+                    purpose="wrapped"
+                    title="Wrapped Generation"
+                    description="Configuration for generating Plex Wrapped content"
+                  />
+                </div>
               </div>
             </div>
 
@@ -165,6 +201,50 @@ export default async function SettingsPage() {
                     )}
                   </div>
                   <ServerForm type="overseerr" server={settings.overseerr} />
+                </div>
+
+                {/* Sonarr */}
+                <div className="border border-slate-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <svg className="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Sonarr
+                    </h3>
+                    {settings.sonarr ? (
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600 rounded text-xs font-medium">
+                        Not Configured
+                      </span>
+                    )}
+                  </div>
+                  <ServerForm type="sonarr" server={settings.sonarr} />
+                </div>
+
+                {/* Radarr */}
+                <div className="border border-slate-700 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                      <svg className="w-4 h-4 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                      </svg>
+                      Radarr
+                    </h3>
+                    {settings.radarr ? (
+                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600 rounded text-xs font-medium">
+                        Not Configured
+                      </span>
+                    )}
+                  </div>
+                  <ServerForm type="radarr" server={settings.radarr} />
                 </div>
               </div>
             </div>

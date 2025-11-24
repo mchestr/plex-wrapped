@@ -82,10 +82,28 @@ async function authenticateAs(page: Page, testToken: string): Promise<void> {
   await page.waitForLoadState('domcontentloaded', { timeout: 10000 });
 
   // Verify session was created by checking the session API
-  const sessionResponse = await page.request.get('/api/auth/session');
-  const session = await sessionResponse.json();
+  // Poll for session with retries since it might take a moment to be established
+  let session: any = null;
+  let attempts = 0;
+  const maxAttempts = 20; // 10 seconds max wait (20 attempts * 500ms)
 
-  console.log(`[E2E Auth] Session: ${JSON.stringify(session)}`);
+  while (attempts < maxAttempts) {
+    attempts++;
+    try {
+      const sessionResponse = await page.request.get('/api/auth/session');
+      session = await sessionResponse.json();
+
+      if (session && session.user) {
+        console.log(`[E2E Auth] Session established on attempt ${attempts}: ${JSON.stringify(session)}`);
+        break;
+      }
+    } catch (err) {
+      console.log(`[E2E Auth] Session check failed on attempt ${attempts}, retrying...`);
+    }
+
+    // Wait 500ms before next attempt
+    await new Promise(resolve => setTimeout(resolve, 500));
+  }
 
   if (!session || !session.user) {
     // Get cookies for debugging
@@ -95,7 +113,8 @@ async function authenticateAs(page: Page, testToken: string): Promise<void> {
     throw new Error(
       `Failed to create session for test token: ${testToken}.\n` +
       `Session: ${JSON.stringify(session)}\n` +
-      `Auth cookies: ${JSON.stringify(authCookies.map(c => c.name))}`
+      `Auth cookies: ${JSON.stringify(authCookies.map(c => c.name))}\n` +
+      `Attempts: ${attempts}/${maxAttempts}`
     );
   }
 

@@ -238,7 +238,6 @@ See `example.env` for all available configuration options. Key variables:
 - **Authentication**: `NEXTAUTH_SECRET`, `PLEX_CLIENT_IDENTIFIER`
 - **Development**: `DEV_*` variables for setup wizard defaults
   - Use URL format: `DEV_PLEX_URL="https://localhost:32400"` (includes protocol and port)
-  - Legacy format (separate protocol/hostname/port) is also supported for backward compatibility
 
 ---
 

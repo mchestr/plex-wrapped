@@ -4,10 +4,10 @@
 
 import { prisma } from "@/lib/prisma"
 import { createLogger } from "@/lib/utils/logger"
-import { WrappedData, WrappedStatistics } from "@/types/wrapped"
 import { callOpenAI, LLMConfig } from "@/lib/wrapped/api-calls"
 import { generateMockWrappedData } from "@/lib/wrapped/mock-data"
 import { generateWrappedPrompt } from "@/lib/wrapped/prompt-template"
+import { WrappedData, WrappedStatistics } from "@/types/wrapped"
 
 const logger = createLogger("LLM")
 
@@ -75,19 +75,23 @@ export async function generateWrappedWithLLM(
       }
     }
 
-    // Get active LLM provider
+    // Get active LLM provider for wrapped generation
     const llmProvider = await prisma.lLMProvider.findFirst({
-      where: { isActive: true },
+      where: { isActive: true, purpose: "wrapped" },
     })
 
     if (!llmProvider) {
-      return { success: false, error: "No active LLM provider configured" }
+      return { success: false, error: "No active LLM provider configured for wrapped generation" }
+    }
+
+    if (!llmProvider.model) {
+      return { success: false, error: "No model configured for wrapped generation. Please configure a model in admin settings." }
     }
 
     const config: LLMConfig = {
       provider: llmProvider.provider as "openai",
       apiKey: llmProvider.apiKey,
-      model: llmProvider.model ?? undefined,
+      model: llmProvider.model,
       temperature: llmProvider.temperature ?? undefined,
       maxTokens: llmProvider.maxTokens ?? undefined,
     }

@@ -22,6 +22,7 @@ model User {
   onboardingCompleted Boolean       @default(false)
   plexWrapped         PlexWrapped[]
   llmUsage            LLMUsage[]
+  chatConversations   ChatConversation[]
   inviteUsages        InviteUsage[]
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
@@ -44,9 +45,7 @@ model Setup {
 model PlexServer {
   id              String   @id @default(cuid())
   name            String
-  hostname        String
-  port            Int      @default(32400)
-  protocol        String   @default("https")
+  url             String   // Full URL including protocol, hostname, and port (e.g. https://plex.example.com:32400)
   publicUrl       String?  // Public facing URL (e.g. https://plex.example.com)
   token           String
   adminPlexUserId String? // Plex user ID of the admin (user who configured this server)
@@ -61,9 +60,7 @@ model PlexServer {
 model Tautulli {
   id        String   @id @default(cuid())
   name      String
-  hostname  String
-  port      Int      @default(8181)
-  protocol  String   @default("http")
+  url       String   // Full URL including protocol, hostname, and port (e.g. http://tautulli.example.com:8181)
   publicUrl String?  // Public facing URL (e.g. https://tautulli.example.com)
   apiKey    String
   isActive  Boolean  @default(true)
@@ -76,10 +73,34 @@ model Tautulli {
 model Overseerr {
   id        String   @id @default(cuid())
   name      String
-  hostname  String
-  port      Int      @default(5055)
-  protocol  String   @default("http")
+  url       String   // Full URL including protocol, hostname, and port (e.g. http://overseerr.example.com:5055)
   publicUrl String?  // Public facing URL (e.g. https://requests.example.com)
+  apiKey    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model Sonarr {
+  id        String   @id @default(cuid())
+  name      String
+  url       String   // Full URL including protocol, hostname, and port (e.g. http://sonarr.example.com:8989)
+  publicUrl String?  // Public facing URL (e.g. https://sonarr.example.com)
+  apiKey    String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isActive])
+}
+
+model Radarr {
+  id        String   @id @default(cuid())
+  name      String
+  url       String   // Full URL including protocol, hostname, and port (e.g. http://radarr.example.com:7878)
+  publicUrl String?  // Public facing URL (e.g. https://radarr.example.com)
   apiKey    String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -91,8 +112,9 @@ model Overseerr {
 model LLMProvider {
   id          String   @id @default(cuid())
   provider    String // Currently "openai", but extensible for other providers
+  purpose     String // "chat" or "wrapped" - distinguishes between chat assistant and wrapped generation configs
   apiKey      String
-  model       String?
+  model       String // Required - no default model allowed
   temperature Float? // Temperature setting (0.0-2.0), null uses model default
   maxTokens   Int? // Max tokens for completion, null uses default (6000)
   isActive    Boolean  @default(true)
@@ -101,6 +123,7 @@ model LLMProvider {
 
   @@index([isActive])
   @@index([provider])
+  @@index([purpose])
 }
 
 // Plex Wrapped models
@@ -141,6 +164,18 @@ model WrappedShareVisit {
   @@index([createdAt])
 }
 
+model ChatConversation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  endedAt   DateTime?
+  usage     LLMUsage[]
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
 // LLM Usage tracking for cost analysis
 // This model stores ALL LLM usage, including regenerations of wrapped content
 // wrappedId is optional to allow tracking LLM usage even without a wrapped
@@ -148,6 +183,8 @@ model LLMUsage {
   id               String       @id @default(cuid())
   wrappedId        String? // Optional - allows tracking usage without a wrapped
   wrapped          PlexWrapped? @relation(fields: [wrappedId], references: [id], onDelete: SetNull)
+  chatConversationId String?
+  chatConversation   ChatConversation? @relation(fields: [chatConversationId], references: [id], onDelete: SetNull)
   userId           String
   user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   provider         String // Currently "openai", but extensible for other providers
@@ -162,6 +199,7 @@ model LLMUsage {
 
   @@index([userId])
   @@index([wrappedId])
+  @@index([chatConversationId])
   @@index([provider])
   @@index([createdAt])
 }

@@ -60,9 +60,7 @@ jest.mock('next/server', () => {
 
 describe('GET /api/admin/plex/users', () => {
   const mockPlexServer = {
-    hostname: 'localhost',
-    port: 32400,
-    protocol: 'http',
+    url: 'http://localhost:32400',
     token: 'test-token',
     isActive: true,
   }
@@ -104,9 +102,7 @@ describe('GET /api/admin/plex/users', () => {
     expect(response.status).toBe(200)
     expect(data.users).toEqual(mockPlexUsers)
     expect(getAllPlexServerUsers).toHaveBeenCalledWith({
-      hostname: 'localhost',
-      port: 32400,
-      protocol: 'http',
+      url: 'http://localhost:32400',
       token: 'test-token',
     })
   })

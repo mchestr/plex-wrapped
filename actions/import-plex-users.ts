@@ -37,9 +37,7 @@ export async function importPlexUsers(): Promise<{
 
     // Fetch users from Plex server
     const usersResult = await getAllPlexServerUsers({
-      hostname: plexServer.hostname,
-      port: plexServer.port,
-      protocol: plexServer.protocol,
+      url: plexServer.url,
       token: plexServer.token,
     })
 

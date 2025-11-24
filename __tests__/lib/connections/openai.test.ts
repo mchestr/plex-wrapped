@@ -3,8 +3,8 @@
  */
 
 import {
-  testOpenAIConnection,
   fetchOpenAIModels,
+  testOpenAIConnection,
 } from '@/lib/connections/openai'
 
 // Mock fetch globally
@@ -12,6 +12,21 @@ global.fetch = jest.fn()
 const mockFetch = global.fetch as jest.MockedFunction<typeof fetch>
 
 describe('OpenAI Connection', () => {
+  // Helper to temporarily disable test mode
+  const withTestModeDisabled = <T>(fn: () => Promise<T>): Promise<T> => {
+    const originalEnv = process.env.NODE_ENV
+    const originalSkip = process.env.SKIP_CONNECTION_TESTS
+    process.env.NODE_ENV = 'production'
+    delete process.env.SKIP_CONNECTION_TESTS
+
+    return fn().finally(() => {
+      process.env.NODE_ENV = originalEnv
+      if (originalSkip) {
+        process.env.SKIP_CONNECTION_TESTS = originalSkip
+      }
+    })
+  }
+
   beforeEach(() => {
     jest.clearAllMocks()
     jest.useFakeTimers()
@@ -35,7 +50,7 @@ describe('OpenAI Connection', () => {
         json: async () => mockResponse,
       } as Response)
 
-      const result = await testOpenAIConnection('valid-api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('valid-api-key'))
 
       expect(result.success).toBe(true)
       expect(result.error).toBeUndefined()
@@ -57,7 +72,7 @@ describe('OpenAI Connection', () => {
         statusText: 'Unauthorized',
       } as Response)
 
-      const result = await testOpenAIConnection('invalid-api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('invalid-api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Invalid API key')
@@ -70,7 +85,7 @@ describe('OpenAI Connection', () => {
         statusText: 'Forbidden',
       } as Response)
 
-      const result = await testOpenAIConnection('forbidden-api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('forbidden-api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Invalid API key')
@@ -83,7 +98,7 @@ describe('OpenAI Connection', () => {
         statusText: 'Internal Server Error',
       } as Response)
 
-      const result = await testOpenAIConnection('api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connection failed')
@@ -101,7 +116,7 @@ describe('OpenAI Connection', () => {
         json: async () => mockResponse,
       } as Response)
 
-      const result = await testOpenAIConnection('api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Rate limit exceeded')
@@ -115,7 +130,7 @@ describe('OpenAI Connection', () => {
         return Promise.reject(abortError)
       })
 
-      const result = await testOpenAIConnection('api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connection timeout')
@@ -124,7 +139,7 @@ describe('OpenAI Connection', () => {
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-      const result = await testOpenAIConnection('api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connection error')
@@ -133,7 +148,7 @@ describe('OpenAI Connection', () => {
     it('should handle non-Error exceptions', async () => {
       mockFetch.mockRejectedValueOnce('String error')
 
-      const result = await testOpenAIConnection('api-key')
+      const result = await withTestModeDisabled(() => testOpenAIConnection('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Failed to connect to OpenAI API')
@@ -148,7 +163,7 @@ describe('OpenAI Connection', () => {
         return Promise.reject(abortError)
       })
 
-      await testOpenAIConnection('api-key')
+      await withTestModeDisabled(() => testOpenAIConnection('api-key'))
 
       // The abort controller is used internally, but we can verify the timeout error is handled
       expect(abortSpy).not.toHaveBeenCalled() // AbortController.abort() is called internally, not directly testable
@@ -173,7 +188,7 @@ describe('OpenAI Connection', () => {
         json: async () => mockResponse,
       } as Response)
 
-      const result = await fetchOpenAIModels('valid-api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('valid-api-key'))
 
       expect(result.success).toBe(true)
       expect(result.models).toEqual(['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'])
@@ -193,7 +208,7 @@ describe('OpenAI Connection', () => {
         json: async () => mockResponse,
       } as Response)
 
-      const result = await fetchOpenAIModels('api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('api-key'))
 
       expect(result.success).toBe(true)
       expect(result.models).toEqual([])
@@ -206,7 +221,7 @@ describe('OpenAI Connection', () => {
         statusText: 'Unauthorized',
       } as Response)
 
-      const result = await fetchOpenAIModels('invalid-api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('invalid-api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Invalid API key')
@@ -224,7 +239,7 @@ describe('OpenAI Connection', () => {
         json: async () => mockResponse,
       } as Response)
 
-      const result = await fetchOpenAIModels('api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toBe('Invalid API key')
@@ -238,7 +253,7 @@ describe('OpenAI Connection', () => {
         return Promise.reject(abortError)
       })
 
-      const result = await fetchOpenAIModels('api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connection timeout')
@@ -247,7 +262,7 @@ describe('OpenAI Connection', () => {
     it('should handle network errors', async () => {
       mockFetch.mockRejectedValueOnce(new Error('Network error'))
 
-      const result = await fetchOpenAIModels('api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('api-key'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connection error')
@@ -263,7 +278,7 @@ describe('OpenAI Connection', () => {
         json: async () => mockResponse,
       } as Response)
 
-      const result = await fetchOpenAIModels('api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('api-key'))
 
       expect(result.success).toBe(true)
       expect(result.models).toEqual([])
@@ -283,7 +298,7 @@ describe('OpenAI Connection', () => {
         json: async () => mockResponse,
       } as Response)
 
-      const result = await fetchOpenAIModels('api-key')
+      const result = await withTestModeDisabled(() => fetchOpenAIModels('api-key'))
 
       expect(result.success).toBe(true)
       expect(result.models).toEqual(['gpt-3.5-turbo', 'gpt-4', 'gpt-4-turbo'])

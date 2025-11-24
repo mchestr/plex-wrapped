@@ -166,7 +166,11 @@ function sanitizeValue(value: unknown, isDevelopment: boolean): unknown {
 /**
  * Sanitize URLs to remove tokens and sensitive query params
  */
-function sanitizeUrl(url: string, isDevelopment: boolean): string {
+function sanitizeUrl(url: string | undefined, isDevelopment: boolean): string {
+  if (!url) {
+    return ""
+  }
+
   if (isDevelopment) {
     return url
   }
@@ -239,7 +243,7 @@ function createWinstonLogger(): Winston.Logger | null {
     winston.format.json()
   )
 
-  // Development format with Chalk for pretty printing
+  // Development format with Chalk for pretty printing (single-line, compact)
   const developmentFormat = winston.format.combine(
     winston.format.timestamp({ format: "YYYY-MM-DD HH:mm:ss" }),
     winston.format.errors({ stack: true }),
@@ -312,12 +316,13 @@ function createWinstonLogger(): Winston.Logger | null {
       delete allMetadata.service
       delete allMetadata.env
 
+      // Build compact, single-line metadata string
       let metaStr = ""
-      if (Object.keys(allMetadata).length > 0) {
-        // Format metadata with colors - build colored string directly
-        const metaLines: string[] = []
-        for (const [key, value] of Object.entries(allMetadata)) {
-          const keyStr = chalk.gray(`${key}:`)
+      const metaEntries = Object.entries(allMetadata)
+      if (metaEntries.length > 0) {
+        const segments: string[] = []
+
+        for (const [key, value] of metaEntries) {
           let valueStr: string
 
           if (key === "requestId") {
@@ -327,25 +332,35 @@ function createWinstonLogger(): Winston.Logger | null {
           } else if (key === "err" || key === "error") {
             // Error objects get special formatting
             if (typeof value === "object" && value !== null) {
-              valueStr = chalk.red(JSON.stringify(value, null, 2))
+              const serialized = JSON.stringify(value)
+              // Truncate very large error payloads
+              const truncated =
+                serialized.length > 300 ? serialized.slice(0, 297) + "..." : serialized
+              valueStr = chalk.red(truncated.replace(/\s+/g, " "))
             } else {
-              valueStr = chalk.red(String(value))
+              const text = String(value)
+              const truncated = text.length > 300 ? text.slice(0, 297) + "..." : text
+              valueStr = chalk.red(truncated.replace(/\s+/g, " "))
             }
           } else if (typeof value === "object" && value !== null) {
-            valueStr = chalk.white(JSON.stringify(value, null, 2))
+            const serialized = JSON.stringify(value)
+            const truncated =
+              serialized.length > 200 ? serialized.slice(0, 197) + "..." : serialized
+            valueStr = chalk.white(truncated.replace(/\s+/g, " "))
           } else {
-            valueStr = chalk.white(String(value))
+            const text = String(value)
+            const truncated = text.length > 120 ? text.slice(0, 117) + "..." : text
+            valueStr = chalk.white(truncated.replace(/\s+/g, " "))
           }
 
-          metaLines.push(`  ${keyStr} ${valueStr}`)
+          const keyStr = chalk.gray(key)
+          segments.push(`${keyStr}=${valueStr}`)
         }
 
-        const openBrace = chalk.gray("{")
-        const closeBrace = chalk.gray("}")
-        metaStr = `\n${openBrace}\n${metaLines.join("\n")}\n${closeBrace}`
+        metaStr = chalk.gray(" | ") + segments.join(chalk.gray(" "))
       }
 
-      // Build the formatted log line
+      // Build the formatted log line (single line on stdout)
       const parts = [
         timestampStr,
         levelColor(`${levelSymbol} ${logLevel.toUpperCase().padEnd(5)}`),

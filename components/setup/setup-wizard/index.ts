@@ -2,6 +2,8 @@ export { FinalSuccessAnimation } from "@/components/setup/setup-wizard/final-suc
 export { LLMProviderForm } from "@/components/setup/setup-wizard/llm-provider-form"
 export { OverseerrForm } from "@/components/setup/setup-wizard/overseerr-form"
 export { PlexServerForm } from "@/components/setup/setup-wizard/plex-server-form"
+export { RadarrForm } from "@/components/setup/setup-wizard/radarr-form"
+export { SonarrForm } from "@/components/setup/setup-wizard/sonarr-form"
 export { SetupWizard } from "@/components/setup/setup-wizard/setup-wizard"
 export { SuccessAnimation } from "@/components/setup/setup-wizard/success-animation"
 export { TautulliForm } from "@/components/setup/setup-wizard/tautulli-form"

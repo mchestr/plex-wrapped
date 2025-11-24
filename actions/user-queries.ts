@@ -85,9 +85,7 @@ export async function getUserDetails(userId: string): Promise<UserDetails | null
     if (user.plexUserId && plexServer) {
       const accessResult = await checkUserServerAccess(
         {
-          hostname: plexServer.hostname,
-          port: plexServer.port,
-          protocol: plexServer.protocol,
+          url: plexServer.url,
           token: plexServer.token,
           adminPlexUserId: plexServer.adminPlexUserId,
         },
@@ -237,9 +235,7 @@ export async function unshareUserLibrary(userId: string): Promise<{ success: boo
     // Unshare the user
     const result = await unshareUserFromPlexServer(
       {
-        hostname: plexServer.hostname,
-        port: plexServer.port,
-        protocol: plexServer.protocol,
+        url: plexServer.url,
         token: plexServer.token,
       },
       user.plexUserId
@@ -312,9 +308,7 @@ export async function buildPlexAccessMap(users: { id: string; plexUserId: string
   try {
     // Get the server's machine identifier once
     const identityResult = await getPlexServerIdentity({
-      hostname: plexServer.hostname,
-      port: plexServer.port,
-      protocol: plexServer.protocol,
+      url: plexServer.url,
       token: plexServer.token,
     })
 

@@ -22,6 +22,16 @@ export const SETUP_STEPS: SetupStep[] = [
   },
   {
     id: 4,
+    title: "Sonarr",
+    description: "Configure your Sonarr API connection",
+  },
+  {
+    id: 5,
+    title: "Radarr",
+    description: "Configure your Radarr API connection",
+  },
+  {
+    id: 6,
     title: "AI Provider",
     description: "Configure OpenAI for AI features",
   },

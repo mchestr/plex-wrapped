@@ -2,9 +2,9 @@
 
 import { requireAdmin } from "@/lib/admin"
 import {
-    acceptPlexInvite,
-    getPlexUserInfo,
-    inviteUserToPlexServer
+  acceptPlexInvite,
+  getPlexUserInfo,
+  inviteUserToPlexServer
 } from "@/lib/connections/plex"
 import { prisma } from "@/lib/prisma"
 import { createLogger } from "@/lib/utils/logger"
@@ -404,9 +404,7 @@ export async function processInvite(code: string, plexAuthToken: string) {
 
     const inviteResult = await inviteUserToPlexServer(
       {
-        hostname: plexServer.hostname,
-        port: plexServer.port,
-        protocol: plexServer.protocol,
+        url: plexServer.url,
         token: plexServer.token,
       },
       plexUser.email,

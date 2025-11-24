@@ -25,9 +25,7 @@ interface ServerAccessResult {
 }
 
 interface PlexServerConfig {
-  hostname: string
-  port: number
-  protocol: string
+  url: string
   token: string
   adminPlexUserId: string | null
 }
@@ -54,9 +52,7 @@ async function getActivePlexServer(): Promise<{ success: boolean; data?: PlexSer
   return {
     success: true,
     data: {
-      hostname: plexServer.hostname,
-      port: plexServer.port,
-      protocol: plexServer.protocol,
+      url: plexServer.url,
       token: plexServer.token,
       adminPlexUserId: plexServer.adminPlexUserId,
     },
@@ -196,7 +192,7 @@ async function retryAccessCheckWithBackoff(
  */
 function logAccessDenied(
   plexUser: PlexUserInfo,
-  serverHostname: string,
+  serverUrl: string,
   reason: string,
   retriesAttempted: number
 ): void {
@@ -204,7 +200,7 @@ function logAccessDenied(
     plexUserId: plexUser.id,
     username: plexUser.username,
     // Email is automatically sanitized by logger in production
-    serverHostname,
+    serverUrl,
     reason,
     retriesAttempted,
   })
@@ -277,7 +273,7 @@ export async function checkServerAccess(
     logger.debug("Starting access check", {
       plexUserId: plexUser.id,
       username: plexUser.username,
-      hostname: serverConfig.hostname,
+      url: serverConfig.url,
     })
 
     let accessCheck: ServerAccessResult
@@ -299,7 +295,7 @@ export async function checkServerAccess(
       const retriesAttempted = isInviteFlow && maxRetries > 0 ? maxRetries : 0
       logAccessDenied(
         plexUser,
-        serverConfig.hostname,
+        serverConfig.url,
         accessCheck.error || "No access to server",
         retriesAttempted
       )

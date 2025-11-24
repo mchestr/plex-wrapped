@@ -17,6 +17,21 @@ import {
 } from '../utils/test-builders'
 
 describe('Plex Connection', () => {
+  // Helper to temporarily disable test mode
+  const withTestModeDisabled = <T>(fn: () => Promise<T>): Promise<T> => {
+    const originalEnv = process.env.NODE_ENV
+    const originalSkip = process.env.SKIP_CONNECTION_TESTS
+    process.env.NODE_ENV = 'production'
+    delete process.env.SKIP_CONNECTION_TESTS
+
+    return fn().finally(() => {
+      process.env.NODE_ENV = originalEnv
+      if (originalSkip) {
+        process.env.SKIP_CONNECTION_TESTS = originalSkip
+      }
+    })
+  }
+
   beforeEach(() => {
     jest.clearAllMocks()
     global.fetch = jest.fn()
@@ -30,11 +45,11 @@ describe('Plex Connection', () => {
       })
 
       const config = makePlexServerConfig()
-      const result = await testPlexConnection(config)
+      const result = await withTestModeDisabled(() => testPlexConnection(config))
 
       expect(result.success).toBe(true)
       expect(global.fetch).toHaveBeenCalledWith(
-        expect.stringContaining(config.hostname),
+        expect.stringContaining(config.url),
         expect.objectContaining({
           method: 'GET',
           headers: expect.objectContaining({
@@ -50,7 +65,7 @@ describe('Plex Connection', () => {
         status: 401,
       })
 
-      const result = await testPlexConnection(makePlexServerConfig({ token: 'invalid-token' }))
+      const result = await withTestModeDisabled(() => testPlexConnection(makePlexServerConfig({ token: 'invalid-token' })))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Invalid Plex token')
@@ -62,7 +77,7 @@ describe('Plex Connection', () => {
         status: 404,
       })
 
-      const result = await testPlexConnection(makePlexServerConfig({ hostname: 'nonexistent.example.com' }))
+      const result = await withTestModeDisabled(() => testPlexConnection(makePlexServerConfig({ url: 'https://nonexistent.example.com:32400' })))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('not found')
@@ -73,7 +88,7 @@ describe('Plex Connection', () => {
       abortError.name = 'AbortError'
       ;(global.fetch as jest.Mock).mockRejectedValueOnce(abortError)
 
-      const result = await testPlexConnection(makePlexServerConfig({ hostname: 'slow.example.com' }))
+      const result = await withTestModeDisabled(() => testPlexConnection(makePlexServerConfig({ url: 'https://slow.example.com:32400' })))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('timeout')
@@ -84,7 +99,7 @@ describe('Plex Connection', () => {
         new Error('Network error')
       )
 
-      const result = await testPlexConnection(makePlexServerConfig())
+      const result = await withTestModeDisabled(() => testPlexConnection(makePlexServerConfig()))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Connection error')
@@ -92,6 +107,7 @@ describe('Plex Connection', () => {
   })
 
   describe('getPlexUserInfo', () => {
+
     it('should successfully get Plex user info', async () => {
       const mockUserData = makePlexUserInfo()
 
@@ -100,7 +116,7 @@ describe('Plex Connection', () => {
         json: async () => mockUserData,
       })
 
-      const result = await getPlexUserInfo('test-token')
+      const result = await withTestModeDisabled(() => getPlexUserInfo('test-token'))
 
       expect(result.success).toBe(true)
       expect(result.data).toEqual(mockUserData)
@@ -128,7 +144,7 @@ describe('Plex Connection', () => {
         json: async () => mockUserData,
       })
 
-      const result = await getPlexUserInfo('test-token')
+      const result = await withTestModeDisabled(() => getPlexUserInfo('test-token'))
 
       expect(result.success).toBe(true)
       expect(result.data?.id).toBe('user-123')
@@ -141,7 +157,7 @@ describe('Plex Connection', () => {
         status: 401,
       })
 
-      const result = await getPlexUserInfo('invalid-token')
+      const result = await withTestModeDisabled(() => getPlexUserInfo('invalid-token'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Invalid Plex token')
@@ -153,7 +169,7 @@ describe('Plex Connection', () => {
         json: async () => ({}), // Missing required fields
       })
 
-      const result = await getPlexUserInfo('test-token')
+      const result = await withTestModeDisabled(() => getPlexUserInfo('test-token'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('Invalid user data')
@@ -164,7 +180,7 @@ describe('Plex Connection', () => {
       abortError.name = 'AbortError'
       ;(global.fetch as jest.Mock).mockRejectedValueOnce(abortError)
 
-      const result = await getPlexUserInfo('test-token')
+      const result = await withTestModeDisabled(() => getPlexUserInfo('test-token'))
 
       expect(result.success).toBe(false)
       expect(result.error).toContain('timeout')
@@ -186,9 +202,7 @@ describe('Plex Connection', () => {
 
       const result = await checkUserServerAccess(
         {
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: 'server-token',
           adminPlexUserId: '123',
         },
@@ -230,9 +244,7 @@ describe('Plex Connection', () => {
 
       const result = await checkUserServerAccess(
         {
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: 'server-token',
           adminPlexUserId: '999',
         },
@@ -272,9 +284,7 @@ describe('Plex Connection', () => {
 
       const result = await checkUserServerAccess(
         {
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: 'server-token',
           adminPlexUserId: '999',
         },
@@ -292,9 +302,7 @@ describe('Plex Connection', () => {
 
       const result = await checkUserServerAccess(
         {
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: 'server-token',
           adminPlexUserId: ' 123 ',
         },
@@ -333,9 +341,7 @@ describe('Plex Connection', () => {
 
       const result = await checkUserServerAccess(
         {
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: 'server-token',
           adminPlexUserId: '999',
         },
@@ -403,9 +409,7 @@ describe('Plex Connection', () => {
 
       const result = await checkUserServerAccess(
         {
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: 'server-token',
           adminPlexUserId: '999',
         },
@@ -424,9 +428,7 @@ describe('Plex Connection', () => {
 
       const result = await checkUserServerAccess(
         {
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: 'server-token',
           adminPlexUserId: '999',
         },
@@ -464,9 +466,7 @@ describe('Plex Connection', () => {
       })
 
       const result = await getAllPlexServerUsers({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
+        url: 'https://plex.example.com:32400',
         token: 'server-token',
       })
 
@@ -499,9 +499,7 @@ describe('Plex Connection', () => {
       })
 
       const result = await getAllPlexServerUsers({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
+        url: 'https://plex.example.com:32400',
         token: 'server-token',
       })
 
@@ -521,9 +519,7 @@ describe('Plex Connection', () => {
       })
 
       const result = await getAllPlexServerUsers({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
+        url: 'https://plex.example.com:32400',
         token: 'server-token',
       })
 
@@ -540,9 +536,7 @@ describe('Plex Connection', () => {
       })
 
       const result = await getAllPlexServerUsers({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
+        url: 'https://plex.example.com:32400',
         token: 'invalid-token',
       })
 
@@ -558,9 +552,7 @@ describe('Plex Connection', () => {
       })
 
       const result = await getAllPlexServerUsers({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
+        url: 'https://plex.example.com:32400',
         token: 'server-token',
       })
 
@@ -581,9 +573,7 @@ describe('Plex Connection', () => {
       ;(global.fetch as jest.Mock).mockRejectedValueOnce(abortError)
 
       const result = await getAllPlexServerUsers({
-        hostname: 'plex.example.com',
-        port: 32400,
-        protocol: 'https',
+        url: 'https://plex.example.com:32400',
         token: 'server-token',
       })
 
@@ -594,9 +584,7 @@ describe('Plex Connection', () => {
 
   describe('inviteUserToPlexServer', () => {
     const mockServerConfig = {
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
     }
 

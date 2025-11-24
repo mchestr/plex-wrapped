@@ -171,9 +171,7 @@ describe('Setup Actions', () => {
       expect(result.success).toBe(true)
       expect(mockTestPlexConnection).toHaveBeenCalledWith(
         expect.objectContaining({
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: plexInput.token,
         })
       )
@@ -181,9 +179,7 @@ describe('Setup Actions', () => {
       expect(mockTx.plexServer.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           name: plexInput.name,
-          hostname: 'plex.example.com',
-          port: 32400,
-          protocol: 'https',
+          url: 'https://plex.example.com:32400',
           token: plexInput.token,
           publicUrl: plexInput.publicUrl,
           adminPlexUserId: 'plex-user-123',
@@ -282,9 +278,7 @@ describe('Setup Actions', () => {
       expect(mockTx.tautulli.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           name: tautulliInput.name,
-          hostname: 'tautulli.example.com',
-          port: 8181,
-          protocol: 'http',
+          url: 'http://tautulli.example.com:8181',
           apiKey: tautulliInput.apiKey,
           publicUrl: tautulliInput.publicUrl,
           isActive: true,
@@ -337,9 +331,7 @@ describe('Setup Actions', () => {
       expect(mockTx.overseerr.create).toHaveBeenCalledWith({
         data: expect.objectContaining({
           name: overseerrInput.name,
-          hostname: 'overseerr.example.com',
-          port: 5055,
-          protocol: 'https',
+          url: 'https://overseerr.example.com:5055',
           apiKey: overseerrInput.apiKey,
           publicUrl: overseerrInput.publicUrl,
           isActive: true,
@@ -378,12 +370,13 @@ describe('Setup Actions', () => {
       expect(result.success).toBe(true)
       expect(mockTestLLMProviderConnection).toHaveBeenCalled()
       expect(mockTx.lLMProvider.updateMany).toHaveBeenCalledWith({
-        where: { isActive: true },
+        where: { isActive: true, purpose: "wrapped" },
         data: { isActive: false },
       })
       expect(mockTx.lLMProvider.create).toHaveBeenCalledWith({
         data: {
           provider: llmInput.provider,
+          purpose: "wrapped",
           apiKey: llmInput.apiKey,
           model: llmInput.model || null,
           temperature: null,

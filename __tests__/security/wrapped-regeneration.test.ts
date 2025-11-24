@@ -75,18 +75,14 @@ describe('Wrapped Regeneration Security', () => {
   const mockPlexServer = {
     id: 'server-1',
     name: 'Test Server',
-    hostname: 'plex.example.com',
-    port: 32400,
-    protocol: 'https',
+    url: 'https://plex.example.com:32400',
     token: 'server-token',
     isActive: true,
   }
 
   const mockTautulli = {
     id: 'tautulli-1',
-    hostname: 'tautulli.example.com',
-    port: 8181,
-    protocol: 'http',
+    url: 'http://tautulli.example.com:8181',
     apiKey: 'tautulli-key',
     isActive: true,
   }

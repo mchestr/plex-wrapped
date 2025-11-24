@@ -2,6 +2,7 @@ import { getUserDetails } from "@/actions/users"
 import { RegenerateWrappedButton } from "@/components/admin/users/regenerate-wrapped-button"
 import { UnshareUserButton } from "@/components/admin/users/unshare-user-button"
 import { UserStatusBadge } from "@/components/admin/users/user-status-badge"
+import { ChangeUserRoleButton } from "@/components/admin/users/change-user-role-button"
 import Link from "next/link"
 import { notFound } from "next/navigation"
 
@@ -103,6 +104,28 @@ export default async function UserDetailsPage({ params }: { params: { userId: st
                       <UnshareUserButton userId={user.id} userName={user.name} />
                     </div>
                   )}
+                </div>
+                {/* Role Management */}
+                <div className="mt-4 pt-4 border-t border-slate-700">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <div className="text-sm text-slate-400 mb-1">Role</div>
+                      <div className="text-sm text-white">
+                        {user.isAdmin ? (
+                          <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs font-medium rounded">
+                            Admin
+                          </span>
+                        ) : (
+                          <span className="text-slate-300">Regular User</span>
+                        )}
+                      </div>
+                    </div>
+                    <ChangeUserRoleButton
+                      userId={user.id}
+                      userName={user.name}
+                      currentIsAdmin={user.isAdmin}
+                    />
+                  </div>
                 </div>
               </div>
             </div>

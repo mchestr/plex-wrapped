@@ -1,8 +1,8 @@
 /**
- * Tests for lib/wrapped/pricing.ts - cost calculation logic
+ * Tests for lib/llm/pricing.ts - cost calculation logic
  */
 
-import { calculateCost, MODEL_PRICING } from '@/lib/wrapped/pricing'
+import { calculateCost, MODEL_PRICING } from '@/lib/llm/pricing'
 
 describe('Pricing Calculation', () => {
   describe('calculateCost', () => {

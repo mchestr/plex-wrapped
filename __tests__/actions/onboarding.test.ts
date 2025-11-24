@@ -38,9 +38,7 @@ describe('Onboarding Actions', () => {
     it('should return publicUrl when available', async () => {
       mockPrisma.overseerr.findFirst.mockResolvedValue({
         publicUrl: 'https://requests.example.com',
-        protocol: 'http',
-        hostname: 'internal',
-        port: 5055,
+        url: 'http://internal:5055',
       } as any)
 
       const result = await getOnboardingInfo()
@@ -51,9 +49,7 @@ describe('Onboarding Actions', () => {
     it('should construct internal URL when publicUrl is missing', async () => {
       mockPrisma.overseerr.findFirst.mockResolvedValue({
         publicUrl: null,
-        protocol: 'http',
-        hostname: 'localhost',
-        port: 5055,
+        url: 'http://localhost:5055',
       } as any)
 
       const result = await getOnboardingInfo()

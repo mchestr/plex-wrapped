@@ -277,7 +277,7 @@ describe('AdminNav', () => {
       render(<AdminNav />)
 
       expect(screen.getByText('Analytics')).toBeInTheDocument()
-      expect(screen.getByText('Configuration')).toBeInTheDocument()
+      expect(screen.getByText('Prompts & Testing')).toBeInTheDocument()
     })
 
     it('should have proper sidebar styling', () => {

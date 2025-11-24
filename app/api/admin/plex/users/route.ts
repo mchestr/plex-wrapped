@@ -1,8 +1,8 @@
-import { prisma } from "@/lib/prisma"
 import { getAllPlexServerUsers } from "@/lib/connections/plex"
+import { prisma } from "@/lib/prisma"
 import { requireAdminAPI } from "@/lib/security/api-helpers"
-import { adminRateLimiter } from "@/lib/security/rate-limit"
 import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/security/error-handler"
+import { adminRateLimiter } from "@/lib/security/rate-limit"
 import { NextRequest, NextResponse } from "next/server"
 
 export const dynamic = 'force-dynamic'
@@ -35,9 +35,7 @@ export async function GET(request: NextRequest) {
 
     // Fetch users from Plex server
     const usersResult = await getAllPlexServerUsers({
-      hostname: plexServer.hostname,
-      port: plexServer.port,
-      protocol: plexServer.protocol,
+      url: plexServer.url,
       token: plexServer.token,
     })
 

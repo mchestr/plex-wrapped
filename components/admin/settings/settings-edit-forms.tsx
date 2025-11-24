@@ -1,17 +1,19 @@
 "use client"
 
-import { setLLMDisabled, updateLLMProvider, updateOverseerr, updatePlexServer, updateTautulli } from "@/actions/admin"
+import { setLLMDisabled, updateChatLLMProvider, updateOverseerr, updatePlexServer, updateRadarr, updateSonarr, updateTautulli, updateWrappedLLMProvider } from "@/actions/admin"
 import { StyledDropdown } from "@/components/ui/styled-dropdown"
 import { StyledInput } from "@/components/ui/styled-input"
-import { constructServerUrl } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useTransition } from "react"
 
 interface LLMProviderFormProps {
   provider: { provider: string; model: string | null; apiKey: string; temperature: number | null; maxTokens: number | null } | null
+  purpose: "chat" | "wrapped"
+  title: string
+  description: string
 }
 
-export function LLMProviderForm({ provider }: LLMProviderFormProps) {
+export function LLMProviderForm({ provider, purpose, title, description }: LLMProviderFormProps) {
   const [isEditing, setIsEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
@@ -21,8 +23,8 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
     provider: provider?.provider || "openai",
     apiKey: provider?.apiKey || "",
     model: provider?.model || "",
-    temperature: provider?.temperature ?? 0.8,
-    maxTokens: provider?.maxTokens ?? 6000,
+    temperature: provider?.temperature ?? (purpose === "chat" ? 0.7 : 0.8),
+    maxTokens: provider?.maxTokens ?? (purpose === "chat" ? 1000 : 6000),
   })
 
   const [availableModels, setAvailableModels] = useState<string[]>([])
@@ -80,11 +82,17 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
     e.preventDefault()
     setError(null)
 
+    if (!formData.model) {
+      setError("Model is required")
+      return
+    }
+
     startTransition(async () => {
-      const result = await updateLLMProvider({
+      const updateFn = purpose === "chat" ? updateChatLLMProvider : updateWrappedLLMProvider
+      const result = await updateFn({
         provider: formData.provider,
         apiKey: formData.apiKey,
-        model: formData.model || undefined,
+        model: formData.model!,
         temperature: formData.temperature,
         maxTokens: formData.maxTokens,
       })
@@ -93,7 +101,7 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
         setIsEditing(false)
         router.refresh()
       } else {
-        setError(result.error || "Failed to update LLM provider")
+        setError(result.error || `Failed to update ${purpose} LLM provider`)
       }
     })
   }
@@ -115,19 +123,19 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
               <div>
                 <div className="text-xs font-medium text-slate-400 mb-1">Model</div>
                 <div className="text-sm text-white font-mono">
-                  {provider.model || "Default"}
+                  {provider.model || "Not configured"}
                 </div>
               </div>
               <div>
                 <div className="text-xs font-medium text-slate-400 mb-1">Temperature</div>
                 <div className="text-sm text-white">
-                  {provider.temperature ?? "Default (0.8)"}
+                  {provider.temperature ?? `Default (${purpose === "chat" ? "0.7" : "0.8"})`}
                 </div>
               </div>
               <div>
                 <div className="text-xs font-medium text-slate-400 mb-1">Max Tokens</div>
                 <div className="text-sm text-white">
-                  {provider.maxTokens ?? "Default (6000)"}
+                  {provider.maxTokens ?? `Default (${purpose === "chat" ? "1000" : "6000"})`}
                 </div>
               </div>
             </div>
@@ -160,7 +168,7 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-slate-400 mb-1">Model (optional)</label>
+          <label className="block text-xs font-medium text-slate-400 mb-1">Model <span className="text-red-400">*</span></label>
           {!useCustomModel && availableModels.length > 0 ? (
             <StyledDropdown
               value={formData.model || ""}
@@ -173,7 +181,7 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
                 }
               }}
               options={[
-                { value: "", label: "Select a model (optional)" },
+                { value: "", label: "Select a model" },
                 ...availableModels.map((model) => ({ value: model, label: model })),
                 { value: "__custom__", label: "Enter custom model..." },
               ]}
@@ -185,6 +193,7 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
               value={formData.model}
               onChange={(e) => setFormData({ ...formData, model: e.target.value })}
               placeholder="gpt-4, gpt-3.5-turbo, etc."
+              required
               disabled={isPending}
             />
           ) : (
@@ -212,7 +221,7 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1">
             Temperature (0.0-2.0)
-            <span className="text-slate-500 ml-1">(optional, default: 0.8)</span>
+            <span className="text-slate-500 ml-1">(optional, default: {purpose === "chat" ? "0.7" : "0.8"})</span>
           </label>
           <StyledInput
             type="number"
@@ -220,8 +229,8 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
             max="2"
             step="0.1"
             value={formData.temperature}
-            onChange={(e) => setFormData({ ...formData, temperature: parseFloat(e.target.value) || 0.8 })}
-            placeholder="0.8"
+            onChange={(e) => setFormData({ ...formData, temperature: parseFloat(e.target.value) || (purpose === "chat" ? 0.7 : 0.8) })}
+            placeholder={purpose === "chat" ? "0.7" : "0.8"}
             disabled={isPending}
           />
           <p className="mt-1 text-xs text-slate-500">
@@ -231,7 +240,7 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
         <div>
           <label className="block text-xs font-medium text-slate-400 mb-1">
             Max Tokens (1-100000)
-            <span className="text-slate-500 ml-1">(optional, default: 6000)</span>
+            <span className="text-slate-500 ml-1">(optional, default: {purpose === "chat" ? "1000" : "6000"})</span>
           </label>
           <StyledInput
             type="number"
@@ -239,8 +248,8 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
             max="100000"
             step="1"
             value={formData.maxTokens}
-            onChange={(e) => setFormData({ ...formData, maxTokens: parseInt(e.target.value) || 6000 })}
-            placeholder="6000"
+            onChange={(e) => setFormData({ ...formData, maxTokens: parseInt(e.target.value) || (purpose === "chat" ? 1000 : 6000) })}
+            placeholder={purpose === "chat" ? "1000" : "6000"}
             disabled={isPending}
           />
           <p className="mt-1 text-xs text-slate-500">
@@ -270,8 +279,8 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
               provider: provider?.provider || "openai",
               apiKey: provider?.apiKey || "",
               model: provider?.model || "",
-              temperature: provider?.temperature ?? 0.8,
-              maxTokens: provider?.maxTokens ?? 6000,
+              temperature: provider?.temperature ?? (purpose === "chat" ? 0.7 : 0.8),
+              maxTokens: provider?.maxTokens ?? (purpose === "chat" ? 1000 : 6000),
             })
             setAvailableModels([])
             setModelsError(null)
@@ -288,8 +297,8 @@ export function LLMProviderForm({ provider }: LLMProviderFormProps) {
 }
 
 interface ServerFormProps {
-  type: "plex" | "tautulli" | "overseerr"
-  server: { name: string; hostname: string; port: number; protocol: string; token?: string; apiKey?: string; publicUrl?: string | null } | null
+  type: "plex" | "tautulli" | "overseerr" | "sonarr" | "radarr"
+  server: { name: string; url: string; token?: string; apiKey?: string; publicUrl?: string | null } | null
 }
 
 export function ServerForm({ type, server }: ServerFormProps) {
@@ -298,14 +307,9 @@ export function ServerForm({ type, server }: ServerFormProps) {
   const [error, setError] = useState<string | null>(null)
   const router = useRouter()
 
-  const getServerUrl = () => {
-    if (!server) return ""
-    return constructServerUrl(server.protocol as "http" | "https", server.hostname, server.port)
-  }
-
   const [formData, setFormData] = useState({
     name: server?.name || "",
-    url: getServerUrl(),
+    url: server?.url || "",
     publicUrl: server?.publicUrl || "",
     token: server?.token || "",
     apiKey: server?.apiKey || "",
@@ -331,8 +335,22 @@ export function ServerForm({ type, server }: ServerFormProps) {
           apiKey: formData.apiKey!,
           publicUrl: formData.publicUrl || undefined,
         })
-      } else {
+      } else if (type === "overseerr") {
         result = await updateOverseerr({
+          name: formData.name,
+          url: formData.url,
+          apiKey: formData.apiKey!,
+          publicUrl: formData.publicUrl || undefined,
+        })
+      } else if (type === "sonarr") {
+        result = await updateSonarr({
+          name: formData.name,
+          url: formData.url,
+          apiKey: formData.apiKey!,
+          publicUrl: formData.publicUrl || undefined,
+        })
+      } else {
+        result = await updateRadarr({
           name: formData.name,
           url: formData.url,
           apiKey: formData.apiKey!,
@@ -361,7 +379,7 @@ export function ServerForm({ type, server }: ServerFormProps) {
               </div>
               <div>
                 <div className="text-xs text-slate-400 mb-1">Local URL</div>
-                <div className="text-white font-mono text-xs">{getServerUrl()}</div>
+                <div className="text-white font-mono text-xs">{server.url}</div>
               </div>
               <div>
                 <div className="text-xs text-slate-400 mb-1">Public URL</div>
@@ -402,7 +420,7 @@ export function ServerForm({ type, server }: ServerFormProps) {
             type="text"
             value={formData.url}
             onChange={(e) => setFormData({ ...formData, url: e.target.value })}
-            placeholder={type === "plex" ? "https://example.com:32400" : type === "tautulli" ? "http://example.com:8181" : "http://example.com:5055"}
+            placeholder={type === "plex" ? "https://example.com:32400" : type === "tautulli" ? "http://example.com:8181" : type === "overseerr" ? "http://example.com:5055" : type === "sonarr" ? "http://example.com:8989" : "http://example.com:7878"}
             required
             disabled={isPending}
           />
@@ -465,7 +483,7 @@ export function ServerForm({ type, server }: ServerFormProps) {
             setError(null)
             setFormData({
               name: server?.name || "",
-              url: getServerUrl(),
+              url: server?.url || "",
               publicUrl: server?.publicUrl || "",
               token: server?.token || "",
               apiKey: server?.apiKey || "",

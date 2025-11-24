@@ -35,8 +35,8 @@ export default async function CostAnalysisPage({ searchParams }: CostAnalysisPag
     projectedCost12Months = avgDailyCost * 365
   }
 
-  // Calculate cost per token
-  const costPerToken = stats.totalTokens > 0 ? stats.totalCost / stats.totalTokens : 0
+  // Calculate cost per 1M tokens (consistent with pricing definition)
+  const costPer1MTokens = stats.totalTokens > 0 ? (stats.totalCost / stats.totalTokens) * 1000000 : 0
 
   // Calculate most expensive day
   const mostExpensiveDay = stats.byDate.length > 0
@@ -85,7 +85,7 @@ export default async function CostAnalysisPage({ searchParams }: CostAnalysisPag
               <div className="text-sm text-slate-400 mb-1">Total Tokens</div>
               <div className="text-3xl font-bold text-cyan-400">{stats.totalTokens.toLocaleString()}</div>
               <div className="text-xs text-slate-500 mt-1">
-                ${costPerToken.toFixed(6)} per token
+                ${costPer1MTokens.toFixed(2)} per 1M tokens
               </div>
             </div>
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-4">

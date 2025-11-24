@@ -85,12 +85,14 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
             <div className="text-sm text-slate-400 mb-1">Total Cost</div>
             <div className="text-2xl font-bold text-green-400">${record.cost.toFixed(4)}</div>
             <div className="text-xs text-slate-500 mt-1">
-              ${((record.cost / record.totalTokens) * 1000).toFixed(6)} per 1K tokens
+              {record.totalTokens > 0
+                ? `$${((record.cost / record.totalTokens) * 1000000).toFixed(2)} per 1M tokens`
+                : "N/A"}
             </div>
           </div>
         </div>
 
-        {/* User & Wrapped Info */}
+        {/* User & Context Info */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
             <h2 className="text-lg font-semibold text-white mb-4">User Information</h2>
@@ -127,34 +129,55 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
           </div>
 
           <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6">
-            <h2 className="text-lg font-semibold text-white mb-4">Wrapped Information</h2>
-            {record.wrapped ? (
-              <div className="space-y-2">
-                <div>
-                  <span className="text-sm text-slate-400">Year: </span>
-                  <span className="text-sm font-medium text-white">{record.wrapped.year}</span>
-                </div>
-                <div>
-                  <span className="text-sm text-slate-400">Status: </span>
-                  <span className="text-sm font-medium text-white">{record.wrapped.status}</span>
-                </div>
-                {record.wrapped.generatedAt && (
-                  <div>
-                    <span className="text-sm text-slate-400">Generated: </span>
-                    <span className="text-sm text-white">
-                      {formatDate(record.wrapped.generatedAt)}
-                    </span>
+            <h2 className="text-lg font-semibold text-white mb-4">Usage Context</h2>
+            {record.wrapped || record.chatConversation ? (
+              <div className="space-y-4">
+                {record.wrapped && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-slate-400 mb-1">Wrapped</div>
+                    <div>
+                      <span className="text-sm text-slate-400">Year: </span>
+                      <span className="text-sm font-medium text-white">{record.wrapped.year}</span>
+                    </div>
+                    <div>
+                      <span className="text-sm text-slate-400">Status: </span>
+                      <span className="text-sm font-medium text-white">{record.wrapped.status}</span>
+                    </div>
+                    {record.wrapped.generatedAt && (
+                      <div>
+                        <span className="text-sm text-slate-400">Generated: </span>
+                        <span className="text-sm text-white">
+                          {formatDate(record.wrapped.generatedAt)}
+                        </span>
+                      </div>
+                    )}
+                    <Link
+                      href={`/admin/users/${record.userId}/wrapped`}
+                      className="text-sm text-cyan-400 hover:text-cyan-300 underline inline-block mt-2"
+                    >
+                      View Wrapped
+                    </Link>
                   </div>
                 )}
-                <Link
-                  href={`/admin/users/${record.userId}/wrapped`}
-                  className="text-sm text-cyan-400 hover:text-cyan-300 underline inline-block mt-2"
-                >
-                  View Wrapped
-                </Link>
+                {record.chatConversation && (
+                  <div className="space-y-2">
+                    <div className="text-sm text-slate-400 mb-1">Chat Conversation</div>
+                    <div className="text-sm text-white">
+                      Started {formatDate(record.chatConversation.createdAt)}
+                    </div>
+                    <Link
+                      href={`/admin/llm-usage/conversation/${record.chatConversation.id}`}
+                      className="text-sm text-cyan-400 hover:text-cyan-300 underline inline-block mt-2"
+                    >
+                      View Conversation Calls
+                    </Link>
+                  </div>
+                )}
               </div>
             ) : (
-              <p className="text-sm text-slate-400">Not associated with a wrapped</p>
+              <p className="text-sm text-slate-400">
+                Not associated with a wrapped or chat conversation.
+              </p>
             )}
           </div>
         </div>

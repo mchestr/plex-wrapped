@@ -189,9 +189,7 @@ export const makeAdminSession = (overrides: any = {}) => ({
  * @returns Plex server config object
  */
 export const makePlexServerConfig = (overrides: any = {}) => ({
-  hostname: 'plex.example.com',
-  port: 32400,
-  protocol: 'https' as const,
+  url: 'https://plex.example.com:32400',
   token: 'plex-token',
   ...overrides,
 })
@@ -203,13 +201,12 @@ export const makePlexServerConfig = (overrides: any = {}) => ({
  */
 export const makePrismaPlexServer = (overrides: any = {}) => ({
   id: 'server-1',
-  hostname: 'plex.example.com',
-  port: 32400,
-  protocol: 'https' as const,
+  url: 'https://plex.example.com:32400',
   token: 'server-token',
   name: 'Test Server',
   isActive: true,
   adminPlexUserId: 'admin-plex-id',
+  publicUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
   ...overrides,
@@ -221,9 +218,7 @@ export const makePrismaPlexServer = (overrides: any = {}) => ({
  * @returns Tautulli server config object
  */
 export const makeTautulliConfig = (overrides: any = {}) => ({
-  hostname: 'tautulli.example.com',
-  port: 8181,
-  protocol: 'https' as const,
+  url: 'https://tautulli.example.com:8181',
   apiKey: 'tautulli-key',
   ...overrides,
 })
@@ -235,11 +230,11 @@ export const makeTautulliConfig = (overrides: any = {}) => ({
  */
 export const makePrismaTautulli = (overrides: any = {}) => ({
   id: 'tautulli-1',
-  hostname: 'tautulli.example.com',
-  port: 8181,
-  protocol: 'https' as const,
+  url: 'https://tautulli.example.com:8181',
   apiKey: 'tautulli-key',
+  name: 'Test Tautulli',
   isActive: true,
+  publicUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
   ...overrides,
@@ -251,9 +246,7 @@ export const makePrismaTautulli = (overrides: any = {}) => ({
  * @returns Overseerr server config object
  */
 export const makeOverseerrConfig = (overrides: any = {}) => ({
-  hostname: 'overseerr.example.com',
-  port: 5055,
-  protocol: 'https' as const,
+  url: 'https://overseerr.example.com:5055',
   apiKey: 'overseerr-key',
   ...overrides,
 })
@@ -265,11 +258,11 @@ export const makeOverseerrConfig = (overrides: any = {}) => ({
  */
 export const makePrismaOverseerr = (overrides: any = {}) => ({
   id: 'overseerr-1',
-  hostname: 'overseerr.example.com',
-  port: 5055,
-  protocol: 'https' as const,
+  url: 'https://overseerr.example.com:5055',
   apiKey: 'overseerr-key',
+  name: 'Test Overseerr',
   isActive: true,
+  publicUrl: null,
   createdAt: new Date('2024-01-01T00:00:00Z'),
   updatedAt: new Date('2024-01-01T00:00:00Z'),
   ...overrides,

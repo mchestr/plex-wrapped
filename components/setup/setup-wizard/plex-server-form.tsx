@@ -3,7 +3,6 @@
 import { getDevDefaults } from "@/actions/dev-defaults"
 import { savePlexServer } from "@/actions/setup"
 import { StyledInput } from "@/components/ui/styled-input"
-import { constructServerUrl } from "@/lib/utils"
 import { type PlexServerInput } from "@/lib/validations/plex"
 import { memo, useCallback, useEffect, useState, useTransition } from "react"
 
@@ -27,12 +26,9 @@ export const PlexServerForm = memo(function PlexServerForm({ onComplete, onBack 
     // Load dev defaults on mount
     getDevDefaults().then((defaults) => {
       if (defaults.plex) {
-        const url = defaults.plex.url || (defaults.plex.hostname && defaults.plex.protocol && defaults.plex.port
-          ? constructServerUrl(defaults.plex.protocol, defaults.plex.hostname, defaults.plex.port)
-          : "")
         setFormData((prev) => ({
           name: defaults.plex?.name ?? prev.name,
-          url: url || prev.url,
+          url: defaults.plex?.url ?? prev.url,
           token: defaults.plex?.token ?? prev.token,
           publicUrl: prev.publicUrl,
         }))

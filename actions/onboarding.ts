@@ -62,9 +62,7 @@ export async function getOnboardingInfo() {
       where: { isActive: true },
       select: {
         publicUrl: true,
-        protocol: true,
-        hostname: true,
-        port: true
+        url: true,
       },
     })
 
@@ -73,10 +71,10 @@ export async function getOnboardingInfo() {
       if (overseerr.publicUrl) {
         overseerrUrl = overseerr.publicUrl
       } else {
-        // Construct internal URL if public URL is not set
+        // Use internal URL if public URL is not set
         // Note: This might not be reachable from client browser if it's an internal IP/docker hostname
         // but it's better than nothing for now
-        overseerrUrl = `${overseerr.protocol}://${overseerr.hostname}:${overseerr.port}`
+        overseerrUrl = overseerr.url
       }
     }
 

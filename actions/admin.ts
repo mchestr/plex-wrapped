@@ -75,14 +75,22 @@ export async function setLLMDisabled(disabled: boolean) {
 /**
  * Get LLM usage records with pagination (admin only)
  */
-export async function getLLMUsageRecords(page: number = 1, pageSize: number = 50, userId?: string) {
+export async function getLLMUsageRecords(
+  page: number = 1,
+  pageSize: number = 50,
+  userId?: string,
+  conversationId?: string
+) {
   await requireAdmin()
 
   const skip = (page - 1) * pageSize
 
-  const where: { userId?: string } = {}
+  const where: { userId?: string; chatConversationId?: string } = {}
   if (userId) {
     where.userId = userId
+  }
+  if (conversationId) {
+    where.chatConversationId = conversationId
   }
 
   const [records, total] = await Promise.all([
@@ -102,6 +110,12 @@ export async function getLLMUsageRecords(page: number = 1, pageSize: number = 50
             id: true,
             year: true,
             status: true,
+          },
+        },
+        chatConversation: {
+          select: {
+            id: true,
+            createdAt: true,
           },
         },
       },
@@ -148,6 +162,12 @@ export async function getLLMUsageById(id: string) {
           year: true,
           status: true,
           generatedAt: true,
+        },
+      },
+      chatConversation: {
+        select: {
+          id: true,
+          createdAt: true,
         },
       },
     },
@@ -425,27 +445,44 @@ export async function getHistoricalWrappedData(llmUsageId: string, _wrappedId: s
 export async function getAdminSettings() {
   await requireAdmin()
 
-  const [config, llmProvider, plexServer, tautulli, overseerr] = await Promise.all([
+  const [config, chatLLMProvider, wrappedLLMProvider, plexServer, tautulli, overseerr, sonarr, radarr] = await Promise.all([
     getConfig(),
-    prisma.lLMProvider.findFirst({ where: { isActive: true } }),
+    prisma.lLMProvider.findFirst({ where: { isActive: true, purpose: "chat" } }),
+    prisma.lLMProvider.findFirst({ where: { isActive: true, purpose: "wrapped" } }),
     prisma.plexServer.findFirst({ where: { isActive: true } }),
     prisma.tautulli.findFirst({ where: { isActive: true } }),
     prisma.overseerr.findFirst({ where: { isActive: true } }),
+    prisma.sonarr.findFirst({ where: { isActive: true } }),
+    prisma.radarr.findFirst({ where: { isActive: true } }),
   ])
 
   return {
     config,
-    llmProvider,
+    chatLLMProvider,
+    wrappedLLMProvider,
+    // Keep llmProvider for backward compatibility (returns wrapped provider)
+    llmProvider: wrappedLLMProvider,
     plexServer,
     tautulli,
     overseerr,
+    sonarr,
+    radarr,
   }
 }
 
 /**
  * Update LLM provider configuration (admin only)
+ * @deprecated Use updateChatLLMProvider or updateWrappedLLMProvider instead
  */
 export async function updateLLMProvider(data: { provider: string; apiKey: string; model?: string; temperature?: number; maxTokens?: number }) {
+  // For backward compatibility, update wrapped provider
+  return updateWrappedLLMProvider(data)
+}
+
+/**
+ * Update chat LLM provider configuration (admin only)
+ */
+export async function updateChatLLMProvider(data: { provider: string; apiKey: string; model: string; temperature?: number; maxTokens?: number }) {
   await requireAdmin()
 
   try {
@@ -453,7 +490,12 @@ export async function updateLLMProvider(data: { provider: string; apiKey: string
     const { testLLMProviderConnection } = await import("@/lib/connections/llm-provider")
     const { revalidatePath } = await import("next/cache")
 
-    const validated = llmProviderSchema.parse(data)
+    // Ensure model is provided
+    if (!data.model) {
+      return { success: false, error: "Model is required" }
+    }
+
+    const validated = llmProviderSchema.parse({ ...data, model: data.model })
 
     // Test connection before saving
     const connectionTest = await testLLMProviderConnection(validated)
@@ -462,9 +504,9 @@ export async function updateLLMProvider(data: { provider: string; apiKey: string
     }
 
     await prisma.$transaction(async (tx) => {
-      // Deactivate any existing providers
+      // Deactivate any existing chat providers
       await tx.lLMProvider.updateMany({
-        where: { isActive: true },
+        where: { isActive: true, purpose: "chat" },
         data: { isActive: false },
       })
 
@@ -472,8 +514,9 @@ export async function updateLLMProvider(data: { provider: string; apiKey: string
       const existing = await tx.lLMProvider.findFirst({
         where: {
           provider: validated.provider,
+          purpose: "chat",
           apiKey: validated.apiKey,
-          model: validated.model || null,
+          model: validated.model,
         },
       })
 
@@ -492,8 +535,9 @@ export async function updateLLMProvider(data: { provider: string; apiKey: string
         await tx.lLMProvider.create({
           data: {
             provider: validated.provider,
+            purpose: "chat",
             apiKey: validated.apiKey,
-            model: validated.model || null,
+            model: validated.model,
             temperature: validated.temperature ?? null,
             maxTokens: validated.maxTokens ?? null,
             isActive: true,
@@ -508,7 +552,84 @@ export async function updateLLMProvider(data: { provider: string; apiKey: string
     if (error instanceof Error) {
       return { success: false, error: error.message }
     }
-    return { success: false, error: "Failed to update LLM provider configuration" }
+    return { success: false, error: "Failed to update chat LLM provider configuration" }
+  }
+}
+
+/**
+ * Update wrapped LLM provider configuration (admin only)
+ */
+export async function updateWrappedLLMProvider(data: { provider: string; apiKey: string; model: string; temperature?: number; maxTokens?: number }) {
+  await requireAdmin()
+
+  try {
+    const { llmProviderSchema } = await import("@/lib/validations/llm-provider")
+    const { testLLMProviderConnection } = await import("@/lib/connections/llm-provider")
+    const { revalidatePath } = await import("next/cache")
+
+    // Ensure model is provided
+    if (!data.model) {
+      return { success: false, error: "Model is required" }
+    }
+
+    const validated = llmProviderSchema.parse({ ...data, model: data.model })
+
+    // Test connection before saving
+    const connectionTest = await testLLMProviderConnection(validated)
+    if (!connectionTest.success) {
+      return { success: false, error: connectionTest.error || "Failed to connect to LLM provider" }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Deactivate any existing wrapped providers
+      await tx.lLMProvider.updateMany({
+        where: { isActive: true, purpose: "wrapped" },
+        data: { isActive: false },
+      })
+
+      // Check if there's an existing provider with same config
+      const existing = await tx.lLMProvider.findFirst({
+        where: {
+          provider: validated.provider,
+          purpose: "wrapped",
+          apiKey: validated.apiKey,
+          model: validated.model,
+        },
+      })
+
+      if (existing) {
+        // Reactivate existing provider and update temperature and maxTokens
+        await tx.lLMProvider.update({
+          where: { id: existing.id },
+          data: {
+            isActive: true,
+            temperature: validated.temperature ?? null,
+            maxTokens: validated.maxTokens ?? null,
+          },
+        })
+      } else {
+        // Create new provider configuration
+        await tx.lLMProvider.create({
+          data: {
+            provider: validated.provider,
+            purpose: "wrapped",
+            apiKey: validated.apiKey,
+            model: validated.model,
+            temperature: validated.temperature ?? null,
+            maxTokens: validated.maxTokens ?? null,
+            isActive: true,
+          },
+        })
+      }
+    })
+
+    revalidatePath("/admin/settings")
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: "Failed to update wrapped LLM provider configuration" }
   }
 }
 
@@ -550,9 +671,7 @@ export async function updatePlexServer(data: { name: string; url: string; token:
       // Update or create server
       const existing = await tx.plexServer.findFirst({
         where: {
-          hostname: validated.hostname,
-          port: validated.port,
-          protocol: validated.protocol,
+          url: validated.url,
         },
       })
 
@@ -561,6 +680,7 @@ export async function updatePlexServer(data: { name: string; url: string; token:
           where: { id: existing.id },
           data: {
             name: validated.name,
+            url: validated.url,
             token: validated.token,
             publicUrl: validated.publicUrl,
             adminPlexUserId,
@@ -571,9 +691,7 @@ export async function updatePlexServer(data: { name: string; url: string; token:
         await tx.plexServer.create({
           data: {
             name: validated.name,
-            hostname: validated.hostname,
-            port: validated.port,
-            protocol: validated.protocol,
+            url: validated.url,
             token: validated.token,
             publicUrl: validated.publicUrl,
             adminPlexUserId,
@@ -622,9 +740,7 @@ export async function updateTautulli(data: { name: string; url: string; apiKey: 
       // Update or create server
       const existing = await tx.tautulli.findFirst({
         where: {
-          hostname: validated.hostname,
-          port: validated.port,
-          protocol: validated.protocol,
+          url: validated.url,
         },
       })
 
@@ -633,6 +749,7 @@ export async function updateTautulli(data: { name: string; url: string; apiKey: 
           where: { id: existing.id },
           data: {
             name: validated.name,
+            url: validated.url,
             apiKey: validated.apiKey,
             publicUrl: validated.publicUrl,
             isActive: true,
@@ -642,9 +759,7 @@ export async function updateTautulli(data: { name: string; url: string; apiKey: 
         await tx.tautulli.create({
           data: {
             name: validated.name,
-            hostname: validated.hostname,
-            port: validated.port,
-            protocol: validated.protocol,
+            url: validated.url,
             apiKey: validated.apiKey,
             publicUrl: validated.publicUrl,
             isActive: true,
@@ -692,9 +807,7 @@ export async function updateOverseerr(data: { name: string; url: string; apiKey:
       // Update or create server
       const existing = await tx.overseerr.findFirst({
         where: {
-          hostname: validated.hostname,
-          port: validated.port,
-          protocol: validated.protocol,
+          url: validated.url,
         },
       })
 
@@ -703,6 +816,7 @@ export async function updateOverseerr(data: { name: string; url: string; apiKey:
           where: { id: existing.id },
           data: {
             name: validated.name,
+            url: validated.url,
             apiKey: validated.apiKey,
             publicUrl: validated.publicUrl,
             isActive: true,
@@ -712,9 +826,7 @@ export async function updateOverseerr(data: { name: string; url: string; apiKey:
         await tx.overseerr.create({
           data: {
             name: validated.name,
-            hostname: validated.hostname,
-            port: validated.port,
-            protocol: validated.protocol,
+            url: validated.url,
             apiKey: validated.apiKey,
             publicUrl: validated.publicUrl,
             isActive: true,
@@ -730,6 +842,208 @@ export async function updateOverseerr(data: { name: string; url: string; apiKey:
       return { success: false, error: error.message }
     }
     return { success: false, error: "Failed to update Overseerr configuration" }
+  }
+}
+
+/**
+ * Update Sonarr configuration (admin only)
+ */
+export async function updateSonarr(data: { name: string; url: string; apiKey: string; publicUrl?: string }) {
+  await requireAdmin()
+
+  try {
+    const { sonarrSchema } = await import("@/lib/validations/sonarr")
+    const { testSonarrConnection } = await import("@/lib/connections/sonarr")
+    const { revalidatePath } = await import("next/cache")
+
+    const validated = sonarrSchema.parse(data)
+
+    // Test connection before saving
+    const connectionTest = await testSonarrConnection(validated)
+    if (!connectionTest.success) {
+      return { success: false, error: connectionTest.error || "Failed to connect to Sonarr server" }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Deactivate existing active server
+      await tx.sonarr.updateMany({
+        where: { isActive: true },
+        data: { isActive: false },
+      })
+
+      // Update or create server
+      const existing = await tx.sonarr.findFirst({
+        where: {
+          url: validated.url,
+        },
+      })
+
+      if (existing) {
+        await tx.sonarr.update({
+          where: { id: existing.id },
+          data: {
+            name: validated.name,
+            url: validated.url,
+            apiKey: validated.apiKey,
+            publicUrl: validated.publicUrl,
+            isActive: true,
+          },
+        })
+      } else {
+        await tx.sonarr.create({
+          data: {
+            name: validated.name,
+            url: validated.url,
+            apiKey: validated.apiKey,
+            publicUrl: validated.publicUrl,
+            isActive: true,
+          },
+        })
+      }
+    })
+
+    revalidatePath("/admin/settings")
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: "Failed to update Sonarr configuration" }
+  }
+}
+
+/**
+ * Update Radarr configuration (admin only)
+ */
+export async function updateRadarr(data: { name: string; url: string; apiKey: string; publicUrl?: string }) {
+  await requireAdmin()
+
+  try {
+    const { radarrSchema } = await import("@/lib/validations/radarr")
+    const { testRadarrConnection } = await import("@/lib/connections/radarr")
+    const { revalidatePath } = await import("next/cache")
+
+    const validated = radarrSchema.parse(data)
+
+    // Test connection before saving
+    const connectionTest = await testRadarrConnection(validated)
+    if (!connectionTest.success) {
+      return { success: false, error: connectionTest.error || "Failed to connect to Radarr server" }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      // Deactivate existing active server
+      await tx.radarr.updateMany({
+        where: { isActive: true },
+        data: { isActive: false },
+      })
+
+      // Update or create server
+      const existing = await tx.radarr.findFirst({
+        where: {
+          url: validated.url,
+        },
+      })
+
+      if (existing) {
+        await tx.radarr.update({
+          where: { id: existing.id },
+          data: {
+            name: validated.name,
+            url: validated.url,
+            apiKey: validated.apiKey,
+            publicUrl: validated.publicUrl,
+            isActive: true,
+          },
+        })
+      } else {
+        await tx.radarr.create({
+          data: {
+            name: validated.name,
+            url: validated.url,
+            apiKey: validated.apiKey,
+            publicUrl: validated.publicUrl,
+            isActive: true,
+          },
+        })
+      }
+    })
+
+    revalidatePath("/admin/settings")
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: "Failed to update Radarr configuration" }
+  }
+}
+
+/**
+ * Update user admin status (admin only)
+ */
+export async function updateUserAdminStatus(userId: string, isAdmin: boolean) {
+  const session = await requireAdmin()
+
+  try {
+    // Prevent users from removing their own admin status
+    if (session.user.id === userId && !isAdmin) {
+      return {
+        success: false,
+        error: "You cannot remove your own admin privileges",
+      }
+    }
+
+    // Get current user to check if status is changing
+    const currentUser = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    })
+
+    if (!currentUser) {
+      return {
+        success: false,
+        error: "User not found",
+      }
+    }
+
+    // Only update if status is actually changing
+    if (currentUser.isAdmin === isAdmin) {
+      return {
+        success: true,
+        message: `User is already ${isAdmin ? "an admin" : "a regular user"}`,
+      }
+    }
+
+    // Update user admin status
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isAdmin },
+    })
+
+    // Log audit event
+    const { logAuditEvent, AuditEventType } = await import("@/lib/security/audit-log")
+    logAuditEvent(
+      isAdmin ? AuditEventType.ADMIN_PRIVILEGE_GRANTED : AuditEventType.ADMIN_PRIVILEGE_REVOKED,
+      session.user.id,
+      {
+        targetUserId: userId,
+        previousAdminStatus: !isAdmin,
+        newAdminStatus: isAdmin,
+      }
+    )
+
+    const { revalidatePath } = await import("next/cache")
+    revalidatePath(`/admin/users/${userId}`)
+    revalidatePath("/admin/users")
+
+    return { success: true }
+  } catch (error) {
+    logger.error("Error updating user admin status", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update user admin status",
+    }
   }
 }
 

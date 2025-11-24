@@ -472,9 +472,7 @@ describe('generatePlexWrapped', () => {
     ;(prisma.plexWrapped.findUnique as jest.Mock).mockResolvedValue(null)
     ;(prisma.plexServer.findFirst as jest.Mock).mockResolvedValue({
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       name: 'Test Server',
       isActive: true,
@@ -495,9 +493,7 @@ describe('generatePlexWrapped', () => {
     ;(prisma.plexWrapped.findUnique as jest.Mock).mockResolvedValue(null)
     ;(prisma.plexServer.findFirst as jest.Mock).mockResolvedValue({
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       name: 'Test Server',
       isActive: true,
@@ -511,9 +507,7 @@ describe('generatePlexWrapped', () => {
     })
     ;(prisma.tautulli.findFirst as jest.Mock).mockResolvedValue({
       id: 'tautulli-1',
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'tautulli-key',
       isActive: true,
     })
@@ -583,9 +577,7 @@ describe('generatePlexWrapped', () => {
     ;(prisma.plexWrapped.findUnique as jest.Mock).mockResolvedValue(null)
     ;(prisma.plexServer.findFirst as jest.Mock).mockResolvedValue({
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       name: 'Test Server',
       isActive: true,
@@ -599,17 +591,13 @@ describe('generatePlexWrapped', () => {
     })
     ;(prisma.tautulli.findFirst as jest.Mock).mockResolvedValue({
       id: 'tautulli-1',
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'tautulli-key',
       isActive: true,
     })
     ;(prisma.overseerr.findFirst as jest.Mock).mockResolvedValue({
       id: 'overseerr-1',
-      hostname: 'overseerr.example.com',
-      port: 5055,
-      protocol: 'https',
+      url: 'https://overseerr.example.com:5055',
       apiKey: 'overseerr-key',
       isActive: true,
     })
@@ -681,9 +669,7 @@ describe('generatePlexWrapped', () => {
     ;(prisma.plexWrapped.findUnique as jest.Mock).mockResolvedValue(null)
     ;(prisma.plexServer.findFirst as jest.Mock).mockResolvedValue({
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       name: 'Test Server',
       isActive: true,
@@ -697,9 +683,7 @@ describe('generatePlexWrapped', () => {
     })
     ;(prisma.tautulli.findFirst as jest.Mock).mockResolvedValue({
       id: 'tautulli-1',
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'tautulli-key',
       isActive: true,
     })
@@ -780,9 +764,7 @@ describe('generatePlexWrapped', () => {
     ;(prisma.plexWrapped.findUnique as jest.Mock).mockResolvedValue(null)
     ;(prisma.plexServer.findFirst as jest.Mock).mockResolvedValue({
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       name: 'Test Server',
       isActive: true,
@@ -796,9 +778,7 @@ describe('generatePlexWrapped', () => {
     })
     ;(prisma.tautulli.findFirst as jest.Mock).mockResolvedValue({
       id: 'tautulli-1',
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'https',
+      url: 'https://tautulli.example.com:8181',
       apiKey: 'tautulli-key',
       isActive: true,
     })
@@ -903,18 +883,14 @@ describe('generateAllPlexWrapped', () => {
     })
     ;(prisma.plexServer.findFirst as jest.Mock).mockResolvedValue({
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       name: 'Test Server',
       isActive: true,
     })
     ;(prisma.tautulli.findFirst as jest.Mock).mockResolvedValue({
       id: 'tautulli-1',
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'http',
+      url: 'http://tautulli.example.com:8181',
       apiKey: 'api-key',
       isActive: true,
     })
@@ -1018,18 +994,14 @@ describe('generateAllPlexWrapped', () => {
     })
     ;(prisma.plexServer.findFirst as jest.Mock).mockResolvedValue({
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https',
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       name: 'Test Server',
       isActive: true,
     })
     ;(prisma.tautulli.findFirst as jest.Mock).mockResolvedValue({
       id: 'tautulli-1',
-      hostname: 'tautulli.example.com',
-      port: 8181,
-      protocol: 'http',
+      url: 'http://tautulli.example.com:8181',
       apiKey: 'api-key',
       isActive: true,
     })

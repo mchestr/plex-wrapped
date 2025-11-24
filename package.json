@@ -7,7 +7,7 @@
   },
   "scripts": {
     "dev": "next dev",
-    "dev:test": "NODE_ENV=test NEXT_PUBLIC_ENABLE_TEST_AUTH=true FAST_REFRESH=false next dev",
+    "dev:test": "NODE_ENV=test NEXT_PUBLIC_ENABLE_TEST_AUTH=true ENABLE_TEST_AUTH=true SKIP_CONNECTION_TESTS=true FAST_REFRESH=false next dev",
     "build": "next build",
     "start": "next start",
     "start:prod": "node server.js",
@@ -21,7 +21,7 @@
     "test:e2e:headed": "playwright test --headed",
     "db:generate": "prisma generate",
     "db:push": "prisma db push",
-    "db:migrate": "prisma migrate dev",
+    "db:migrate": "prisma migrate dev --skip-seed",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed"
   },
@@ -40,6 +40,7 @@
     "react-chartjs-2": "^5.3.1",
     "react-countup": "^6.5.3",
     "react-dom": "^18.3.0",
+    "react-markdown": "^10.1.0",
     "tailwind-merge": "^3.4.0",
     "winston": "^3.18.3",
     "zod": "^3.23.8"

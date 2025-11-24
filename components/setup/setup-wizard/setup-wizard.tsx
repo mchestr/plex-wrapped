@@ -5,6 +5,8 @@ import { FinalSuccessAnimation } from "@/components/setup/setup-wizard/final-suc
 import { LLMProviderForm } from "@/components/setup/setup-wizard/llm-provider-form"
 import { OverseerrForm } from "@/components/setup/setup-wizard/overseerr-form"
 import { PlexServerForm } from "@/components/setup/setup-wizard/plex-server-form"
+import { RadarrForm } from "@/components/setup/setup-wizard/radarr-form"
+import { SonarrForm } from "@/components/setup/setup-wizard/sonarr-form"
 import { SuccessAnimation } from "@/components/setup/setup-wizard/success-animation"
 import { TautulliForm } from "@/components/setup/setup-wizard/tautulli-form"
 import { SETUP_STEPS } from "@/types/setup"
@@ -58,6 +60,10 @@ export function SetupWizard({ currentStep: initialStep }: SetupWizardProps) {
       case 3:
         return <OverseerrForm onComplete={handleStepComplete} onBack={handleBack} />
       case 4:
+        return <SonarrForm onComplete={handleStepComplete} onBack={handleBack} />
+      case 5:
+        return <RadarrForm onComplete={handleStepComplete} onBack={handleBack} />
+      case 6:
         return <LLMProviderForm onComplete={handleStepComplete} onBack={handleBack} />
       default:
         return <div className="text-white">Step {currentStep} - Coming soon</div>

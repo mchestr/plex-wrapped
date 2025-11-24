@@ -70,8 +70,14 @@ interface ParsedXmlServerUsersResponse {
 }
 
 export async function testPlexConnection(config: PlexServerParsed): Promise<{ success: boolean; error?: string }> {
+  // TEST MODE BYPASS - Skip connection tests in test environment
+  const isTestMode = process.env.NODE_ENV === 'test' || process.env.SKIP_CONNECTION_TESTS === 'true'
+  if (isTestMode) {
+    return { success: true }
+  }
+
   try {
-    const url = `${config.protocol}://${config.hostname}:${config.port}/status/sessions?X-Plex-Token=${config.token}`
+    const url = `${config.url}/status/sessions?X-Plex-Token=${config.token}`
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
@@ -113,6 +119,19 @@ export async function testPlexConnection(config: PlexServerParsed): Promise<{ su
  * Uses the Plex.tv API to get account information
  */
 export async function getPlexUserInfo(token: string): Promise<{ success: boolean; data?: PlexUserInfo; error?: string }> {
+  // TEST MODE BYPASS - Return mock user info in test environment
+  const isTestMode = process.env.NODE_ENV === 'test' || process.env.SKIP_CONNECTION_TESTS === 'true'
+  if (isTestMode) {
+    return {
+      success: true,
+      data: {
+        id: 'test-plex-user-id',
+        username: 'testuser',
+        email: 'test@example.com',
+      },
+    }
+  }
+
   try {
     const url = `https://plex.tv/api/v2/user`
 
@@ -366,11 +385,11 @@ function checkUserHasAccess(
  * Uses the Plex.tv API to get users and check if the user has access to the server
  */
 export async function checkUserServerAccess(
-  serverConfig: { hostname: string; port: number; protocol: string; token: string; adminPlexUserId?: string | null },
+  serverConfig: { url: string; token: string; adminPlexUserId?: string | null },
   plexUserId: string
 ): Promise<{ success: boolean; hasAccess: boolean; error?: string }> {
   const checkStartTime = Date.now()
-  logger.debug("Checking user server access", { plexUserId, hostname: serverConfig.hostname })
+  logger.debug("Checking user server access", { plexUserId, url: sanitizeUrlForLogging(serverConfig.url) })
 
   try {
     // Normalize IDs for comparison (convert to string and trim)
@@ -386,9 +405,7 @@ export async function checkUserServerAccess(
     // Get the server's machine identifier
     logger.debug("Fetching server machine identifier")
     const identityResult = await getPlexServerIdentity({
-      hostname: serverConfig.hostname,
-      port: serverConfig.port,
-      protocol: serverConfig.protocol,
+      url: serverConfig.url,
       token: serverConfig.token,
     })
 
@@ -458,7 +475,7 @@ export async function checkUserServerAccess(
  * Uses the Plex.tv API /api/users endpoint which returns XML
  */
 export async function getAllPlexServerUsers(
-  serverConfig: { hostname: string; port: number; protocol: string; token: string }
+  serverConfig: { url: string; token: string }
 ): Promise<{ success: boolean; data?: PlexServerUser[]; error?: string }> {
   const fetchStartTime = Date.now()
   const url = "https://clients.plex.tv/api/users"
@@ -472,10 +489,8 @@ export async function getAllPlexServerUsers(
   }
 
   logger.debug("Fetching all Plex server users", {
-    hostname: serverConfig.hostname,
-    port: serverConfig.port,
-    protocol: serverConfig.protocol,
-    url: sanitizeUrlForLogging(url),
+    url: sanitizeUrlForLogging(serverConfig.url),
+    apiUrl: sanitizeUrlForLogging(url),
   })
 
   try {
@@ -614,10 +629,10 @@ export async function getAllPlexServerUsers(
  * Get the machine identifier from a Plex server
  */
 export async function getPlexServerIdentity(
-  serverConfig: { hostname: string; port: number; protocol: string; token: string }
+  serverConfig: { url: string; token: string }
 ): Promise<{ success: boolean; machineIdentifier?: string; error?: string }> {
   try {
-    const url = `${serverConfig.protocol}://${serverConfig.hostname}:${serverConfig.port}/identity?X-Plex-Token=${serverConfig.token}`
+    const url = `${serverConfig.url}/identity?X-Plex-Token=${serverConfig.token}`
 
     const controller = new AbortController()
     const timeoutId = setTimeout(() => controller.abort(), 5000)
@@ -663,7 +678,7 @@ export async function getPlexServerIdentity(
  * Returns the section IDs as used by Plex.tv API
  */
 export async function getLibrarySectionIDs(
-  serverConfig: { hostname: string; port: number; protocol: string; token: string },
+  serverConfig: { url: string; token: string },
   machineIdentifier: string
 ): Promise<{ success: boolean; sectionIDs?: number[]; error?: string }> {
   try {
@@ -728,7 +743,7 @@ export interface InviteSettings {
  * Returns the invite ID if successful
  */
 export async function inviteUserToPlexServer(
-  serverConfig: { hostname: string; port: number; protocol: string; token: string },
+  serverConfig: { url: string; token: string },
   email: string,
   inviteSettings?: InviteSettings
 ): Promise<{ success: boolean; inviteID?: number; error?: string }> {
@@ -962,11 +977,11 @@ export async function acceptPlexInvite(
  * Uses the Plex API v2 sharings endpoint
  */
 export async function unshareUserFromPlexServer(
-  serverConfig: { hostname: string; port: number; protocol: string; token: string },
+  serverConfig: { url: string; token: string },
   plexUserId: string
 ): Promise<{ success: boolean; error?: string }> {
   const unshareStartTime = Date.now()
-  logger.debug("Unsharing user from Plex server", { plexUserId, hostname: serverConfig.hostname })
+  logger.debug("Unsharing user from Plex server", { plexUserId, url: sanitizeUrlForLogging(serverConfig.url) })
 
   try {
     // 1. Get client identifier
@@ -1027,6 +1042,164 @@ export async function unshareUserFromPlexServer(
       return { success: false, error: `Error unsharing user: ${error.message}` }
     }
     return { success: false, error: "Failed to unshare user from Plex server" }
+  }
+}
+
+/**
+ * Fetches current sessions from Plex server
+ * Uses the Plex server API /status/sessions endpoint
+ */
+export async function getPlexSessions(
+  serverConfig: { url: string; token: string }
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const url = `${serverConfig.url}/status/sessions?X-Plex-Token=${serverConfig.token}`
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000) // 10 second timeout
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      return { success: false, error: `Failed to fetch sessions: ${response.statusText}` }
+    }
+
+    const data = await response.json()
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        return { success: false, error: "Connection timeout" }
+      }
+      return { success: false, error: `Error fetching sessions: ${error.message}` }
+    }
+    return { success: false, error: "Failed to fetch Plex sessions" }
+  }
+}
+
+/**
+ * Get library sections from Plex server
+ */
+export async function getPlexLibrarySections(
+  serverConfig: { url: string; token: string }
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const url = `${serverConfig.url}/library/sections?X-Plex-Token=${serverConfig.token}`
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      return { success: false, error: `Failed to fetch library sections: ${response.statusText}` }
+    }
+
+    const data = await response.json()
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        return { success: false, error: "Connection timeout" }
+      }
+      return { success: false, error: `Error fetching library sections: ${error.message}` }
+    }
+    return { success: false, error: "Failed to fetch Plex library sections" }
+  }
+}
+
+/**
+ * Get recently added content from Plex server
+ */
+export async function getPlexRecentlyAdded(
+  serverConfig: { url: string; token: string },
+  limit = 20
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const url = `${serverConfig.url}/library/recentlyAdded?X-Plex-Token=${serverConfig.token}&limit=${limit}`
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      return { success: false, error: `Failed to fetch recently added: ${response.statusText}` }
+    }
+
+    const data = await response.json()
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        return { success: false, error: "Connection timeout" }
+      }
+      return { success: false, error: `Error fetching recently added: ${error.message}` }
+    }
+    return { success: false, error: "Failed to fetch Plex recently added" }
+  }
+}
+
+/**
+ * Get on deck content from Plex server
+ */
+export async function getPlexOnDeck(
+  serverConfig: { url: string; token: string }
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    const url = `${serverConfig.url}/library/onDeck?X-Plex-Token=${serverConfig.token}`
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 10000)
+
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Accept": "application/json",
+      },
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      return { success: false, error: `Failed to fetch on deck: ${response.statusText}` }
+    }
+
+    const data = await response.json()
+    return { success: true, data }
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.name === "AbortError") {
+        return { success: false, error: "Connection timeout" }
+      }
+      return { success: false, error: `Error fetching on deck: ${error.message}` }
+    }
+    return { success: false, error: "Failed to fetch Plex on deck" }
   }
 }
 

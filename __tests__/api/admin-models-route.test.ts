@@ -25,7 +25,7 @@ jest.mock('@/lib/security/rate-limit', () => ({
   adminRateLimiter: jest.fn(),
 }))
 
-jest.mock('@/lib/wrapped/pricing', () => ({
+jest.mock('@/lib/llm/pricing', () => ({
   MODEL_PRICING: {
     'gpt-4': { input: 0.03, output: 0.06 },
     'gpt-3.5-turbo': { input: 0.001, output: 0.002 },

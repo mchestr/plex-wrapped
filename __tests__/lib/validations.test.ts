@@ -1,7 +1,7 @@
+import { llmProviderSchema, type LLMProviderInput } from '@/lib/validations/llm-provider'
+import { overseerrSchema, type OverseerrInput } from '@/lib/validations/overseerr'
 import { plexServerSchema, type PlexServerInput } from '@/lib/validations/plex'
 import { tautulliSchema, type TautulliInput } from '@/lib/validations/tautulli'
-import { overseerrSchema, type OverseerrInput } from '@/lib/validations/overseerr'
-import { llmProviderSchema, type LLMProviderInput } from '@/lib/validations/llm-provider'
 
 describe('plexServerSchema', () => {
   it('should validate valid Plex server data', () => {
@@ -13,24 +13,25 @@ describe('plexServerSchema', () => {
     expect(() => plexServerSchema.parse(valid)).not.toThrow()
   })
 
-  it('should use default port 32400', () => {
+  it('should parse URL correctly', () => {
     const data = {
       name: 'My Plex Server',
       url: 'https://plex.example.com:32400',
       token: 'abc123token',
     }
     const result = plexServerSchema.parse(data)
-    expect(result.port).toBe(32400)
+    expect(result.url).toBe('https://plex.example.com:32400')
   })
 
-  it('should use default protocol https', () => {
+  it('should default to https when protocol is missing', () => {
     const data = {
       name: 'My Plex Server',
       url: 'plex.example.com:32400',
       token: 'abc123token',
     }
     const result = plexServerSchema.parse(data)
-    expect(result.protocol).toBe('https')
+    // parseServerUrl defaults to https, so the URL should be normalized
+    expect(result.url).toContain('https://')
   })
 
   it('should reject empty name', () => {
@@ -98,24 +99,25 @@ describe('tautulliSchema', () => {
     expect(() => tautulliSchema.parse(valid)).not.toThrow()
   })
 
-  it('should use default port 8181', () => {
+  it('should parse URL correctly', () => {
     const data = {
       name: 'My Tautulli',
       url: 'http://tautulli.example.com:8181',
       apiKey: 'abc123key',
     }
     const result = tautulliSchema.parse(data)
-    expect(result.port).toBe(8181)
+    expect(result.url).toBe('http://tautulli.example.com:8181')
   })
 
-  it('should use default protocol http', () => {
+  it('should default to https when protocol is missing', () => {
     const data = {
       name: 'My Tautulli',
       url: 'tautulli.example.com:8181',
       apiKey: 'abc123key',
     }
     const result = tautulliSchema.parse(data)
-    expect(result.protocol).toBe('https') // parseServerUrl defaults to https
+    // parseServerUrl defaults to https, so the URL should be normalized
+    expect(result.url).toContain('https://')
   })
 
   it('should reject empty name', () => {
@@ -147,24 +149,25 @@ describe('overseerrSchema', () => {
     expect(() => overseerrSchema.parse(valid)).not.toThrow()
   })
 
-  it('should use default port 5055', () => {
+  it('should parse URL correctly', () => {
     const data = {
       name: 'My Overseerr',
       url: 'http://overseerr.example.com:5055',
       apiKey: 'abc123key',
     }
     const result = overseerrSchema.parse(data)
-    expect(result.port).toBe(5055)
+    expect(result.url).toBe('http://overseerr.example.com:5055')
   })
 
-  it('should use default protocol http', () => {
+  it('should default to https when protocol is missing', () => {
     const data = {
       name: 'My Overseerr',
       url: 'overseerr.example.com:5055',
       apiKey: 'abc123key',
     }
     const result = overseerrSchema.parse(data)
-    expect(result.protocol).toBe('https') // parseServerUrl defaults to https
+    // parseServerUrl defaults to https, so the URL should be normalized
+    expect(result.url).toContain('https://')
   })
 
   it('should reject empty name', () => {

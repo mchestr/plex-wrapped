@@ -3,7 +3,6 @@
 import { getDevDefaults } from "@/actions/dev-defaults"
 import { saveOverseerr } from "@/actions/setup"
 import { StyledInput } from "@/components/ui/styled-input"
-import { constructServerUrl } from "@/lib/utils"
 import { type OverseerrInput } from "@/lib/validations/overseerr"
 import { useEffect, useState, useTransition } from "react"
 
@@ -27,12 +26,9 @@ export function OverseerrForm({ onComplete, onBack }: OverseerrFormProps) {
     // Load dev defaults on mount
     getDevDefaults().then((defaults) => {
       if (defaults.overseerr) {
-        const url = defaults.overseerr.url || (defaults.overseerr.hostname && defaults.overseerr.protocol && defaults.overseerr.port
-          ? constructServerUrl(defaults.overseerr.protocol, defaults.overseerr.hostname, defaults.overseerr.port)
-          : "")
         setFormData((prev) => ({
           name: defaults.overseerr?.name ?? prev.name,
-          url: url || prev.url,
+          url: defaults.overseerr?.url ?? prev.url,
           apiKey: defaults.overseerr?.apiKey ?? prev.apiKey,
           publicUrl: prev.publicUrl,
         }))

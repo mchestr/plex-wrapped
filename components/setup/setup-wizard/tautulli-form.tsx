@@ -3,7 +3,6 @@
 import { getDevDefaults } from "@/actions/dev-defaults"
 import { saveTautulli } from "@/actions/setup"
 import { StyledInput } from "@/components/ui/styled-input"
-import { constructServerUrl } from "@/lib/utils"
 import { type TautulliInput } from "@/lib/validations/tautulli"
 import { useEffect, useState, useTransition } from "react"
 
@@ -27,12 +26,9 @@ export function TautulliForm({ onComplete, onBack }: TautulliFormProps) {
     // Load dev defaults on mount
     getDevDefaults().then((defaults) => {
       if (defaults.tautulli) {
-        const url = defaults.tautulli.url || (defaults.tautulli.hostname && defaults.tautulli.protocol && defaults.tautulli.port
-          ? constructServerUrl(defaults.tautulli.protocol, defaults.tautulli.hostname, defaults.tautulli.port)
-          : "")
         setFormData((prev) => ({
           name: defaults.tautulli?.name ?? prev.name,
-          url: url || prev.url,
+          url: defaults.tautulli?.url ?? prev.url,
           apiKey: defaults.tautulli?.apiKey ?? prev.apiKey,
           publicUrl: prev.publicUrl,
         }))

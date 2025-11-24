@@ -38,9 +38,7 @@ async function globalSetup() {
       await prisma.plexServer.create({
         data: {
           name: 'Test Server',
-          hostname: 'localhost',
-          port: 32400,
-          protocol: 'http',
+          url: 'http://localhost:32400',
           token: 'test-token',
           adminPlexUserId: 'admin-plex-id',
           isActive: true,

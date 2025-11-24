@@ -12,46 +12,15 @@ export async function navigateAndVerify(
 ): Promise<void> {
   const timeout = options?.timeout || 15000;
 
-  // Wait for network idle to ensure all initial requests complete
-  await page.goto(path, { waitUntil: 'networkidle', timeout });
-
-  // Wait for both load states to ensure page is ready
-  await page.waitForLoadState('domcontentloaded', { timeout });
-  await page.waitForLoadState('networkidle', { timeout });
+  // Navigate using the default load behavior.
+  // In Next.js dev mode, waiting for "networkidle" is flaky because of
+  // ongoing HMR / websocket requests; rely on explicit UI checks instead.
+  await page.goto(path, { timeout });
 
   // Wait for any application loading states to resolve
   await waitForLoadingGone(page, timeout);
 
-  // Wait for the main content area to be present (ensures layout is rendered)
-  await page.waitForSelector('main', { state: 'attached', timeout }).catch(() => {
-    // Ignore if main doesn't exist, some pages might not have it
-  });
-
-  // Wait for React hydration and content painting
-  await page.waitForTimeout(2000);
-
-  // Ensure document is ready and content is painted
-  await page.evaluate(() => {
-    return new Promise<void>((resolve) => {
-      if (document.readyState === 'complete') {
-        // Give browser time to paint
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            resolve();
-          });
-        });
-      } else {
-        window.addEventListener('load', () => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resolve();
-            });
-          });
-        });
-      }
-    });
-  });
-
+  // Wait for optional specific selector if provided
   if (options?.waitForSelector) {
     await page.waitForSelector(options.waitForSelector, { timeout, state: 'visible' });
   }
@@ -61,78 +30,28 @@ export async function navigateAndVerify(
  * Wait for application loading screens to disappear
  */
 export async function waitForLoadingGone(page: Page, timeout = 15000): Promise<void> {
-  // Common loading messages
-  const loadingMessages = [
-    'Loading...',
-    'Checking setup status...',
-    'Checking account status...',
-    'Loading Plex Manager...',
-    'Loading Admin Dashboard...',
-    'Validating invite...',
-    'Loading data...',
-    'Fetching...',
-    'Loading users...',
-    'Loading models...',
-    'Loading statistics...',
-    'Loading versions...',
-    'Loading libraries...',
-    'Saving...',
-    'Generating...',
-    'Importing...',
-  ];
-
-  // Wait a bit for any loading states to appear
-  await page.waitForTimeout(500);
-
-  // Wait for all loading messages to disappear
-  for (const msg of loadingMessages) {
-    const loader = page.getByText(msg, { exact: false });
-    try {
-      if (await loader.isVisible({ timeout: 1000 }).catch(() => false)) {
-        await expect(loader).not.toBeVisible({ timeout });
-      }
-    } catch {
-      // Ignore if element doesn't exist or disappears quickly
-    }
-  }
-
-  // Wait for loading spinners to disappear
-  const spinnerSelectors = [
+  // Wait for common loading indicators to disappear
+  const loadingSelectors = [
+    'text=/Loading/i',
     '.animate-spin',
     '[role="status"]',
-    '[aria-label="Loading"]',
-    'svg.animate-spin',
+    '[aria-label*="Loading" i]',
   ];
 
-  for (const selector of spinnerSelectors) {
+  // Wait for any visible loading indicators to disappear
+  for (const selector of loadingSelectors) {
     try {
-      const spinners = page.locator(selector);
-      const count = await spinners.count();
+      const elements = page.locator(selector);
+      const count = await elements.count();
       if (count > 0) {
-        // Wait for all spinners to be hidden
-        for (let i = 0; i < count; i++) {
-          try {
-            await expect(spinners.nth(i)).not.toBeVisible({ timeout }).catch(() => {
-              // Some spinners might be in hidden containers, that's okay
-            });
-          } catch {
-            // Ignore individual spinner failures
-          }
-        }
+        // Wait for first visible element to be hidden (others will follow)
+        await expect(elements.first()).not.toBeVisible({ timeout: Math.min(timeout, 5000) }).catch(() => {
+          // Element may not exist or already hidden - that's fine
+        });
       }
     } catch {
-      // Ignore selector errors
+      // Selector may not match anything - that's fine
     }
-  }
-
-  // Wait for LoadingScreen component to disappear
-  try {
-    const loadingScreen = page.locator('text=/Loading.*Dashboard/i');
-    if (await loadingScreen.isVisible({ timeout: 1000 }).catch(() => false)) {
-      await expect(loadingScreen).not.toBeVisible({ timeout });
-    }
-  } catch {
-    // Ignore if loading screen doesn't exist
   }
 }
 
@@ -174,129 +93,24 @@ export async function verifyPageUnauthorized(page: Page): Promise<void> {
  */
 export async function waitForStablePage(page: Page, options?: { timeout?: number }): Promise<void> {
   const timeout = options?.timeout || 15000;
-  await page.waitForLoadState('domcontentloaded', { timeout });
   await page.waitForLoadState('networkidle', { timeout });
   await waitForLoadingGone(page, timeout);
-
-  // Wait for the main content area to be present
-  await page.waitForSelector('main', { state: 'attached', timeout }).catch(() => {
-    // Ignore if main doesn't exist
-  });
-
-  // Extra time for React hydration and painting
-  await page.waitForTimeout(1500);
-
-  // Ensure document is fully ready and content is painted
-  await page.evaluate(() => {
-    return new Promise<void>((resolve) => {
-      if (document.readyState === 'complete') {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            resolve();
-          });
-        });
-      } else {
-        window.addEventListener('load', () => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resolve();
-            });
-          });
-        });
-      }
-    });
-  });
 }
 
 /**
  * Wait for admin page to be fully loaded with navigation and content
  */
 export async function waitForAdminPageReady(page: Page, timeout = 20000): Promise<void> {
-  // Wait for network idle to ensure all initial requests complete
-  await page.waitForLoadState('networkidle', { timeout }).catch(() => {
-    // If networkidle times out, continue anyway
-  });
-
-  // Wait for DOM to be ready
-  await page.waitForLoadState('domcontentloaded', { timeout });
-
-  // Wait for any admin API requests to complete (if they exist)
-  // Some admin pages make client-side API calls after initial load
-  try {
-    // Give time for API calls to start
-    await page.waitForTimeout(1000);
-
-    // Wait for admin API responses with a reasonable timeout
-    // This will timeout quickly if no API calls are made, which is fine
-    await Promise.race([
-      page.waitForResponse(
-        (response) => {
-          const url = response.url();
-          return url.includes('/api/admin/') && response.status() < 400;
-        },
-        { timeout: Math.min(timeout, 10000) }
-      ),
-      // Fallback timeout to prevent hanging
-      new Promise(resolve => setTimeout(resolve, 2000))
-    ]).catch(() => {
-      // If no API calls are pending, that's fine
-    });
-  } catch {
-    // Ignore if waiting for API response fails - page might not make API calls
-  }
-
-  // Wait for admin nav to be visible (indicates layout is rendered)
-  await page.waitForSelector('nav', { state: 'visible', timeout }).catch(() => {
-    // Some admin pages might not have nav visible yet
-  });
-
-  // Wait for main content to be visible
-  await page.waitForSelector('main', { state: 'visible', timeout });
-
-  // Wait for all loading states to disappear
+  // Wait for network to be idle and loading states to disappear
+  await page.waitForLoadState('networkidle', { timeout });
   await waitForLoadingGone(page, timeout);
-
-  // Wait for any pending network requests to complete
-  try {
-    await page.waitForLoadState('networkidle', { timeout: Math.min(timeout, 5000) });
-  } catch {
-    // If networkidle times out, continue anyway
-  }
-
-  // Additional time for client components to hydrate and render
-  await page.waitForTimeout(1000);
-
-  // Ensure document is fully ready and content is painted
-  await page.evaluate(() => {
-    return new Promise<void>((resolve) => {
-      if (document.readyState === 'complete') {
-        requestAnimationFrame(() => {
-          requestAnimationFrame(() => {
-            resolve();
-          });
-        });
-      } else {
-        window.addEventListener('load', () => {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(() => {
-              resolve();
-            });
-          });
-        });
-      }
-    });
-  });
 }
 
 /**
  * Verify admin access by checking admin menu items or admin-specific content
  */
 export async function verifyAdminAccess(page: Page): Promise<void> {
-  // Navigate to admin page
-  await page.goto('/admin/users', { waitUntil: 'networkidle' });
-  await waitForAdminPageReady(page);
-
-  // Should not see 401 error
+  await navigateAndVerify(page, '/admin/users');
   await verifyPageAccessible(page);
 
   // Should see admin content (heading with Dashboard or Users)
@@ -308,18 +122,13 @@ export async function verifyAdminAccess(page: Page): Promise<void> {
  * Verify regular user (non-admin) cannot access admin pages
  */
 export async function verifyNoAdminAccess(page: Page): Promise<void> {
-  // Try to navigate to admin page
-  await page.goto('/admin');
-  await page.waitForLoadState('networkidle');
-  await waitForLoadingGone(page);
+  await navigateAndVerify(page, '/admin');
 
   // Should see 401 error or be redirected
   const url = page.url();
   if (url.includes('/admin')) {
-    // Still on admin page, should see 401
     await verifyPageUnauthorized(page);
   } else {
-    // Redirected away from admin page
     expect(url).not.toContain('/admin');
   }
 }
@@ -393,67 +202,23 @@ export async function waitForAdminContent(
   options?: { timeout?: number }
 ): Promise<void> {
   const timeout = options?.timeout || 20000;
-
-  // First ensure the page is ready
   await waitForAdminPageReady(page, timeout);
 
-  // Wait a bit more for client-side components to finish rendering
-  await page.waitForTimeout(500);
-
-  // Then wait for specific content to appear
+  // Wait for specific content to appear
   for (const selector of contentSelectors) {
-    try {
-      if (selector.type === 'heading') {
-        const headingOptions: { name: string | RegExp; level?: number; exact?: boolean } = {
-          name: selector.value
-        };
-        // Use exact matching for string values to avoid multiple matches
-        if (typeof selector.value === 'string') {
-          headingOptions.exact = true;
-        }
-        // Support heading level if specified
-        if (selector.level !== undefined) {
-          headingOptions.level = selector.level;
-        }
-        await expect(
-          page.getByRole('heading', headingOptions)
-        ).toBeVisible({ timeout });
-      } else if (selector.type === 'text') {
-        await expect(
-          page.getByText(selector.value)
-        ).toBeVisible({ timeout });
-      } else if (selector.type === 'selector') {
-        await page.waitForSelector(selector.value as string, { state: 'visible', timeout });
+    if (selector.type === 'heading') {
+      const headingOptions: { name: string | RegExp; level?: number; exact?: boolean } = {
+        name: selector.value,
+        exact: typeof selector.value === 'string',
+      };
+      if (selector.level !== undefined) {
+        headingOptions.level = selector.level;
       }
-    } catch (error) {
-      // If first attempt fails, wait a bit more and try once more
-      await page.waitForTimeout(1000);
-      // Re-check loading states
-      await waitForLoadingGone(page, Math.min(timeout, 5000));
-
-      // Final attempt
-      if (selector.type === 'heading') {
-        const headingOptions: { name: string | RegExp; level?: number; exact?: boolean } = {
-          name: selector.value
-        };
-        // Use exact matching for string values to avoid multiple matches
-        if (typeof selector.value === 'string') {
-          headingOptions.exact = true;
-        }
-        // Support heading level if specified
-        if (selector.level !== undefined) {
-          headingOptions.level = selector.level;
-        }
-        await expect(
-          page.getByRole('heading', headingOptions)
-        ).toBeVisible({ timeout: Math.min(timeout, 10000) });
-      } else if (selector.type === 'text') {
-        await expect(
-          page.getByText(selector.value)
-        ).toBeVisible({ timeout: Math.min(timeout, 10000) });
-      } else if (selector.type === 'selector') {
-        await page.waitForSelector(selector.value as string, { state: 'visible', timeout: Math.min(timeout, 10000) });
-      }
+      await expect(page.getByRole('heading', headingOptions)).toBeVisible({ timeout });
+    } else if (selector.type === 'text') {
+      await expect(page.getByText(selector.value)).toBeVisible({ timeout });
+    } else if (selector.type === 'selector') {
+      await page.waitForSelector(selector.value as string, { state: 'visible', timeout });
     }
   }
 }

@@ -1,9 +1,9 @@
 import { checkServerAccess } from '@/actions/auth'
-import { prisma } from '@/lib/prisma'
 import { checkUserServerAccess, getPlexUserInfo } from '@/lib/connections/plex'
+import { prisma } from '@/lib/prisma'
 import {
-  makePrismaPlexServer,
   makePlexUserInfo,
+  makePrismaPlexServer,
 } from '../utils/test-builders'
 
 jest.mock('@/lib/prisma', () => ({
@@ -53,9 +53,7 @@ describe('checkServerAccess', () => {
     expect(mockGetPlexUserInfo).toHaveBeenCalledWith('user-token')
     expect(mockCheckUserServerAccess).toHaveBeenCalledWith(
       {
-        hostname: mockPlexServer.hostname,
-        port: mockPlexServer.port,
-        protocol: mockPlexServer.protocol,
+        url: mockPlexServer.url,
         token: mockPlexServer.token,
         adminPlexUserId: mockPlexServer.adminPlexUserId,
       },
@@ -98,9 +96,7 @@ describe('checkServerAccess', () => {
   it('should return error when user does not have access', async () => {
     const mockPlexServer = {
       id: 'server-1',
-      hostname: 'plex.example.com',
-      port: 32400,
-      protocol: 'https' as const,
+      url: 'https://plex.example.com:32400',
       token: 'server-token',
       adminPlexUserId: 'admin-plex-id',
       isActive: true,

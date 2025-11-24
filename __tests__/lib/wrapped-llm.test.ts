@@ -305,7 +305,7 @@ describe('generateWrappedWithLLM', () => {
     consoleErrorSpy.mockRestore()
   })
 
-  it('should use default model when model is not specified', async () => {
+  it('should return error when model is not specified', async () => {
     ;(prisma.config.findUnique as jest.Mock).mockResolvedValue({
       id: 'config',
       llmDisabled: false,
@@ -321,36 +321,11 @@ describe('generateWrappedWithLLM', () => {
 
     ;(generateWrappedPrompt as jest.Mock).mockResolvedValue('test prompt')
 
-    const mockLLMResponse = {
-      success: true,
-      data: {
-        sections: [],
-        summary: 'Test summary',
-      },
-      rawResponse: JSON.stringify({ sections: [], summary: 'Test summary' }),
-      tokenUsage: {
-        promptTokens: 1000,
-        completionTokens: 500,
-        totalTokens: 1500,
-        cost: 0.06,
-      },
-    }
+    const result = await generateWrappedWithLLM('Test User', 2024, 'user-1', 'wrapped-1', mockStatistics)
 
-    ;(callOpenAI as jest.Mock).mockResolvedValue(mockLLMResponse)
-    ;(prisma.lLMUsage.create as jest.Mock).mockResolvedValue({})
-
-    await generateWrappedWithLLM('Test User', 2024, 'user-1', 'wrapped-1', mockStatistics)
-
-    expect(callOpenAI).toHaveBeenCalledWith(
-      expect.objectContaining({
-        model: undefined, // Should pass undefined, API call will use default
-      }),
-      expect.any(String),
-      expect.any(Object),
-      expect.any(Number),
-      expect.any(String),
-      expect.any(String)
-    )
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('No model configured')
+    expect(callOpenAI).not.toHaveBeenCalled()
   })
 
   it('should handle errors gracefully', async () => {

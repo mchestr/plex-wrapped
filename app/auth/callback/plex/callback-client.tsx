@@ -2,7 +2,7 @@
 
 import { checkServerAccess } from "@/actions/auth"
 import { getPlexAuthToken } from "@/lib/plex-auth"
-import { signIn } from "next-auth/react"
+import { getSession, signIn } from "next-auth/react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
@@ -52,13 +52,27 @@ export function PlexCallbackPageClient() {
           console.log('[AUTH] signIn result:', result)
 
           if (result?.ok) {
-            console.log("[AUTH] Test token authentication successful, redirecting to home")
+            console.log("[AUTH] Test token authentication successful, waiting for session...")
 
-            // Wait for session to be fully established before redirecting
-            await new Promise(resolve => setTimeout(resolve, 1000))
-            console.log('[AUTH] Session established, navigating...')
+            // Wait a moment for the session cookie to be set server-side
+            await new Promise(resolve => setTimeout(resolve, 1500))
 
-            // Use window.location for a clean navigation that avoids React Router issues
+            // Verify session is available before redirecting
+            try {
+              const session = await getSession()
+              if (session && session.user) {
+                console.log('[AUTH] Session verified:', session.user.email)
+              } else {
+                console.warn('[AUTH] Session not yet available, but proceeding with redirect')
+              }
+            } catch (err) {
+              console.warn('[AUTH] Could not verify session, but proceeding with redirect:', err)
+            }
+
+            console.log('[AUTH] Navigating to home...')
+
+            // Use window.location for a full page reload to ensure session cookie is sent
+            // The test fixture will wait for the redirect and verify the session
             window.location.href = '/'
             return
           } else {

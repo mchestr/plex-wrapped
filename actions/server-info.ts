@@ -45,8 +45,7 @@ export async function getAvailableLibraries(): Promise<{
     }
 
     // Fetch library sections directly from the local Plex server
-    const baseUrl = `${plexServer.protocol}://${plexServer.hostname}:${plexServer.port}`
-    const sectionsUrl = `${baseUrl}/library/sections?X-Plex-Token=${plexServer.token}`
+    const sectionsUrl = `${plexServer.url}/library/sections?X-Plex-Token=${plexServer.token}`
 
     logger.debug("Fetching libraries from local server", { url: sectionsUrl })
 

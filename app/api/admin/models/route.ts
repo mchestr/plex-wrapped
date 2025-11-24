@@ -2,7 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAdminAPI } from "@/lib/security/api-helpers"
 import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/security/error-handler"
 import { adminRateLimiter } from "@/lib/security/rate-limit"
-import { MODEL_PRICING } from "@/lib/wrapped/pricing"
+import { MODEL_PRICING } from "@/lib/llm/pricing"
 import { NextRequest, NextResponse } from "next/server"
 
 export const dynamic = 'force-dynamic'
