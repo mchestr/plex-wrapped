@@ -6,9 +6,10 @@ import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/secur
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { wrappedId: string } }
+  context: { params: Promise<{ wrappedId: string }> }
 ) {
   try {
+    const { wrappedId } = await context.params
     // Apply rate limiting
     const rateLimitResponse = await adminRateLimiter(request)
     if (rateLimitResponse) {
@@ -21,7 +22,7 @@ export async function GET(
       return authResult.response
     }
 
-    const versions = await getHistoricalWrappedVersions(params.wrappedId)
+    const versions = await getHistoricalWrappedVersions(wrappedId)
 
     return NextResponse.json({ versions })
   } catch (error) {

@@ -8,9 +8,11 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { wrappedId: string } }
+  context: { params: Promise<{ wrappedId: string }> }
 ) {
   try {
+    const { wrappedId } = await context.params
+
     // Apply rate limiting
     const rateLimitResponse = await adminRateLimiter(request)
     if (rateLimitResponse) {
@@ -24,7 +26,7 @@ export async function GET(
     }
 
     const wrapped = await prisma.plexWrapped.findUnique({
-      where: { id: params.wrappedId },
+      where: { id: wrappedId },
       select: {
         userId: true,
       },

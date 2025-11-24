@@ -6,9 +6,10 @@ import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/secur
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { userId: string } }
+  context: { params: Promise<{ userId: string }> }
 ) {
   try {
+    const { userId } = await context.params
     // Apply rate limiting
     const rateLimitResponse = await adminRateLimiter(request)
     if (rateLimitResponse) {
@@ -24,7 +25,7 @@ export async function GET(
     const yearParam = request.nextUrl.searchParams.get("year")
     const currentYear = validateYear(yearParam)
 
-    const wrapped = await getUserPlexWrapped(params.userId, currentYear)
+    const wrapped = await getUserPlexWrapped(userId, currentYear)
 
     if (!wrapped) {
       return NextResponse.json({ wrappedId: null })

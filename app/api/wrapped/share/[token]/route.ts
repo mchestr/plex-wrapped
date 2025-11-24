@@ -10,16 +10,15 @@ import { createSafeError, ErrorCode, getStatusCode, logError } from "@/lib/secur
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { token: string } }
+  context: { params: Promise<{ token: string }> }
 ) {
   try {
+    const { token } = await context.params
     // Apply rate limiting
     const rateLimitResponse = await shareRateLimiter(request)
     if (rateLimitResponse) {
       return rateLimitResponse
     }
-
-    const { token } = params
 
     if (!token) {
       return NextResponse.json(

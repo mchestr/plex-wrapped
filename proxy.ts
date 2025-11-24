@@ -1,5 +1,5 @@
 /**
- * Next.js middleware for request logging and request ID tracking
+ * Next.js proxy (formerly middleware) for request logging and request ID tracking
  * Logs incoming HTTP requests and sets up request context for async operations
  */
 
@@ -15,9 +15,9 @@ import { NextResponse } from "next/server"
 const logger = createLogger("HTTP")
 
 /**
- * Middleware to log HTTP requests and set up request context
+ * Proxy handler to log HTTP requests and set up request context
  */
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const requestId = generateRequestId()
 
   // Extract user ID from session if available (set by auth callbacks)
@@ -54,7 +54,7 @@ export function middleware(request: NextRequest) {
 }
 
 /**
- * Configure which routes should be processed by this middleware
+ * Configure which routes should be processed by this proxy
  */
 export const config = {
   matcher: [
@@ -69,4 +69,5 @@ export const config = {
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico)).*)",
   ],
 }
+
 
