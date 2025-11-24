@@ -1,6 +1,7 @@
 import { getLLMUsageRecords } from "@/actions/admin"
 import { aggregateLlmUsage } from "@/lib/utils"
 import Link from "next/link"
+import Image from "next/image"
 
 export const dynamic = "force-dynamic"
 
@@ -149,11 +150,13 @@ export default async function LLMConversationPage({
             <div className="flex items-center gap-2">
               {user.image ? (
                 <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-700">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={user.image}
                     alt={user.name || "User"}
+                    width={32}
+                    height={32}
                     className="w-full h-full object-cover"
+                    unoptimized
                   />
                 </div>
               ) : (

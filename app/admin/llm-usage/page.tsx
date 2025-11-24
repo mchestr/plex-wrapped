@@ -1,6 +1,7 @@
 import { getLLMUsageRecords, getLLMUsageStats, getUserById } from "@/actions/admin"
 import { aggregateLlmUsage } from "@/lib/utils"
 import Link from "next/link"
+import Image from "next/image"
 
 export const dynamic = 'force-dynamic'
 
@@ -107,11 +108,13 @@ export default async function LLMUsagePage({
               <div className="flex items-center gap-3 sm:gap-4">
                 {filteredUser.image ? (
                   <div className="relative w-10 h-10 sm:w-12 sm:h-12 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
+                    <Image
                       src={filteredUser.image}
                       alt={filteredUser.name || "User"}
+                      width={48}
+                      height={48}
                       className="w-full h-full object-cover"
+                      unoptimized
                     />
                   </div>
                 ) : (
@@ -242,11 +245,13 @@ export default async function LLMUsagePage({
                             <div className="flex items-center gap-2">
                               {group.user.image ? (
                                 <div className="relative w-8 h-8 rounded-full overflow-hidden bg-slate-700">
-                                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                                  <img
+                                  <Image
                                     src={group.user.image}
                                     alt={group.user.name || "User"}
+                                    width={32}
+                                    height={32}
                                     className="w-full h-full object-cover"
+                                    unoptimized
                                   />
                                 </div>
                               ) : (

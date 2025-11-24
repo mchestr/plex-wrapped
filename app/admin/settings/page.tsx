@@ -9,6 +9,13 @@ export default async function SettingsPage() {
   const baseUrl = getBaseUrl()
   const nodeVersion = process.version
   const nodeEnv = process.env.NODE_ENV || "development"
+  const databaseProvider = (() => {
+    const url = process.env.DATABASE_URL
+    if (!url) return "Not configured"
+    if (url.startsWith("postgres")) return "PostgreSQL"
+    if (url.startsWith("file:") || url.startsWith("sqlite:")) return "SQLite"
+    return "Unknown"
+  })()
 
   return (
     <div className="p-4 sm:p-6">
@@ -260,7 +267,7 @@ export default async function SettingsPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs font-medium text-slate-400 mb-1">Database Provider</div>
-                    <div className="text-sm text-white">SQLite</div>
+                    <div className="text-sm text-white">{databaseProvider}</div>
                   </div>
                   <div>
                     <div className="text-xs font-medium text-slate-400 mb-1">Database URL</div>

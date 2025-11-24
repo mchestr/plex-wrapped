@@ -1,6 +1,7 @@
 import { getLLMUsageById } from "@/actions/admin"
 import { ExpandablePrompt } from "@/components/admin/prompts/expandable-prompt"
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
@@ -99,11 +100,13 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
             <div className="flex items-center gap-4 mb-4">
               {record.user.image ? (
                 <div className="relative w-16 h-16 rounded-full overflow-hidden bg-slate-700">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={record.user.image}
                     alt={record.user.name || "User"}
+                    width={64}
+                    height={64}
                     className="w-full h-full object-cover"
+                    unoptimized
                   />
                 </div>
               ) : (

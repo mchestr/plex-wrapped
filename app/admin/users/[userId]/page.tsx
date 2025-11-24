@@ -4,6 +4,7 @@ import { UnshareUserButton } from "@/components/admin/users/unshare-user-button"
 import { UserStatusBadge } from "@/components/admin/users/user-status-badge"
 import { ChangeUserRoleButton } from "@/components/admin/users/change-user-role-button"
 import Link from "next/link"
+import Image from "next/image"
 import { notFound } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
@@ -49,11 +50,13 @@ export default async function UserDetailsPage({ params }: { params: { userId: st
             <div className="flex items-start gap-6">
               {user.image ? (
                 <div className="relative w-20 h-20 rounded-full overflow-hidden bg-slate-700 flex-shrink-0">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
+                  <Image
                     src={user.image}
                     alt={user.name || "User"}
+                    width={80}
+                    height={80}
                     className="w-full h-full object-cover"
+                    unoptimized
                   />
                 </div>
               ) : (

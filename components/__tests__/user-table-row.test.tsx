@@ -20,6 +20,16 @@ jest.mock('next/link', () => {
   return MockLink
 })
 
+// Mock next/image
+jest.mock('next/image', () => ({
+  __esModule: true,
+  default: (props: any) => {
+    const { width, height, fill, loader, quality, priority, unoptimized, ...imgProps } = props
+    // eslint-disable-next-line @next/next/no-img-element, jsx-a11y/alt-text
+    return <img {...imgProps} />
+  },
+}))
+
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: () => ({

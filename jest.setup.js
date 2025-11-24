@@ -5,6 +5,11 @@ import '@testing-library/jest-dom'
 process.env.NEXTAUTH_SECRET = 'test-secret-key-for-hashing-ip-addresses-min-32-chars'
 process.env.NODE_ENV = 'test'
 
+// Polyfill TextEncoder/TextDecoder for Node.js test environment
+const { TextEncoder, TextDecoder } = require('util')
+global.TextEncoder = TextEncoder
+global.TextDecoder = TextDecoder
+
 // Mock framer-motion to avoid animation issues in tests
 jest.mock('framer-motion', () => ({
   motion: {
