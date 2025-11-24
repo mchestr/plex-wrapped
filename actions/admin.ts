@@ -474,7 +474,7 @@ export async function getAdminSettings() {
  * Update LLM provider configuration (admin only)
  * @deprecated Use updateChatLLMProvider or updateWrappedLLMProvider instead
  */
-export async function updateLLMProvider(data: { provider: string; apiKey: string; model?: string; temperature?: number; maxTokens?: number }) {
+export async function updateLLMProvider(data: { provider: string; apiKey: string; model: string; temperature?: number; maxTokens?: number }) {
   // For backward compatibility, update wrapped provider
   return updateWrappedLLMProvider(data)
 }
