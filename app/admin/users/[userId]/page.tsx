@@ -9,8 +9,9 @@ import { notFound } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
-export default async function UserDetailsPage({ params }: { params: { userId: string } }) {
-  const user = await getUserDetails(params.userId)
+export default async function UserDetailsPage({ params }: { params: Promise<{ userId: string }> }) {
+  const { userId } = await params
+  const user = await getUserDetails(userId)
 
   if (!user) {
     notFound()
@@ -133,6 +134,65 @@ export default async function UserDetailsPage({ params }: { params: { userId: st
               </div>
             </div>
           </div>
+
+          {/* Discord Connection */}
+          {user.discordConnection && (
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-6 mb-6">
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div>
+                  <h3 className="text-lg font-semibold text-white">Discord Connection</h3>
+                  <p className="text-sm text-slate-400">Linked Roles status from Discord</p>
+                </div>
+                <span
+                  className={`px-2 py-1 rounded text-xs font-medium ${
+                    user.discordConnection.revokedAt
+                      ? "bg-red-500/20 text-red-300 border border-red-500/30"
+                      : "bg-green-500/20 text-green-300 border border-green-500/30"
+                  }`}
+                >
+                  {user.discordConnection.revokedAt ? "Revoked" : "Active"}
+                </span>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <div className="text-sm text-slate-400 mb-1">Display Name</div>
+                  <div className="text-sm text-white">
+                    {user.discordConnection.globalName || user.discordConnection.username}
+                  </div>
+                  <div className="text-xs text-slate-400">
+                    Handle {user.discordConnection.username}
+                    {user.discordConnection.discriminator ? `#${user.discordConnection.discriminator}` : ""}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-slate-400 mb-1">Discord ID</div>
+                  <div className="text-sm text-white font-mono break-all">
+                    {user.discordConnection.discordUserId}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-slate-400 mb-1">Linked</div>
+                  <div className="text-sm text-white">
+                    {formatDate(user.discordConnection.linkedAt)}
+                  </div>
+                </div>
+                <div>
+                  <div className="text-sm text-slate-400 mb-1">Last Metadata Sync</div>
+                  <div className="text-sm text-white">
+                    {user.discordConnection.metadataSyncedAt
+                      ? formatDate(user.discordConnection.metadataSyncedAt)
+                      : "Pending"}
+                  </div>
+                </div>
+              </div>
+              {user.discordConnection.lastError && (
+                <div className="mt-4 text-sm text-yellow-300 border border-yellow-500/30 bg-yellow-500/5 rounded-lg px-3 py-2">
+                  <span className="font-semibold text-yellow-200">Last sync warning:</span>{" "}
+                  {user.discordConnection.lastError}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures/auth';
-import { navigateAndVerify, verifyPageAccessible, waitForAdminContent, waitForAdminPageReady } from './helpers/test-utils';
+import { verifyPageAccessible, waitForAdminContent, waitForAdminPageReady } from './helpers/test-utils';
 
 test.describe('Admin Functionality', () => {
   test('should access admin dashboard', async ({ adminPage }) => {
@@ -11,7 +11,7 @@ test.describe('Admin Functionality', () => {
 
   test('should access admin settings', async ({ adminPage }) => {
     // Use in-app navigation instead of forcing a new navigation
-    await adminPage.getByRole('link', { name: 'Settings' }).click();
+    await adminPage.locator('aside').getByTestId('admin-nav-settings').first().click();
     await waitForAdminContent(adminPage, [
       { type: 'heading', value: 'Settings' },
       { type: 'text', value: 'Application Settings' },
@@ -31,14 +31,14 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin cost analysis', async ({ adminPage }) => {
-    await adminPage.getByRole('link', { name: 'Cost Analysis' }).click();
+    await adminPage.locator('aside').getByTestId('admin-nav-cost-analysis').first().click();
     await waitForAdminContent(adminPage, [
       { type: 'heading', value: 'Cost Analysis' }
     ], { timeout: 30000 });
   });
 
   test('should access admin LLM usage', async ({ adminPage }) => {
-    await adminPage.getByRole('link', { name: 'LLM Usage' }).click();
+    await adminPage.locator('aside').getByTestId('admin-nav-llm-usage').first().click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)
@@ -46,7 +46,7 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin playground', async ({ adminPage }) => {
-    await adminPage.getByRole('link', { name: 'Playground' }).click();
+    await adminPage.locator('aside').getByTestId('admin-nav-playground').first().click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)
@@ -54,7 +54,7 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin invites', async ({ adminPage }) => {
-    await adminPage.getByRole('link', { name: 'Invites' }).click();
+    await adminPage.locator('aside').getByTestId('admin-nav-invites').first().click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)
@@ -62,7 +62,7 @@ test.describe('Admin Functionality', () => {
   });
 
   test('should access admin shares', async ({ adminPage }) => {
-    await adminPage.getByRole('link', { name: 'Share Analytics' }).click();
+    await adminPage.locator('aside').getByTestId('admin-nav-share-analytics').first().click();
     await waitForAdminPageReady(adminPage, 30000);
     await verifyPageAccessible(adminPage);
     // Wait for page content to be visible (not just accessible)

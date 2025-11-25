@@ -69,11 +69,16 @@ export function PlexCallbackPageClient() {
               console.warn('[AUTH] Could not verify session, but proceeding with redirect:', err)
             }
 
-            console.log('[AUTH] Navigating to home...')
+            // Check if user needs to complete onboarding
+            const { getOnboardingStatus } = await import("@/actions/onboarding")
+            const { isComplete } = await getOnboardingStatus()
+
+            console.log('[AUTH] Onboarding status:', isComplete ? 'complete' : 'incomplete')
+            console.log('[AUTH] Navigating to', isComplete ? 'home' : 'onboarding...')
 
             // Use window.location for a full page reload to ensure session cookie is sent
             // The test fixture will wait for the redirect and verify the session
-            window.location.href = '/'
+            window.location.href = isComplete ? '/' : '/onboarding'
             return
           } else {
             console.error("[AUTH] Test token sign in failed:", result?.error)
@@ -154,18 +159,21 @@ export function PlexCallbackPageClient() {
             })
 
             if (result?.ok) {
-              // Check if user needs to complete onboarding (for invite flows)
-              if (inviteCode) {
-                const { getOnboardingStatus } = await import("@/actions/onboarding")
-                const { isComplete } = await getOnboardingStatus()
-                if (!isComplete) {
-                  router.push("/onboarding")
-                  router.refresh()
-                  return
-                }
+              // Wait a moment for the session cookie to be set server-side
+              await new Promise(resolve => setTimeout(resolve, 500))
+
+              // Check if user needs to complete onboarding (for all users, not just invite flows)
+              const { getOnboardingStatus } = await import("@/actions/onboarding")
+              const { isComplete } = await getOnboardingStatus()
+
+              if (!isComplete) {
+                // Use window.location for a full page reload to ensure session is properly set
+                window.location.href = "/onboarding"
+                return
               }
-              router.push("/")
-              router.refresh()
+
+              // Use window.location for a full page reload to ensure session is properly set
+              window.location.href = "/"
             } else {
               setError(result?.error || "Failed to sign in")
               isProcessingRef.current = false

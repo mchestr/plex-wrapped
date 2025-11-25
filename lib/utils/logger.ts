@@ -128,6 +128,11 @@ function sanitizeValue(value: unknown, isDevelopment: boolean): unknown {
   }
 
   if (typeof value === "string") {
+    // Don't redact UUIDs (used for requestIds)
+    const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (uuidPattern.test(value)) {
+      return value
+    }
     // Redact tokens, API keys, etc. (looks like long random strings)
     if (value.length > 32 && /^[A-Za-z0-9_-]+$/.test(value)) {
       return "[REDACTED]"

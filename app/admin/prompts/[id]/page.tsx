@@ -9,9 +9,10 @@ export const dynamic = 'force-dynamic'
 export default async function PromptTemplatePage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
-  const result = await getPromptTemplate(params.id)
+  const { id } = await params
+  const result = await getPromptTemplate(id)
   if (!result.success || !result.data) {
     notFound()
   }

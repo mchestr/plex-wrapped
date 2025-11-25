@@ -2,27 +2,21 @@
  * Tests for actions/chatbot.ts - chatbot sources tracking functionality
  */
 
-import { getConfig } from "@/actions/admin"
 import { chatWithAdminBot, type ChatMessage } from "@/actions/chatbot"
-import { requireAdmin } from "@/lib/admin"
 import { callChatLLM } from "@/lib/llm/chat"
 import { prisma } from "@/lib/prisma"
+import { getServerSession } from "next-auth"
 
 // Mock dependencies
-jest.mock("@/lib/admin", () => ({
-  requireAdmin: jest.fn(),
-}))
-
-jest.mock("@/actions/admin", () => ({
-  getConfig: jest.fn(),
-}))
-
 jest.mock("@/lib/llm/chat", () => ({
   callChatLLM: jest.fn(),
 }))
 
 jest.mock("@/lib/prisma", () => ({
   prisma: {
+    config: {
+      findUnique: jest.fn(),
+    },
     lLMProvider: {
       findFirst: jest.fn(),
     },
@@ -93,21 +87,23 @@ jest.mock("@/lib/utils/logger", () => ({
   })),
 }))
 
-const mockRequireAdmin = requireAdmin as jest.MockedFunction<typeof requireAdmin>
-const mockGetConfig = getConfig as jest.MockedFunction<typeof getConfig>
+jest.mock("next-auth", () => ({
+  getServerSession: jest.fn(),
+}))
+
 const mockCallChatLLM = callChatLLM as jest.MockedFunction<typeof callChatLLM>
 const mockPrisma = prisma as jest.Mocked<typeof prisma>
+const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>
 
 describe("chatbot sources tracking", () => {
   beforeEach(() => {
     jest.clearAllMocks()
 
-    // Default mocks
-    mockRequireAdmin.mockResolvedValue({
+    mockGetServerSession.mockResolvedValue({
       user: { id: "user-1", name: "Test User", email: "test@example.com" },
     } as any)
 
-    mockGetConfig.mockResolvedValue({
+    mockPrisma.config.findUnique.mockResolvedValue({
       llmDisabled: false,
     } as any)
 

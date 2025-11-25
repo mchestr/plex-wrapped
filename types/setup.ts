@@ -32,8 +32,18 @@ export const SETUP_STEPS: SetupStep[] = [
   },
   {
     id: 6,
-    title: "AI Provider",
-    description: "Configure OpenAI for AI features",
+    title: "Discord Linked Roles",
+    description: "Connect your Discord application and linked roles metadata",
+  },
+  {
+    id: 7,
+    title: "Chat Assistant AI",
+    description: "Configure the chatbot model used for admin troubleshooting",
+  },
+  {
+    id: 8,
+    title: "Wrapped AI Provider",
+    description: "Configure OpenAI for Plex Wrapped generation",
   },
 ]
 

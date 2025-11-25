@@ -8,6 +8,9 @@ jest.mock('@/lib/prisma', () => ({
     overseerr: {
       findFirst: jest.fn(),
     },
+    discordIntegration: {
+      findUnique: jest.fn(),
+    },
     user: {
       findUnique: jest.fn(),
       update: jest.fn(),
@@ -40,6 +43,7 @@ describe('Onboarding Actions', () => {
         publicUrl: 'https://requests.example.com',
         url: 'http://internal:5055',
       } as any)
+      mockPrisma.discordIntegration.findUnique.mockResolvedValue(null)
 
       const result = await getOnboardingInfo()
 
@@ -51,6 +55,7 @@ describe('Onboarding Actions', () => {
         publicUrl: null,
         url: 'http://localhost:5055',
       } as any)
+      mockPrisma.discordIntegration.findUnique.mockResolvedValue(null)
 
       const result = await getOnboardingInfo()
 
@@ -59,6 +64,7 @@ describe('Onboarding Actions', () => {
 
     it('should return null when no overseerr configured', async () => {
       mockPrisma.overseerr.findFirst.mockResolvedValue(null)
+      mockPrisma.discordIntegration.findUnique.mockResolvedValue(null)
 
       const result = await getOnboardingInfo()
 

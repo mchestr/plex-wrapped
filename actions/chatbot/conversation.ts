@@ -1,4 +1,4 @@
-import { callChatLLM, type ChatMessage as LLMChatMessage } from "@/lib/llm/chat"
+import { callChatLLM, type ChatTool, type ChatMessage as LLMChatMessage } from "@/lib/llm/chat"
 import { calculateCost } from "@/lib/llm/pricing"
 import { prisma } from "@/lib/prisma"
 import { createLogger } from "@/lib/utils/logger"
@@ -11,6 +11,7 @@ const logger = createLogger("CHATBOT_CONVERSATION")
 interface ConversationConfig {
   userId: string
   conversationId: string
+  context?: string
   llmProvider: {
     apiKey: string
     model: string | null
@@ -18,6 +19,7 @@ interface ConversationConfig {
     maxTokens: number | null
   }
   systemPrompt: string
+  tools?: ChatTool[]
 }
 
 interface ConversationResult {
@@ -36,6 +38,7 @@ export async function runConversationLoop(
     ...messages.map((m) => ({ role: m.role as "user" | "assistant", content: m.content })),
   ]
 
+  const toolRegistry = config.tools ?? TOOLS
   const MAX_LOOPS = 5
   let loops = 0
   const toolsUsed = new Set<string>() // Track which tools were called
@@ -57,7 +60,7 @@ export async function runConversationLoop(
         maxTokens: config.llmProvider.maxTokens || undefined,
       },
       currentMessages,
-      TOOLS
+      toolRegistry
     )
 
     if (!response.success) {
@@ -95,7 +98,7 @@ export async function runConversationLoop(
     if (response.content && (!response.toolCalls || response.toolCalls.length === 0)) {
       // Build sources array from tools used
       const sources = Array.from(toolsUsed).map((toolName) => {
-        const tool = TOOLS.find((t) => t.function.name === toolName)
+        const tool = toolRegistry.find((t) => t.function.name === toolName)
         return {
           tool: toolName,
           description: tool?.function.description || toolName,
@@ -130,7 +133,7 @@ export async function runConversationLoop(
       // Execute tools in parallel
       const toolResults = await Promise.all(
         response.toolCalls.map(async (toolCall) => {
-          const result = await executeToolCall(toolCall)
+          const result = await executeToolCall(toolCall, config.userId, config.context)
           return {
             role: "tool" as const,
             tool_call_id: toolCall.id,

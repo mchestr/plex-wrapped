@@ -1,7 +1,12 @@
 import { getAllOverseerrRequests, getOverseerrDiscoverMovies, getOverseerrDiscoverTV, getOverseerrMediaDetails, getOverseerrRequests, getOverseerrStatus, getOverseerrUsers } from "@/lib/connections/overseerr"
 import { prisma } from "@/lib/prisma"
 
-export async function executeOverseerrTool(toolName: string, args: Record<string, unknown>): Promise<string> {
+export async function executeOverseerrTool(
+  toolName: string,
+  args: Record<string, unknown>,
+  _userId?: string,
+  _context?: string
+): Promise<string> {
   const server = await prisma.overseerr.findFirst({ where: { isActive: true } })
   if (!server) return "Error: No active Overseerr server configured."
 

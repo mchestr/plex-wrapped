@@ -1,7 +1,7 @@
 "use client"
 
 import { completeOnboarding, getOnboardingInfo } from "@/actions/onboarding"
-import { FinalStep, MediaRequestStep, PlexConfigurationStep, ReportIssuesStep, WelcomeStep } from "@/components/onboarding/onboarding-steps"
+import { DiscordSupportStep, FinalStep, MediaRequestStep, PlexConfigurationStep, ReportIssuesStep, WelcomeStep } from "@/components/onboarding/onboarding-steps"
 import { FinalSuccessAnimation } from "@/components/setup/setup-wizard/final-success-animation"
 import { SuccessAnimation } from "@/components/setup/setup-wizard/success-animation"
 import { ONBOARDING_STEPS } from "@/types/onboarding"
@@ -19,11 +19,15 @@ export function OnboardingWizard({ currentStep: initialStep }: OnboardingWizardP
   const [showSuccess, setShowSuccess] = useState(false)
   const [showFinalSuccess, setShowFinalSuccess] = useState(false)
   const [overseerrUrl, setOverseerrUrl] = useState<string | null>(null)
+  const [discordEnabled, setDiscordEnabled] = useState(false)
+  const [discordInstructions, setDiscordInstructions] = useState<string | null>(null)
 
   useEffect(() => {
     const fetchInfo = async () => {
       const info = await getOnboardingInfo()
       setOverseerrUrl(info.overseerrUrl)
+      setDiscordEnabled(info.discordEnabled ?? false)
+      setDiscordInstructions(info.discordInstructions ?? null)
     }
     fetchInfo()
   }, [])
@@ -44,10 +48,19 @@ export function OnboardingWizard({ currentStep: initialStep }: OnboardingWizardP
 
   const handleFinalSuccessComplete = async () => {
     // Mark onboarding as complete in the database
-    await completeOnboarding()
-    // Redirect to home page
-    router.push("/")
-    router.refresh()
+    const result = await completeOnboarding()
+
+    if (result.success) {
+      // Wait a moment to ensure the database update is committed
+      await new Promise(resolve => setTimeout(resolve, 500))
+
+      // Use window.location for a full page reload to ensure session is refreshed
+      // and the server-side redirect logic in app/page.tsx can properly check onboarding status
+      window.location.href = "/"
+    } else {
+      console.error("Failed to complete onboarding:", result.error)
+      // Could show an error message to the user here
+    }
   }
 
   const handleBack = () => {
@@ -65,7 +78,9 @@ export function OnboardingWizard({ currentStep: initialStep }: OnboardingWizardP
       case 3:
         return { title: "Got it!", message: "Next: Support" }
       case 4:
-        return { title: "Perfect!", message: "Almost done" }
+        return { title: "Perfect!", message: "Next: Discord access" }
+      case 5:
+        return { title: "Nice!", message: "You're all set" }
       default:
         return { title: "Success!", message: "Moving to next step" }
     }
@@ -82,6 +97,15 @@ export function OnboardingWizard({ currentStep: initialStep }: OnboardingWizardP
       case 4:
         return <ReportIssuesStep onComplete={handleStepComplete} onBack={handleBack} />
       case 5:
+        return (
+          <DiscordSupportStep
+            onComplete={handleStepComplete}
+            onBack={handleBack}
+            discordEnabled={discordEnabled}
+            instructions={discordInstructions}
+          />
+        )
+      case 6:
         return <FinalStep onComplete={handleStepComplete} onBack={handleBack} />
       default:
         return <div className="text-white">Step {currentStep} - Coming soon</div>

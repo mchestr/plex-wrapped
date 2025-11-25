@@ -9,7 +9,7 @@ import { executeTautulliTool } from "./tautulli"
 const logger = createLogger("CHATBOT_EXECUTOR")
 
 // Map tool names to their service executors
-const TOOL_SERVICE_MAP: Record<string, (toolName: string, args: Record<string, unknown>) => Promise<string>> = {
+const TOOL_SERVICE_MAP: Record<string, (toolName: string, args: Record<string, unknown>, userId?: string, context?: string) => Promise<string>> = {
   // Plex tools
   get_plex_status: executePlexTool,
   get_plex_sessions: executePlexTool,
@@ -42,6 +42,8 @@ const TOOL_SERVICE_MAP: Record<string, (toolName: string, args: Record<string, u
   get_sonarr_queue: executeSonarrTool,
   get_sonarr_series: executeSonarrTool,
   get_sonarr_series_details: executeSonarrTool,
+  get_sonarr_episodes: executeSonarrTool,
+  get_sonarr_episode_details: executeSonarrTool,
   get_sonarr_calendar: executeSonarrTool,
   get_sonarr_wanted_missing: executeSonarrTool,
   get_sonarr_root_folders: executeSonarrTool,
@@ -59,7 +61,11 @@ const TOOL_SERVICE_MAP: Record<string, (toolName: string, args: Record<string, u
   get_radarr_quality_profiles: executeRadarrTool,
 }
 
-export async function executeToolCall(toolCall: ChatToolCall): Promise<string> {
+export async function executeToolCall(
+  toolCall: ChatToolCall,
+  userId?: string,
+  context?: string
+): Promise<string> {
   const toolName = toolCall.function.name
   const rawArgs = toolCall.function.arguments || "{}"
 
@@ -90,10 +96,12 @@ export async function executeToolCall(toolCall: ChatToolCall): Promise<string> {
   logger.debug("Executing chatbot tool", {
     toolName,
     toolCallId: toolCall.id,
+    userId,
+    context,
   })
 
   try {
-    const result = await executor(toolName, args)
+    const result = await executor(toolName, args, userId, context)
 
     logger.debug("Chatbot tool execution completed", {
       toolName,

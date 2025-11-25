@@ -7,6 +7,7 @@ import { generatePlexWrapped } from '@/actions/wrapped-generation'
 import { getUserPlexWrapped } from '@/actions/user-queries'
 import { getServerSession } from 'next-auth'
 import { prisma } from '@/lib/prisma'
+import { getWrappedSettings } from '@/actions/admin'
 
 // Mock dependencies
 jest.mock('next-auth', () => ({
@@ -55,6 +56,10 @@ jest.mock('next/cache', () => ({
   revalidatePath: jest.fn(),
 }))
 
+jest.mock('@/actions/admin', () => ({
+  getWrappedSettings: jest.fn(),
+}))
+
 describe('User Wrapped Generation Security', () => {
   const mockUser1 = {
     id: 'user-1',
@@ -93,6 +98,7 @@ describe('User Wrapped Generation Security', () => {
 
   describe('generatePlexWrapped', () => {
     it('should allow user to generate their own wrapped', async () => {
+      ;(getWrappedSettings as jest.Mock).mockResolvedValue({ wrappedEnabled: true, wrappedYear: 2024 })
       ;(getServerSession as jest.Mock).mockResolvedValue({
         user: {
           id: 'user-1',
@@ -177,6 +183,7 @@ describe('User Wrapped Generation Security', () => {
     })
 
     it('should fail if user does not exist', async () => {
+      ;(getWrappedSettings as jest.Mock).mockResolvedValue({ wrappedEnabled: true, wrappedYear: 2024 })
       ;(getServerSession as jest.Mock).mockResolvedValue({
         user: {
           id: 'user-1',
@@ -192,6 +199,7 @@ describe('User Wrapped Generation Security', () => {
     })
 
     it('should fail if user does not have plexUserId', async () => {
+      ;(getWrappedSettings as jest.Mock).mockResolvedValue({ wrappedEnabled: true, wrappedYear: 2024 })
       ;(getServerSession as jest.Mock).mockResolvedValue({
         user: {
           id: 'user-1',
@@ -224,6 +232,7 @@ describe('User Wrapped Generation Security', () => {
     })
 
     it('should preserve existing share token when regenerating', async () => {
+      ;(getWrappedSettings as jest.Mock).mockResolvedValue({ wrappedEnabled: true, wrappedYear: 2024 })
       ;(getServerSession as jest.Mock).mockResolvedValue({
         user: {
           id: 'admin-1',

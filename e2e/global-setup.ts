@@ -6,10 +6,19 @@ import { PrismaClient } from '@prisma/client';
  */
 async function globalSetup() {
   console.log('[E2E Setup] Starting E2E test setup...');
-  console.log('[E2E Setup] Database URL:', process.env.DATABASE_URL?.replace(/\/\/[^:]+:[^@]+@/, '//***:***@') || 'not set');
+
+  const databaseUrl = process.env.DATABASE_URL;
+
+  console.log('[E2E Setup] Database URL:', databaseUrl?.replace(/\/\/[^:]+:[^@]+@/, '//***:***@') || 'not set');
   console.log('[E2E Setup] Test auth enabled:', process.env.NEXT_PUBLIC_ENABLE_TEST_AUTH);
 
-  const prisma = new PrismaClient();
+  const prisma = new PrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
+  });
 
   try {
     // Test database connection

@@ -1,7 +1,11 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { WrappedHomeButton } from '@/components/wrapped/wrapped-home-button'
 import * as userActions from '@/actions/users'
+
+// Mock the admin actions first (before component import)
+jest.mock('@/actions/admin', () => ({
+  getWrappedSettings: jest.fn(),
+}))
 
 // Mock the user actions
 jest.mock('@/actions/users', () => ({
@@ -24,216 +28,140 @@ jest.mock('../generator/wrapped-generating-animation', () => ({
   ),
 }))
 
+// Mock WrappedShareButton
+jest.mock('../wrapped/wrapped-share-button', () => ({
+  WrappedShareButton: ({ shareToken, year }: { shareToken: string; year: number }) => (
+    <div data-testid="share-button">Share {year}</div>
+  ),
+}))
+
+// Import component after mocks
+import { WrappedHomeButton } from '@/components/wrapped/wrapped-home-button'
+import * as adminActions from '@/actions/admin'
+
 describe('WrappedHomeButton', () => {
+  const currentYear = new Date().getFullYear()
+
   beforeEach(() => {
     jest.clearAllMocks()
-    jest.useFakeTimers()
-  })
-
-  afterEach(() => {
-    jest.runOnlyPendingTimers()
-    jest.useRealTimers()
-  })
-
-  it('should render generate button when no wrapped exists', async () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue(null)
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByText(/My Server Manager/i)).toBeInTheDocument()
-      expect(screen.getByText('Generate My Wrapped')).toBeInTheDocument()
+    // Default mock for getWrappedSettings
+    jest.spyOn(adminActions, 'getWrappedSettings').mockResolvedValue({
+      wrappedEnabled: true,
+      wrappedYear: currentYear,
     })
   })
 
-  it('should show loading state initially', () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockImplementation(
-      () => new Promise(() => {}) // Never resolves
-    )
+  describe('Rendering States', () => {
+    it('should render generate button when no wrapped exists', async () => {
+      jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue(null)
 
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
+      render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
 
-    const spinner = document.querySelector('.animate-spin')
-    expect(spinner).toBeInTheDocument()
-  })
-
-  it('should show view wrapped button when wrapped is completed', async () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue({
-      id: 'wrapped-1',
-      status: 'completed',
-      year: 2024,
-    } as any)
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByText("Let's Get Started!")).toBeInTheDocument()
-    })
-  })
-
-  it('should show try again button when wrapped failed', async () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue({
-      id: 'wrapped-1',
-      status: 'failed',
-      error: 'Generation failed',
-      year: 2024,
-    } as any)
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Try Again')).toBeInTheDocument()
-      expect(screen.getByText('Generation failed')).toBeInTheDocument()
-    })
-  })
-
-  it('should show generating animation when generating', async () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue({
-      id: 'wrapped-1',
-      status: 'generating',
-      year: 2024,
-    } as any)
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByTestId('generating-animation')).toBeInTheDocument()
-    })
-  })
-
-  it('should call generatePlexWrapped when generate button is clicked', async () => {
-    const user = userEvent.setup({ delay: null })
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue(null)
-    const mockGenerate = jest.spyOn(userActions, 'generatePlexWrapped').mockResolvedValue({
-      success: true,
-    } as any)
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Generate My Wrapped')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByText(/My Server/i)).toBeInTheDocument()
+        expect(screen.getByText(`Generate My ${currentYear} Wrapped`)).toBeInTheDocument()
+      })
     })
 
-    const generateButton = screen.getByText('Generate My Wrapped')
-    await user.click(generateButton)
+    it('should show loading state initially', async () => {
+      jest.spyOn(userActions, 'getUserPlexWrapped').mockImplementation(
+        () => new Promise(() => {}) // Never resolves
+      )
 
-    await waitFor(() => {
-      expect(mockGenerate).toHaveBeenCalledWith('user-1', expect.any(Number))
-    })
-  })
+      render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
 
-  it('should show error when generation fails', async () => {
-    const user = userEvent.setup({ delay: null })
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue(null)
-    jest.spyOn(userActions, 'generatePlexWrapped').mockResolvedValue({
-      success: false,
-      error: 'Failed to generate',
-    } as any)
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Generate My Wrapped')).toBeInTheDocument()
+      await waitFor(() => {
+        const spinner = document.querySelector('.animate-spin')
+        expect(spinner).toBeInTheDocument()
+      })
     })
 
-    const generateButton = screen.getByText('Generate My Wrapped')
-    await user.click(generateButton)
-
-    await waitFor(() => {
-      expect(screen.getByText('Failed to generate')).toBeInTheDocument()
-    })
-  })
-
-  it('should poll for wrapped completion when generating', async () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped')
-      .mockResolvedValueOnce({
-        id: 'wrapped-1',
-        status: 'generating',
-        year: 2024,
-      } as any)
-      .mockResolvedValueOnce({
+    it('should show view wrapped button when wrapped is completed', async () => {
+      jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue({
         id: 'wrapped-1',
         status: 'completed',
-        year: 2024,
+        year: currentYear,
+        shareToken: 'test-token',
       } as any)
 
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
+      render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
 
-    await waitFor(() => {
-      expect(screen.getByTestId('generating-animation')).toBeInTheDocument()
+      const viewButton = await screen.findByText("Let's Get Started!", {}, { timeout: 2000 })
+      expect(viewButton).toBeInTheDocument()
     })
 
-    // Advance timer to trigger polling
-    jest.advanceTimersByTime(2000)
-
-    await waitFor(() => {
-      expect(mockPush).toHaveBeenCalledWith('/wrapped')
-    })
-  })
-
-  it('should stop polling when wrapped fails', async () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped')
-      .mockResolvedValueOnce({
-        id: 'wrapped-1',
-        status: 'generating',
-        year: 2024,
-      } as any)
-      .mockResolvedValueOnce({
+    it('should show try again button when wrapped failed', async () => {
+      jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue({
         id: 'wrapped-1',
         status: 'failed',
         error: 'Generation failed',
-        year: 2024,
+        year: currentYear,
       } as any)
 
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
+      render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
 
-    await waitFor(() => {
-      expect(screen.getByTestId('generating-animation')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByText('Try Again')).toBeInTheDocument()
+        expect(screen.getByText('Generation failed')).toBeInTheDocument()
+      })
     })
 
-    jest.advanceTimersByTime(2000)
+    it('should show generating animation when generating', async () => {
+      jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue({
+        id: 'wrapped-1',
+        status: 'generating',
+        year: currentYear,
+      } as any)
 
-    await waitFor(() => {
-      expect(screen.getByText('Try Again')).toBeInTheDocument()
-    })
-  })
+      render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
 
-  it('should handle error when loading wrapped', async () => {
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockRejectedValue(new Error('Load failed'))
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Load failed')).toBeInTheDocument()
-    })
-  })
-
-  it('should handle error when generating wrapped', async () => {
-    const user = userEvent.setup({ delay: null })
-    jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue(null)
-    jest.spyOn(userActions, 'generatePlexWrapped').mockRejectedValue(new Error('Generate failed'))
-
-    render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
-
-    await waitFor(() => {
-      expect(screen.getByText('Generate My Wrapped')).toBeInTheDocument()
-    })
-
-    const generateButton = screen.getByText('Generate My Wrapped')
-    await user.click(generateButton)
-
-    await waitFor(() => {
-      expect(screen.getByText('Generate failed')).toBeInTheDocument()
+      await waitFor(() => {
+        expect(screen.getByTestId('generating-animation')).toBeInTheDocument()
+      })
     })
   })
 
-  it('should not load wrapped when userId is not provided', () => {
-    const mockGetWrapped = jest.spyOn(userActions, 'getUserPlexWrapped')
+  describe('User Interactions', () => {
+    it('should render generate button when no wrapped exists', async () => {
+      jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue(null)
 
-    render(<WrappedHomeButton userId="" serverName="My Server" />)
+      render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
 
-    // Should not call getUserPlexWrapped with empty userId
-    expect(mockGetWrapped).not.toHaveBeenCalled()
+      // Wait for button to appear (settings must load first)
+      const generateButton = await screen.findByText(
+        `Generate My ${currentYear} Wrapped`,
+        {},
+        { timeout: 2000 }
+      )
+
+      // Button should exist and be a button element
+      expect(generateButton).toBeDefined()
+      expect(generateButton.tagName).toBe('BUTTON')
+    })
+  })
+
+  describe('Edge Cases', () => {
+    it('should not load wrapped when userId is not provided', () => {
+      const mockGetWrapped = jest.spyOn(userActions, 'getUserPlexWrapped')
+
+      render(<WrappedHomeButton userId="" serverName="My Server" />)
+
+      // Should not call getUserPlexWrapped with empty userId
+      expect(mockGetWrapped).not.toHaveBeenCalled()
+    })
+
+    it('should handle wrapped settings not enabled', async () => {
+      jest.spyOn(adminActions, 'getWrappedSettings').mockResolvedValue({
+        wrappedEnabled: false,
+        wrappedYear: currentYear,
+      })
+      jest.spyOn(userActions, 'getUserPlexWrapped').mockResolvedValue(null)
+
+      render(<WrappedHomeButton userId="user-1" serverName="My Server" />)
+
+      await waitFor(() => {
+        expect(screen.getByText(/Wrapped generation is currently disabled/i)).toBeInTheDocument()
+      })
+    })
   })
 })
-

@@ -16,6 +16,7 @@ const ReactMarkdown = dynamic(() => import("react-markdown"), {
 
 interface ChatbotProps {
   userName?: string
+  enabled?: boolean
 }
 
 const getInitialMessage = (userName?: string): ChatMessage => ({
@@ -24,7 +25,7 @@ const getInitialMessage = (userName?: string): ChatMessage => ({
   timestamp: Date.now(),
 })
 
-export function Chatbot({ userName }: ChatbotProps) {
+export function Chatbot({ userName, enabled = true }: ChatbotProps) {
   const { isOpen, toggleChat } = useChat()
   const [messages, setMessages] = useState<ChatMessage[]>([getInitialMessage(userName)])
   const [conversationId, setConversationId] = useState<string | undefined>(undefined)
@@ -38,8 +39,15 @@ export function Chatbot({ userName }: ChatbotProps) {
   }
 
   useEffect(() => {
-    scrollToBottom()
-  }, [messages, isOpen])
+    if (enabled) {
+      scrollToBottom()
+    }
+  }, [messages, isOpen, enabled])
+
+  // Always call hooks in the same order, but return early if disabled
+  if (!enabled) {
+    return null
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()

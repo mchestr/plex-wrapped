@@ -9,6 +9,41 @@ const logger = createLogger("ADMIN")
 // Server stats are now calculated on the fly - no database caching needed
 
 /**
+ * Get wrapped settings (public - no auth required)
+ */
+export async function getWrappedSettings() {
+  try {
+    const config = await prisma.config.findUnique({
+      where: { id: "config" },
+      select: {
+        wrappedEnabled: true,
+        wrappedYear: true,
+      },
+    })
+
+    // Return defaults if config doesn't exist
+    if (!config) {
+      return {
+        wrappedEnabled: true,
+        wrappedYear: new Date().getFullYear(),
+      }
+    }
+
+    return {
+      wrappedEnabled: config.wrappedEnabled ?? true,
+      wrappedYear: config.wrappedYear ?? new Date().getFullYear(),
+    }
+  } catch (error) {
+    logger.error("Error getting wrapped settings", error)
+    // Return defaults on error
+    return {
+      wrappedEnabled: true,
+      wrappedYear: new Date().getFullYear(),
+    }
+  }
+}
+
+/**
  * Get the current application configuration (admin only)
  */
 export async function getConfig() {
@@ -25,6 +60,8 @@ export async function getConfig() {
         data: {
           id: "config",
           llmDisabled: false,
+          wrappedEnabled: true,
+          wrappedYear: new Date().getFullYear(),
         },
       })
     }
@@ -36,6 +73,8 @@ export async function getConfig() {
     return {
       id: "config",
       llmDisabled: false,
+      wrappedEnabled: true,
+      wrappedYear: new Date().getFullYear(),
       updatedAt: new Date(),
       updatedBy: null,
     }
@@ -68,6 +107,52 @@ export async function setLLMDisabled(disabled: boolean) {
     return {
       success: false,
       error: error instanceof Error ? error.message : "Failed to update configuration",
+    }
+  }
+}
+
+/**
+ * Update wrapped settings (admin only)
+ */
+export async function updateWrappedSettings(data: { enabled: boolean; year?: number }) {
+  const session = await requireAdmin()
+
+  try {
+    const updateData: {
+      wrappedEnabled: boolean
+      wrappedYear?: number | null
+      updatedBy: string
+    } = {
+      wrappedEnabled: data.enabled,
+      updatedBy: session.user.id,
+    }
+
+    if (data.year !== undefined) {
+      updateData.wrappedYear = data.year || null
+    }
+
+    const config = await prisma.config.upsert({
+      where: { id: "config" },
+      update: updateData,
+      create: {
+        id: "config",
+        llmDisabled: false,
+        wrappedEnabled: data.enabled,
+        wrappedYear: data.year || null,
+        updatedBy: session.user.id,
+      },
+    })
+
+    const { revalidatePath } = await import("next/cache")
+    revalidatePath("/")
+    revalidatePath("/wrapped")
+
+    return { success: true, config }
+  } catch (error) {
+    logger.error("Error updating wrapped settings", error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Failed to update wrapped settings",
     }
   }
 }
@@ -142,8 +227,12 @@ export async function getLLMUsageRecords(
 /**
  * Get a single LLM usage record by ID (admin only)
  */
-export async function getLLMUsageById(id: string) {
+export async function getLLMUsageById(id: string | undefined) {
   await requireAdmin()
+
+  if (!id) {
+    throw new Error("LLM usage ID is required")
+  }
 
   const record = await prisma.lLMUsage.findUnique({
     where: { id },
@@ -445,7 +534,18 @@ export async function getHistoricalWrappedData(llmUsageId: string, _wrappedId: s
 export async function getAdminSettings() {
   await requireAdmin()
 
-  const [config, chatLLMProvider, wrappedLLMProvider, plexServer, tautulli, overseerr, sonarr, radarr] = await Promise.all([
+  const [
+    config,
+    chatLLMProvider,
+    wrappedLLMProvider,
+    plexServer,
+    tautulli,
+    overseerr,
+    sonarr,
+    radarr,
+    discordIntegration,
+    discordLinkedCount,
+  ] = await Promise.all([
     getConfig(),
     prisma.lLMProvider.findFirst({ where: { isActive: true, purpose: "chat" } }),
     prisma.lLMProvider.findFirst({ where: { isActive: true, purpose: "wrapped" } }),
@@ -454,6 +554,8 @@ export async function getAdminSettings() {
     prisma.overseerr.findFirst({ where: { isActive: true } }),
     prisma.sonarr.findFirst({ where: { isActive: true } }),
     prisma.radarr.findFirst({ where: { isActive: true } }),
+    prisma.discordIntegration.findUnique({ where: { id: "discord" } }),
+    prisma.discordConnection.count({ where: { revokedAt: null } }),
   ])
 
   return {
@@ -467,6 +569,8 @@ export async function getAdminSettings() {
     overseerr,
     sonarr,
     radarr,
+    discordIntegration,
+    discordLinkedCount,
   }
 }
 

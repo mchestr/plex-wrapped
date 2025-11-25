@@ -6,8 +6,9 @@ import { notFound } from "next/navigation"
 
 export const dynamic = 'force-dynamic'
 
-export default async function LLMUsageDetailPage({ params }: { params: { id: string } }) {
-  const record = await getLLMUsageById(params.id)
+export default async function LLMUsageDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
+  const record = await getLLMUsageById(id)
 
   if (!record) {
     notFound()
@@ -47,10 +48,56 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
     // Not JSON, will display as text
   }
 
+  // Format prompt nicely - check if it's a chat message array
+  let formattedPrompt: string = record.prompt
+  let promptIsJson = false
+  let promptIsChatMessages = false
+  try {
+    const parsedPrompt = JSON.parse(record.prompt)
+    promptIsJson = true
+
+    // Check if it's an array of chat messages
+    if (Array.isArray(parsedPrompt) && parsedPrompt.length > 0) {
+      const firstItem = parsedPrompt[0]
+      if (typeof firstItem === 'object' && firstItem !== null && ('role' in firstItem || 'content' in firstItem)) {
+        promptIsChatMessages = true
+        // Format as readable chat messages with separator
+        formattedPrompt = parsedPrompt.map((msg: any, idx: number) => {
+          const role = msg.role || 'unknown'
+          let content: string
+
+          if (typeof msg.content === 'string') {
+            // Check if the string is JSON (common for tool outputs)
+            try {
+              const parsed = JSON.parse(msg.content)
+              content = JSON.stringify(parsed, null, 2)
+            } catch {
+              // Not JSON, use as-is
+              content = msg.content
+            }
+          } else {
+            content = JSON.stringify(msg.content, null, 2)
+          }
+
+          const name = msg.name ? ` (${msg.name})` : ''
+          return `[${role.toUpperCase()}${name}]\n${content}`
+        }).join('\n\n---\n\n')
+      } else {
+        // Regular JSON array/object
+        formattedPrompt = JSON.stringify(parsedPrompt, null, 2)
+      }
+    } else {
+      // Regular JSON object
+      formattedPrompt = JSON.stringify(parsedPrompt, null, 2)
+    }
+  } catch {
+    // Not JSON, will display as text
+  }
+
   return (
     <div className="p-4 sm:p-6">
       <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
+        <div className="mb-6">
             <Link
               href="/admin/llm-usage"
               className="text-sm text-cyan-400 hover:text-cyan-300 mb-4 inline-block"
@@ -215,9 +262,10 @@ export default async function LLMUsageDetailPage({ params }: { params: { id: str
 
         {/* Prompt */}
         <ExpandablePrompt
-          content={record.prompt}
+          content={formattedPrompt}
           title="Prompt"
           characterCount={record.prompt.length}
+          characterCountSuffix={promptIsChatMessages ? "(Chat messages)" : promptIsJson ? "(JSON formatted)" : undefined}
         />
 
         {/* Response */}

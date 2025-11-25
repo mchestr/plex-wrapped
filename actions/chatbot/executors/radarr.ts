@@ -1,7 +1,12 @@
 import { getRadarrCalendar, getRadarrDiskSpace, getRadarrHealth, getRadarrHistory, getRadarrMovieById, getRadarrMovies, getRadarrQualityProfiles, getRadarrQueue, getRadarrRootFolders, getRadarrSystemStatus, getRadarrWantedMissing, searchRadarrMovies } from "@/lib/connections/radarr"
 import { prisma } from "@/lib/prisma"
 
-export async function executeRadarrTool(toolName: string, args: Record<string, unknown>): Promise<string> {
+export async function executeRadarrTool(
+  toolName: string,
+  args: Record<string, unknown>,
+  userId?: string,
+  context?: string
+): Promise<string> {
   const server = await prisma.radarr.findFirst({ where: { isActive: true } })
   if (!server) return "Error: No active Radarr server configured."
 
@@ -26,12 +31,54 @@ export async function executeRadarrTool(toolName: string, args: Record<string, u
       if (typeof args.term !== "string") {
         return "Error: 'term' parameter is required and must be a string"
       }
-      const results = await searchRadarrMovies(config, args.term)
-      return JSON.stringify(results)
+      const lookupResults = await searchRadarrMovies(config, args.term)
+
+      // Also check if any of these movies are already in the library
+      // This allows us to return Radarr internal IDs when available
+      const libraryMovies = await getRadarrMovies(config)
+      const libraryArray = Array.isArray(libraryMovies) ? libraryMovies : []
+
+      // Match lookup results with library movies by TMDB ID
+      const enrichedResults = Array.isArray(lookupResults) ? lookupResults.map((lookup: any) => {
+        const inLibrary = libraryArray.find((lib: any) =>
+          lib.tmdbId === lookup.tmdbId ||
+          lib.title?.toLowerCase() === lookup.title?.toLowerCase()
+        )
+        return {
+          ...lookup,
+          // If found in library, include Radarr internal ID
+          radarrId: inLibrary?.id,
+          inLibrary: !!inLibrary,
+        }
+      }) : lookupResults
+
+      return JSON.stringify(enrichedResults)
     }
     case "get_radarr_history": {
       const pageSize = typeof args.pageSize === "number" ? args.pageSize : 20
-      const history = await getRadarrHistory(config, pageSize)
+      let movieId: number | undefined = typeof args.movieId === "number" ? args.movieId : undefined
+
+      // If movieName is provided, search for the movie first
+      if (typeof args.movieName === "string" && !movieId) {
+        const allMovies = await getRadarrMovies(config)
+        const matchingMovie = Array.isArray(allMovies)
+          ? allMovies.find(
+              (m: { title?: string; titleSlug?: string }) =>
+                m.title?.toLowerCase().includes(args.movieName.toLowerCase()) ||
+                m.titleSlug?.toLowerCase().includes(args.movieName.toLowerCase())
+            )
+          : null
+
+        if (!matchingMovie) {
+          return JSON.stringify({
+            error: `Movie "${args.movieName}" not found in Radarr library`,
+          })
+        }
+
+        movieId = matchingMovie.id
+      }
+
+      const history = await getRadarrHistory(config, pageSize, movieId)
       return JSON.stringify(history)
     }
     case "get_radarr_queue": {

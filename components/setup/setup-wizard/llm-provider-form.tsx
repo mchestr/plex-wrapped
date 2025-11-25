@@ -1,28 +1,50 @@
 "use client"
 
 import { getDevDefaults } from "@/actions/dev-defaults"
-import { fetchLLMModels, saveLLMProvider } from "@/actions/setup"
-import { type LLMProviderInput } from "@/lib/validations/llm-provider"
-import { useCallback, useEffect, useState, useTransition } from "react"
+import { fetchLLMModels, saveChatLLMProvider, saveLLMProvider } from "@/actions/setup"
 import { StyledDropdown } from "@/components/ui/styled-dropdown"
 import { StyledInput } from "@/components/ui/styled-input"
+import { type LLMProviderInput } from "@/lib/validations/llm-provider"
+import { useCallback, useEffect, useState, useTransition } from "react"
 
 interface LLMProviderFormProps {
+  purpose: "chat" | "wrapped"
   onComplete: () => void
   onBack?: () => void
 }
 
-export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
+const PURPOSE_CONFIG = {
+  chat: {
+    title: "Chat Assistant AI Configuration",
+    description: "Configure the model that powers the admin troubleshooting chatbot.",
+    temperatureLabel: "Temperature (0.0-2.0)",
+    defaultTemperature: 0.7,
+    defaultMaxTokens: 1000,
+    providerDescription: "Configure OpenAI for the real-time chatbot experience.",
+  },
+  wrapped: {
+    title: "Wrapped Generation AI Configuration",
+    description: "Configure the model that writes Plex Wrapped summaries and stories.",
+    temperatureLabel: "Temperature (0.0-2.0)",
+    defaultTemperature: 0.8,
+    defaultMaxTokens: 6000,
+    providerDescription: "Configure OpenAI for Plex Wrapped generation.",
+  },
+} as const
+
+export function LLMProviderForm({ purpose, onComplete, onBack }: LLMProviderFormProps) {
+  const config = PURPOSE_CONFIG[purpose]
+  const saveAction = purpose === "chat" ? saveChatLLMProvider : saveLLMProvider
   const [isPending, startTransition] = useTransition()
   const [isSuccess, setIsSuccess] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
-  const [formData, setFormData] = useState<LLMProviderInput>({
+  const [formData, setFormData] = useState<LLMProviderInput>(() => ({
     provider: "openai",
     apiKey: "",
     model: "",
-    temperature: undefined,
-    maxTokens: undefined,
-  })
+    temperature: config.defaultTemperature,
+    maxTokens: config.defaultMaxTokens,
+  }))
   const [availableModels, setAvailableModels] = useState<string[]>([])
   const [isLoadingModels, setIsLoadingModels] = useState(false)
   const [modelsError, setModelsError] = useState<string | null>(null)
@@ -36,13 +58,14 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
         const apiKey = defaults.llmProvider.apiKey ?? ""
         const model = defaults.llmProvider.model ?? ""
 
-        setFormData({
+        setFormData((prev) => ({
+          ...prev,
           provider,
           apiKey,
           model,
-          temperature: (defaults.llmProvider as any)?.temperature ?? undefined,
-          maxTokens: (defaults.llmProvider as any)?.maxTokens ?? undefined,
-        })
+          temperature: (defaults.llmProvider as any)?.temperature ?? prev.temperature,
+          maxTokens: (defaults.llmProvider as any)?.maxTokens ?? prev.maxTokens,
+        }))
 
         // If there's a model but it's not in the available models list, use custom input
         if (model && model.trim() !== "") {
@@ -105,7 +128,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
     setErrors({})
 
     startTransition(async () => {
-      const result = await saveLLMProvider(formData)
+      const result = await saveAction(formData)
       if (result.success) {
         setIsSuccess(true)
         onComplete()
@@ -136,7 +159,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
   const providerInfo = {
     openai: {
       name: "OpenAI",
-      description: "Configure OpenAI API access for AI-powered features.",
+      description: config.providerDescription,
       apiKeyHelp: "Get your API key from https://platform.openai.com/api-keys",
       modelPlaceholder: "gpt-4, gpt-3.5-turbo, etc. (optional)",
     },
@@ -148,10 +171,10 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
         <h2 className="text-2xl font-semibold text-white mb-4">
-          AI Provider Configuration
+          {config.title}
         </h2>
         <p className="text-sm text-slate-300 mb-6">
-          {currentProvider.description}
+          {config.description}
         </p>
       </div>
 
@@ -172,7 +195,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
           <option value="openai" className="bg-slate-800">OpenAI</option>
         </select>
         <p className="mt-1 text-xs text-slate-400">
-          OpenAI is currently the supported provider for AI features
+          OpenAI is currently the supported provider for this experience.
         </p>
       </div>
 
@@ -267,7 +290,8 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
           htmlFor="temperature"
           className="block text-sm font-medium text-cyan-400 mb-2"
         >
-          Temperature <span className="text-slate-500 text-xs">(Optional, default: 0.8)</span>
+          {config.temperatureLabel}{" "}
+          <span className="text-slate-500 text-xs">(Optional, default: {config.defaultTemperature})</span>
         </label>
         <StyledInput
           type="number"
@@ -283,7 +307,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
               temperature: e.target.value ? parseFloat(e.target.value) : undefined,
             })
           }
-          placeholder="0.8"
+          placeholder={config.defaultTemperature.toString()}
           size="md"
           className="mt-1"
         />
@@ -297,7 +321,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
           htmlFor="maxTokens"
           className="block text-sm font-medium text-cyan-400 mb-2"
         >
-          Max Tokens <span className="text-slate-500 text-xs">(Optional, default: 6000)</span>
+          Max Tokens <span className="text-slate-500 text-xs">(Optional, default: {config.defaultMaxTokens})</span>
         </label>
         <StyledInput
           type="number"
@@ -313,7 +337,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
               maxTokens: e.target.value ? parseInt(e.target.value) : undefined,
             })
           }
-          placeholder="6000"
+          placeholder={config.defaultMaxTokens.toString()}
           size="md"
           className="mt-1"
         />
@@ -342,6 +366,7 @@ export function LLMProviderForm({ onComplete, onBack }: LLMProviderFormProps) {
         <div className={onBack ? "ml-auto" : "ml-auto"}>
           <button
             type="submit"
+            data-testid="setup-form-submit"
             disabled={isPending || isSuccess}
             className="inline-flex justify-center rounded-md py-2 px-6 text-sm font-medium text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500"
           >

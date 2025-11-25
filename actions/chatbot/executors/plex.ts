@@ -1,7 +1,13 @@
 import { getPlexLibrarySections, getPlexOnDeck, getPlexRecentlyAdded, getPlexServerIdentity, getPlexSessions } from "@/lib/connections/plex"
 import { prisma } from "@/lib/prisma"
+import { sanitizePlexSessionsPayload } from "./plex-sanitizer"
 
-export async function executePlexTool(toolName: string, args: Record<string, unknown>): Promise<string> {
+export async function executePlexTool(
+  toolName: string,
+  args: Record<string, unknown>,
+  userId?: string,
+  context?: string
+): Promise<string> {
   const server = await prisma.plexServer.findFirst({ where: { isActive: true } })
   if (!server) return "Error: No active Plex server configured."
 
@@ -19,7 +25,54 @@ export async function executePlexTool(toolName: string, args: Record<string, unk
     }
     case "get_plex_sessions": {
       const sessions = await getPlexSessions(config)
-      return JSON.stringify(sessions)
+      if (!sessions.success || !sessions.data) {
+        return JSON.stringify(sessions)
+      }
+
+      // In Discord context, scope sessions to the requesting user
+      let sessionsData = sessions.data
+      if (context === "discord" && userId) {
+        const user = await prisma.user.findUnique({
+          where: { id: userId },
+          select: { plexUserId: true },
+        })
+
+        if (user?.plexUserId && sessionsData?.MediaContainer?.Metadata) {
+          // Filter sessions to only include those belonging to the user
+          const userSessions = Array.isArray(sessionsData.MediaContainer.Metadata)
+            ? sessionsData.MediaContainer.Metadata.filter(
+                (session: any) => session.User?.id === user.plexUserId || session.user_id === user.plexUserId
+              )
+            : sessionsData.MediaContainer.Metadata.User?.id === user.plexUserId ||
+              sessionsData.MediaContainer.Metadata.user_id === user.plexUserId
+              ? [sessionsData.MediaContainer.Metadata]
+              : []
+
+          sessionsData = {
+            ...sessionsData,
+            MediaContainer: {
+              ...sessionsData.MediaContainer,
+              size: userSessions.length,
+              Metadata: userSessions,
+            },
+          }
+        } else if (!user?.plexUserId) {
+          // User doesn't have a Plex user ID, return empty sessions
+          sessionsData = {
+            ...sessionsData,
+            MediaContainer: {
+              ...sessionsData.MediaContainer,
+              size: 0,
+              Metadata: [],
+            },
+          }
+        }
+      }
+
+      return JSON.stringify({
+        success: true,
+        data: sanitizePlexSessionsPayload(sessionsData),
+      })
     }
     case "get_plex_library_sections": {
       const result = await getPlexLibrarySections(config)

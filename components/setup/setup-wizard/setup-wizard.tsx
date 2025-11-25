@@ -1,6 +1,7 @@
 "use client"
 
 import { completeSetup } from "@/actions/setup"
+import { DiscordIntegrationForm } from "@/components/setup/setup-wizard/discord-integration-form"
 import { FinalSuccessAnimation } from "@/components/setup/setup-wizard/final-success-animation"
 import { LLMProviderForm } from "@/components/setup/setup-wizard/llm-provider-form"
 import { OverseerrForm } from "@/components/setup/setup-wizard/overseerr-form"
@@ -23,12 +24,20 @@ export function SetupWizard({ currentStep: initialStep }: SetupWizardProps) {
   const [currentStep, setCurrentStep] = useState(initialStep)
   const [showSuccess, setShowSuccess] = useState(false)
   const [showFinalSuccess, setShowFinalSuccess] = useState(false)
+  const totalSteps = SETUP_STEPS.length
+  const visibleStep = Math.min(currentStep, totalSteps)
+  const progressPercent =
+    totalSteps > 1
+      ? Math.min(((currentStep - 1) / (totalSteps - 1)) * 100, 100)
+      : currentStep > 0
+      ? 100
+      : 0
 
   const handleStepComplete = () => {
-    const isFinalStep = currentStep === SETUP_STEPS.length
+    const isFinalStep = currentStep === totalSteps
     if (isFinalStep) {
       setShowFinalSuccess(true)
-    } else if (currentStep < SETUP_STEPS.length) {
+    } else if (currentStep < totalSteps) {
       setShowSuccess(true)
     }
   }
@@ -52,6 +61,25 @@ export function SetupWizard({ currentStep: initialStep }: SetupWizardProps) {
   }
 
   const renderStep = () => {
+    if (currentStep > totalSteps) {
+      return (
+        <div className="space-y-4 text-white">
+          <p className="text-lg font-semibold">You're ready to finish setup</p>
+          <p className="text-sm text-slate-300">
+            All configuration steps are complete. Launch the final animation to mark setup as
+            finished and start using Plex Manager.
+          </p>
+          <button
+            type="button"
+            onClick={() => setShowFinalSuccess(true)}
+            className="inline-flex justify-center rounded-md py-2 px-6 text-sm font-medium text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-slate-900 transition-all duration-200 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500"
+          >
+            Finish setup
+          </button>
+        </div>
+      )
+    }
+
     switch (currentStep) {
       case 1:
         return <PlexServerForm onComplete={handleStepComplete} onBack={undefined} />
@@ -64,7 +92,11 @@ export function SetupWizard({ currentStep: initialStep }: SetupWizardProps) {
       case 5:
         return <RadarrForm onComplete={handleStepComplete} onBack={handleBack} />
       case 6:
-        return <LLMProviderForm onComplete={handleStepComplete} onBack={handleBack} />
+        return <DiscordIntegrationForm onComplete={handleStepComplete} onBack={handleBack} />
+      case 7:
+        return <LLMProviderForm purpose="chat" onComplete={handleStepComplete} onBack={handleBack} />
+      case 8:
+        return <LLMProviderForm purpose="wrapped" onComplete={handleStepComplete} onBack={handleBack} />
       default:
         return <div className="text-white">Step {currentStep} - Coming soon</div>
     }
@@ -102,80 +134,74 @@ export function SetupWizard({ currentStep: initialStep }: SetupWizardProps) {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.2 }}
-          className="mb-8"
+          className="mb-8 space-y-4"
         >
-          <nav aria-label="Progress">
-            <ol className="flex items-start gap-4">
-              {SETUP_STEPS.map((step, index) => (
-                <li key={step.id} className="relative flex-1">
-                  {index !== SETUP_STEPS.length - 1 && (
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-2 bg-slate-800/60 rounded-full overflow-hidden">
+              <div
+                className="h-full bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 transition-all duration-500"
+                style={{ width: `${progressPercent}%` }}
+                aria-hidden="true"
+              />
+            </div>
+            <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+              Step {visibleStep} / {totalSteps}
+            </span>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {SETUP_STEPS.map((step, index) => {
+              const isComplete = step.id < currentStep
+              const isActive = step.id === currentStep
+              const stateClasses = isComplete
+                ? "border-cyan-500/40 bg-gradient-to-br from-cyan-500/20 to-purple-500/10 shadow-[0_10px_40px_rgba(34,211,238,0.15)]"
+                : isActive
+                ? "border-cyan-400/40 bg-slate-900/70 shadow-[0_10px_30px_rgba(34,211,238,0.1)]"
+                : "border-slate-700/80 bg-slate-900/40"
+
+              return (
+                <motion.div
+                  key={step.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.04 }}
+                  className={`rounded-xl border px-4 py-3 backdrop-blur-sm transition-colors duration-300 ${stateClasses}`}
+                >
+                  <div className="flex items-center justify-between gap-2">
                     <div
-                      className={`absolute top-4 left-8 right-0 h-0.5 transition-colors duration-300 ${
-                        step.id < currentStep
-                          ? "bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 shadow-[0_0_10px_rgba(34,211,238,0.5)]"
-                          : "bg-slate-700/50"
+                      className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold ${
+                        isComplete
+                          ? "bg-cyan-400 text-slate-900"
+                          : isActive
+                          ? "border border-cyan-400 text-cyan-300"
+                          : "border border-slate-600 text-slate-400"
                       }`}
                       aria-hidden="true"
-                    />
-                  )}
-                  <div className="relative flex flex-col items-start">
-                    <div className="flex items-center">
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: index * 0.1 }}
-                        className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 transition-colors duration-300 ${
-                          step.id < currentStep
-                            ? "border-cyan-400 bg-gradient-to-br from-cyan-400 to-purple-400 shadow-[0_0_20px_rgba(34,211,238,0.6)]"
-                            : step.id === currentStep
-                            ? "border-cyan-400 bg-transparent shadow-[0_0_20px_rgba(34,211,238,0.4)]"
-                            : "border-slate-600 bg-slate-800/50"
-                        }`}
-                      >
-                        {step.id < currentStep ? (
-                          <svg
-                            className="h-5 w-5 text-slate-900"
-                            viewBox="0 0 20 20"
-                            fill="currentColor"
-                          >
-                            <path
-                              fillRule="evenodd"
-                              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                              clipRule="evenodd"
-                            />
-                          </svg>
-                        ) : (
-                          <span
-                            className={`text-sm font-medium ${
-                              step.id === currentStep
-                                ? "text-cyan-400"
-                                : "text-slate-400"
-                            }`}
-                          >
-                            {step.id}
-                          </span>
-                        )}
-                      </motion.div>
+                    >
+                      {isComplete ? (
+                        <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                          <path
+                            fillRule="evenodd"
+                            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                            clipRule="evenodd"
+                          />
+                        </svg>
+                      ) : (
+                        step.id
+                      )}
                     </div>
-                    <div className="mt-2 min-w-0">
-                      <p
-                        className={`text-sm font-medium transition-colors ${
-                          step.id <= currentStep
-                            ? "text-white"
-                            : "text-slate-400"
-                        }`}
-                      >
-                        {step.title}
-                      </p>
-                      <p className="text-xs text-slate-400 mt-1">
-                        {step.description}
-                      </p>
-                    </div>
+                    <span className="text-[10px] uppercase tracking-wide text-slate-500">
+                      {isComplete ? "Complete" : isActive ? "In progress" : "Upcoming"}
+                    </span>
                   </div>
-                </li>
-              ))}
-            </ol>
-          </nav>
+                  <div className="mt-3">
+                    <p className="text-sm font-semibold text-white">{step.title}</p>
+                    <p className="mt-1 text-xs text-slate-400 leading-relaxed">{step.description}</p>
+                  </div>
+                </motion.div>
+              )
+            })}
+          </div>
         </motion.div>
 
         {/* Step Content */}

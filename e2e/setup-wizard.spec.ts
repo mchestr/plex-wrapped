@@ -29,7 +29,7 @@ test.describe('Setup Wizard', () => {
     // Set a longer timeout for this test since it goes through the entire wizard
     test.setTimeout(120000); // 2 minutes
 
-    // Connection tests are bypassed via SKIP_CONNECTION_TESTS=true in dev:test script
+    // Connection tests are bypassed via SKIP_CONNECTION_TESTS=true in Playwright config
     // The connection test functions check for NODE_ENV=test or SKIP_CONNECTION_TESTS=true
     // and return success immediately without making actual API calls
 
@@ -41,6 +41,7 @@ test.describe('Setup Wizard', () => {
     await prisma.invite.deleteMany();
     await prisma.user.deleteMany();
     await prisma.lLMProvider.deleteMany();
+    await prisma.discordIntegration.deleteMany();
     await prisma.radarr.deleteMany();
     await prisma.sonarr.deleteMany();
     await prisma.overseerr.deleteMany();
@@ -69,7 +70,7 @@ test.describe('Setup Wizard', () => {
 
       // Fill all fields
       for (const [name, value] of Object.entries(fields)) {
-        const input = page.locator(`input[name="${name}"], select[name="${name}"]`).first();
+        const input = page.locator(`input[name="${name}"], select[name="${name}"], textarea[name="${name}"]`).first();
         await input.waitFor({ state: 'visible', timeout: 5000 });
         const tagName = await input.evaluate((el) => el.tagName);
         if (tagName === 'SELECT') {
@@ -80,9 +81,7 @@ test.describe('Setup Wizard', () => {
       }
 
       // Submit form
-      const submitButton = page.getByRole('button', {
-        name: /Continue|Next|Save|Complete/i
-      });
+      const submitButton = page.getByTestId('setup-form-submit');
 
       console.log(`[TEST] Clicking submit button for ${stepName}`);
 
@@ -162,41 +161,40 @@ test.describe('Setup Wizard', () => {
       publicUrl: 'http://localhost:7878',
     });
 
-    // Step 6: LLM Provider Configuration
-    await expect(page.getByRole('heading', { name: /AI Provider|OpenAI/i })).toBeVisible({ timeout: 10000 });
-
-    // Fill provider fields
-    const providerSelect = page.locator('select[name="provider"]');
-    if (await providerSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await providerSelect.selectOption('openai');
+    // Step 6: Discord Linked Roles
+    await expect(page.getByRole('heading', { name: /Discord Linked Roles/i })).toBeVisible({ timeout: 10000 });
+    const discordToggle = page.getByTestId('setup-discord-toggle');
+    if ((await discordToggle.getAttribute('aria-pressed')) === 'false') {
+      await discordToggle.click();
     }
+    await fillAndSubmitStep('Discord Linked Roles', {
+      clientId: 'discord-client-id',
+      clientSecret: 'discord-client-secret',
+      guildId: '1234567890',
+      metadataKey: 'plex_member',
+      metadataValue: '42',
+      platformName: 'Plex Wrapped Test',
+      botSharedSecret: 'discord-shared-secret',
+      instructions: 'Use this Discord app for linked roles.',
+    });
 
-    await page.fill('input[name="apiKey"]', 'sk-test-openai-api-key-12345');
+    // Step 7: Chat Assistant AI Configuration
+    await fillAndSubmitStep('Chat Assistant AI Configuration', {
+      provider: 'openai',
+      apiKey: 'sk-chat-openai-api-key',
+      model: 'gpt-4o-mini',
+      temperature: '0.6',
+      maxTokens: '1200',
+    });
 
-    // Wait for models to load (if they're being fetched)
-    // Check if model select becomes visible/available instead of fixed timeout
-    const modelSelect = page.locator('select[name="model"]');
-    const modelInput = page.locator('input[name="model"]');
-
-    // Wait for either the select or input to be ready
-    await Promise.race([
-      modelSelect.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
-      modelInput.waitFor({ state: 'visible', timeout: 5000 }).catch(() => null),
-    ]);
-
-    if (await modelSelect.isVisible({ timeout: 2000 }).catch(() => false)) {
-      const options = await modelSelect.locator('option').all();
-      if (options.length > 1) {
-        await modelSelect.selectOption({ index: 1 });
-      }
-    } else if (await modelInput.isVisible({ timeout: 2000 }).catch(() => false)) {
-      await modelInput.fill('gpt-4o-mini');
-    }
-
-    await page.getByRole('button', { name: /Continue|Next|Save|Complete/i }).click();
-
-    // Wait for loading to complete and redirect
-    await waitForLoadingGone(page);
+    // Step 8: Wrapped Generation AI Configuration
+    await fillAndSubmitStep('Wrapped Generation AI Configuration', {
+      provider: 'openai',
+      apiKey: 'sk-wrapped-openai-api-key',
+      model: 'gpt-4o-mini',
+      temperature: '0.8',
+      maxTokens: '6000',
+    });
 
     // Wait for final success animation and redirect to home
     await page.waitForURL('**/', { timeout: 15000 });
@@ -232,11 +230,23 @@ test.describe('Setup Wizard', () => {
     expect(radarr).toBeTruthy();
     expect(radarr?.name).toBe('Test Radarr');
 
-    const llmProvider = await prisma.lLMProvider.findFirst({
+    const discordIntegration = await prisma.discordIntegration.findFirst();
+    expect(discordIntegration).toBeTruthy();
+    expect(discordIntegration?.isEnabled).toBe(true);
+    expect(discordIntegration?.clientId).toBe('discord-client-id');
+
+    const chatLLMProvider = await prisma.lLMProvider.findFirst({
+      where: { purpose: 'chat' },
+    });
+    expect(chatLLMProvider).toBeTruthy();
+    expect(chatLLMProvider?.provider).toBe('openai');
+    expect(chatLLMProvider?.purpose).toBe('chat');
+
+    const wrappedLLMProvider = await prisma.lLMProvider.findFirst({
       where: { purpose: 'wrapped' },
     });
-    expect(llmProvider).toBeTruthy();
-    expect(llmProvider?.provider).toBe('openai');
-    expect(llmProvider?.purpose).toBe('wrapped');
+    expect(wrappedLLMProvider).toBeTruthy();
+    expect(wrappedLLMProvider?.provider).toBe('openai');
+    expect(wrappedLLMProvider?.purpose).toBe('wrapped');
   });
 });

@@ -3,13 +3,22 @@
 import { signOut } from "next-auth/react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
+import { type ReactNode } from "react"
+
+type NavItem = {
+  href: string
+  label: string
+  icon: ReactNode
+  testId: string
+}
 
 // Navigation items organized by logical groups
 // Group 1: Core Management (most frequently accessed)
-const coreNavItems = [
+const coreNavItems: NavItem[] = [
   {
     href: "/admin/users",
     label: "Users",
+    testId: "admin-nav-users",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -19,6 +28,7 @@ const coreNavItems = [
   {
     href: "/admin/shares",
     label: "Share Analytics",
+    testId: "admin-nav-share-analytics",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
@@ -28,6 +38,7 @@ const coreNavItems = [
   {
     href: "/admin/invites",
     label: "Invites",
+    testId: "admin-nav-invites",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
@@ -37,10 +48,11 @@ const coreNavItems = [
 ]
 
 // Group 2: Monitoring & Analytics
-const analyticsNavItems = [
+const analyticsNavItems: NavItem[] = [
   {
     href: "/admin/llm-usage",
     label: "LLM Usage",
+    testId: "admin-nav-llm-usage",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
@@ -50,6 +62,7 @@ const analyticsNavItems = [
   {
     href: "/admin/cost-analysis",
     label: "Cost Analysis",
+    testId: "admin-nav-cost-analysis",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -59,10 +72,11 @@ const analyticsNavItems = [
 ]
 
 // Group 3: Prompts & Testing
-const configNavItems = [
+const configNavItems: NavItem[] = [
   {
     href: "/admin/prompts",
     label: "Prompts",
+    testId: "admin-nav-prompts",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
@@ -72,6 +86,7 @@ const configNavItems = [
   {
     href: "/admin/playground",
     label: "Playground",
+    testId: "admin-nav-playground",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
@@ -81,10 +96,11 @@ const configNavItems = [
 ]
 
 // Group 4: System (always at bottom)
-const systemNavItems = [
+const systemNavItems: NavItem[] = [
   {
     href: "/admin/settings",
     label: "Settings",
+    testId: "admin-nav-settings",
     icon: (
       <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -95,11 +111,16 @@ const systemNavItems = [
 ]
 
 // Flattened array for mobile navigation (no separators needed)
-const navItems = [...coreNavItems, ...analyticsNavItems, ...configNavItems, ...systemNavItems]
+const navItems: NavItem[] = [...coreNavItems, ...analyticsNavItems, ...configNavItems, ...systemNavItems]
 
-export function AdminNav() {
+export function AdminNav({ hide = false }: { hide?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
+
+  // Always call hooks in the same order, but return early if hidden
+  if (hide) {
+    return null
+  }
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })
@@ -124,7 +145,7 @@ export function AdminNav() {
     return pathname.startsWith(href)
   }
 
-  const renderNavItem = (item: { href: string; label: string; icon: React.ReactNode }, mobile = false) => {
+  const renderNavItem = (item: NavItem, mobile = false) => {
     const active = isActive(item.href)
 
     if (mobile) {
@@ -132,6 +153,7 @@ export function AdminNav() {
         <Link
           key={item.href}
           href={item.href}
+          data-testid={item.testId}
           className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all min-w-0 flex-1 ${
             active ? "text-cyan-400" : "text-slate-400"
           }`}
@@ -154,6 +176,7 @@ export function AdminNav() {
       <Link
         key={item.href}
         href={item.href}
+        data-testid={item.testId}
         className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all group ${
           active
             ? "bg-gradient-to-r from-cyan-600/20 to-purple-600/20 border border-cyan-500/30 text-cyan-400"

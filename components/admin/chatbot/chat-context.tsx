@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useContext, useState, type ReactNode } from "react"
+import { createContext, useContext, useState, useMemo, useCallback, type ReactNode } from "react"
 
 interface ChatContextType {
   isOpen: boolean
@@ -14,12 +14,17 @@ const ChatContext = createContext<ChatContextType | undefined>(undefined)
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false)
 
-  const toggleChat = () => setIsOpen((prev) => !prev)
-  const openChat = () => setIsOpen(true)
-  const closeChat = () => setIsOpen(false)
+  const toggleChat = useCallback(() => setIsOpen((prev) => !prev), [])
+  const openChat = useCallback(() => setIsOpen(true), [])
+  const closeChat = useCallback(() => setIsOpen(false), [])
+
+  const value = useMemo(
+    () => ({ isOpen, toggleChat, openChat, closeChat }),
+    [isOpen, toggleChat, openChat, closeChat]
+  )
 
   return (
-    <ChatContext.Provider value={{ isOpen, toggleChat, openChat, closeChat }}>
+    <ChatContext.Provider value={value}>
       {children}
     </ChatContext.Provider>
   )

@@ -24,6 +24,8 @@ model User {
   llmUsage            LLMUsage[]
   chatConversations   ChatConversation[]
   inviteUsages        InviteUsage[]
+  discordConnection   DiscordConnection?
+  discordOAuthStates  DiscordOAuthState[]
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
@@ -171,6 +173,7 @@ model ChatConversation {
   createdAt DateTime @default(now())
   endedAt   DateTime?
   usage     LLMUsage[]
+  discordSessions DiscordChatSession[]
 
   @@index([userId])
   @@index([createdAt])
@@ -206,10 +209,85 @@ model LLMUsage {
 
 // Application Configuration (singleton pattern)
 model Config {
-  id          String   @id @default("config")
-  llmDisabled Boolean  @default(false) // When true, LLM calls are disabled and mock data is returned
-  updatedAt   DateTime @updatedAt
-  updatedBy   String? // User ID who last updated this config
+  id            String   @id @default("config")
+  llmDisabled   Boolean  @default(false) // When true, LLM calls are disabled and mock data is returned
+  wrappedEnabled Boolean @default(true) // When false, wrapped generation is disabled
+  wrappedYear    Int?     // Year for wrapped generation (null uses current year)
+  updatedAt     DateTime @updatedAt
+  updatedBy     String? // User ID who last updated this config
+}
+
+model DiscordIntegration {
+  id               String   @id @default("discord")
+  isEnabled        Boolean  @default(false)
+  clientId         String?
+  clientSecret     String?
+  guildId          String?
+  metadataKey      String   @default("is_subscribed")
+  metadataValue    String   @default("true")
+  platformName     String   @default("Plex Wrapped")
+  instructions     String?
+  botSharedSecret  String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  updatedBy        String?
+}
+
+model DiscordConnection {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discordUserId    String   @unique
+  username         String
+  discriminator    String?
+  globalName       String?
+  avatar           String?
+  accessToken      String
+  refreshToken     String?
+  scope            String?
+  expiresAt        DateTime?
+  metadataSyncedAt DateTime?
+  linkedAt         DateTime @default(now())
+  revokedAt        DateTime?
+  lastError        String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([discordUserId])
+  @@index([linkedAt])
+}
+
+model DiscordChatSession {
+  id                 String            @id @default(cuid())
+  discordUserId      String
+  discordChannelId   String
+  chatConversationId String
+  chatConversation   ChatConversation  @relation(fields: [chatConversationId], references: [id], onDelete: Cascade)
+  messages           Json
+  lastMessageAt      DateTime          @default(now())
+  isActive           Boolean           @default(true)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+
+  @@unique([discordUserId, discordChannelId])
+  @@index([discordUserId])
+  @@index([chatConversationId])
+}
+
+model DiscordOAuthState {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  state        String   @unique
+  codeVerifier String
+  redirectTo   String?
+  createdAt    DateTime @default(now())
+  expiresAt    DateTime
+  consumedAt   DateTime?
+
+  @@index([state])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 // Prompt Template for LLM generation

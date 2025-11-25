@@ -58,6 +58,9 @@ jest.mock('@/lib/prisma', () => ({
       updateMany: jest.fn(),
       create: jest.fn(),
     },
+    discordIntegration: {
+      upsert: jest.fn(),
+    },
     $transaction: jest.fn((callback) => callback({
       setup: {
         findFirst: jest.fn(),
@@ -76,6 +79,9 @@ jest.mock('@/lib/prisma', () => ({
       lLMProvider: {
         updateMany: jest.fn(),
         create: jest.fn(),
+      },
+      discordIntegration: {
+        upsert: jest.fn(),
       },
     })),
   },

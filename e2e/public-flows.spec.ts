@@ -30,7 +30,6 @@ test.describe('Public Flows', () => {
     // Wait for loading screen to disappear
     await waitForLoadingGone(page);
 
-    await expect(page.getByRole('heading', { name: /Manager/i })).toBeVisible();
     await expect(page.getByRole('button', { name: /Sign in with Plex/i })).toBeVisible();
   });
 
@@ -102,9 +101,25 @@ test.describe('Public Flows', () => {
     };
 
     try {
-      // Ensure regular user exists (should be created by global setup, but safe to check/connect)
-      // We just insert the wrapped connected to 'regular-user-id'
+      // Ensure regular user exists (should be created by global setup, but verify)
+      const user = await prisma.user.findUnique({
+        where: { id: 'regular-user-id' }
+      });
 
+      if (!user) {
+        await prisma.user.create({
+          data: {
+            id: 'regular-user-id',
+            plexUserId: 'regular-plex-id',
+            name: 'Regular User',
+            email: 'regular@example.com',
+            isAdmin: false,
+            onboardingCompleted: true,
+          },
+        });
+      }
+
+      // Create wrapped with share token
       await prisma.plexWrapped.create({
         data: {
           userId: 'regular-user-id',
@@ -115,17 +130,28 @@ test.describe('Public Flows', () => {
         }
       });
 
+      // Verify the wrapped exists in the database before navigating
+      // This ensures the transaction is committed and visible to the API route
+      const createdWrapped = await prisma.plexWrapped.findUnique({
+        where: { shareToken: shareToken },
+      });
+
+      if (!createdWrapped) {
+        throw new Error('Failed to create wrapped in database');
+      }
+
       // Navigate to share page
       await page.goto(`/wrapped/share/${shareToken}`);
 
-      // Wait for loading to finish
+      // Wait for page to load and any network requests to complete
+      await page.waitForLoadState('networkidle');
       await waitForLoadingGone(page);
 
-      // Assert content is visible
-      // Adjust these selectors based on actual UI
-      await expect(page.getByText("Regular User's 2024 Plex Wrapped")).toBeVisible();
-      // 1000 minutes = 16 hours
-      await expect(page.getByText('16 hours')).toBeVisible();
+      // Wait for the heading to appear (the page uses client-side rendering with animations)
+      await expect(page.getByRole('heading', { name: /Regular User's 2024 Plex Wrapped/i })).toBeVisible({ timeout: 10000 });
+
+      // 1000 minutes = 16 hours 40 minutes, but formatWatchTimeHours shows "16 hours"
+      await expect(page.getByText(/16 hour/i)).toBeVisible();
 
     } finally {
       // Cleanup

@@ -13,13 +13,15 @@ export default async function UserWrappedPage({
   params,
   searchParams,
 }: {
-  params: { userId: string }
-  searchParams: { year?: string }
+  params: Promise<{ userId: string }>
+  searchParams: Promise<{ year?: string }>
 }) {
   await requireAdmin()
 
-  const year = searchParams.year ? parseInt(searchParams.year, 10) : new Date().getFullYear()
-  const wrapped = await getUserPlexWrapped(params.userId, year)
+  const { userId } = await params
+  const resolvedSearchParams = await searchParams
+  const year = resolvedSearchParams.year ? parseInt(resolvedSearchParams.year, 10) : new Date().getFullYear()
+  const wrapped = await getUserPlexWrapped(userId, year)
 
   // Admin header component
   const AdminHeader = ({ userName, wrappedId, userId, year: headerYear }: { userName?: string | null; wrappedId?: string; userId: string; year: number }) => (
@@ -68,7 +70,7 @@ export default async function UserWrappedPage({
   if (!wrapped) {
     return (
       <main className="min-h-screen bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900">
-        <AdminHeader userName={null} userId={params.userId} year={year} />
+        <AdminHeader userName={null} userId={userId} year={year} />
         <div className="pt-20 p-6">
           <div className="max-w-7xl mx-auto">
             <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg p-8 text-center">
@@ -88,7 +90,7 @@ export default async function UserWrappedPage({
 
   return (
     <main className="min-h-screen">
-      <AdminHeader userName={wrapped.user.name || wrapped.user.email} wrappedId={wrapped.id} userId={params.userId} year={year} />
+      <AdminHeader userName={wrapped.user.name || wrapped.user.email} wrappedId={wrapped.id} userId={userId} year={year} />
       <div className="pt-20">
         {wrapped.status === "completed" && wrapped.data ? (
           (() => {
@@ -120,7 +122,7 @@ export default async function UserWrappedPage({
             }
           })()
         ) : wrapped.status === "generating" ? (
-          <WrappedPageClient userId={params.userId} year={year} initialStatus="generating" />
+          <WrappedPageClient userId={userId} year={year} initialStatus="generating" />
         ) : wrapped.status === "failed" ? (
           <div className="bg-slate-800/50 backdrop-blur-sm border border-red-500/50 rounded-lg p-12 text-center max-w-2xl mx-auto mt-8">
             <div className="max-w-md mx-auto">

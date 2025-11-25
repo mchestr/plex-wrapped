@@ -32,9 +32,9 @@ async function getSharedWrapped(token: string) {
 export async function generateMetadata({
   params,
 }: {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }): Promise<Metadata> {
-  const { token } = params
+  const { token } = await params
   const baseUrl = getBaseUrl()
   const shareUrl = `${baseUrl}/wrapped/share/${token}`
 
@@ -91,9 +91,9 @@ export async function generateMetadata({
 export default async function SharedWrappedPage({
   params,
 }: {
-  params: { token: string }
+  params: Promise<{ token: string }>
 }) {
-  const { token } = params
+  const { token } = await params
 
   if (!token) {
     notFound()

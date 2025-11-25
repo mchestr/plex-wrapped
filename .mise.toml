@@ -71,11 +71,7 @@ run = [
 
 [tasks."db:reset"]
 description = "Reset the database (delete and recreate)"
-run = [
-  "rm -f prisma/dev.db",
-  "mise run db:generate",
-  "mise run db:push"
-]
+run = "npx prisma migrate reset --skip-seed"
 
 [tasks.ci]
 description = "Run CI checks (matches GitHub Actions workflow)"
@@ -85,3 +81,11 @@ run = [
   "npm run lint",
   "npm run build"
 ]
+
+[tasks."bot:discord"]
+description = "Run the Discord bot"
+run = "npm run bot:discord"
+
+[tasks."register-discord-metadata"]
+description = "Register Discord role connection metadata schema (required before using role_connections.write scope)"
+run = "npm run register-discord-metadata"

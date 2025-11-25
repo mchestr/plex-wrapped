@@ -37,11 +37,19 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
   webServer: {
-    // Use dev:test script which sets the required env vars for test mode
-    command: 'npm run dev:test',
+    command: 'npx next dev',
     url: 'http://localhost:3000',
     reuseExistingServer: !process.env.CI,
-    timeout: 120000, // 2 minutes to allow for build/startup
+    timeout: 30000, // 30 seconds to allow for build/startup
+    env: {
+      ...process.env,
+      NODE_ENV: 'test',
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+      NEXT_PUBLIC_ENABLE_TEST_AUTH: 'true',
+      ENABLE_TEST_AUTH: 'true',
+      SKIP_CONNECTION_TESTS: 'true',
+      FAST_REFRESH: 'false',
+    },
   },
 });
 

@@ -1,12 +1,58 @@
 import { getAdminSettings } from "@/actions/admin"
-import { LLMProviderForm, LLMToggle, ServerForm } from "@/components/admin/settings/settings-edit-forms"
+import { DiscordIntegrationForm, LLMProviderForm, LLMToggle, ServerForm } from "@/components/admin/settings/settings-edit-forms"
+import { WrappedSettingsForm } from "@/components/admin/settings/wrapped-settings-form"
 import { getBaseUrl } from "@/lib/utils"
 
 export const dynamic = 'force-dynamic'
 
+type BadgeTone = "success" | "warning" | "danger" | "neutral"
+
+type StatusBadgeProps = {
+  label: string
+  tone?: BadgeTone
+  tooltip?: string
+}
+
+const toneClasses: Record<BadgeTone, string> = {
+  success: "bg-green-500/15 text-green-300 border border-green-500/30",
+  warning: "bg-amber-500/15 text-amber-300 border border-amber-500/30",
+  danger: "bg-red-500/15 text-red-300 border border-red-500/30",
+  neutral: "bg-slate-800/60 text-slate-300 border border-slate-600/70",
+}
+
+function StatusBadge({ label, tone = "neutral", tooltip }: StatusBadgeProps) {
+  return (
+    <span
+      className={`px-2.5 py-1 rounded-full text-xs font-medium tracking-wide ${toneClasses[tone]}`}
+      aria-label={tooltip ?? label}
+      title={tooltip ?? label}
+    >
+      {label}
+    </span>
+  )
+}
+
+type FeatureStatusBadgeProps = {
+  featureName: string
+  enabled: boolean
+}
+
+function FeatureStatusBadge({ featureName, enabled }: FeatureStatusBadgeProps) {
+  const label = enabled ? "Feature Enabled" : "Feature Disabled"
+  const tooltip = `${featureName} ${label}`
+  return (
+    <StatusBadge
+      label={label}
+      tone={enabled ? "success" : "neutral"}
+      tooltip={tooltip}
+    />
+  )
+}
+
 export default async function SettingsPage() {
   const settings = await getAdminSettings()
   const baseUrl = getBaseUrl()
+  const discordPortalUrl = `${baseUrl}/discord/link`
   const nodeVersion = process.version
   const nodeEnv = process.env.NODE_ENV || "development"
   const databaseProvider = (() => {
@@ -49,30 +95,23 @@ export default async function SettingsPage() {
                   </div>
                   <div>
                     <div className="text-xs font-medium text-slate-400 mb-1">Environment</div>
-                    <div className="text-sm text-white">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        nodeEnv === "production"
-                          ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                          : "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
-                      }`}>
-                        {nodeEnv.toUpperCase()}
-                      </span>
-                    </div>
+                    <StatusBadge
+                      label={nodeEnv.toUpperCase()}
+                      tone={nodeEnv === "production" ? "success" : "warning"}
+                      tooltip={`Environment: ${nodeEnv}`}
+                    />
                   </div>
                   <div>
                     <div className="text-xs font-medium text-slate-400 mb-1">Node.js Version</div>
                     <div className="text-sm text-white font-mono">{nodeVersion}</div>
                   </div>
                   <div>
-                    <div className="text-xs font-medium text-slate-400 mb-1">LLM Status</div>
+                    <div className="text-xs font-medium text-slate-400 mb-1">LLM Feature</div>
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${
-                        settings.config.llmDisabled
-                          ? "bg-red-500/20 text-red-400 border border-red-500/30"
-                          : "bg-green-500/20 text-green-400 border border-green-500/30"
-                      }`}>
-                        {settings.config.llmDisabled ? "Disabled" : "Enabled"}
-                      </span>
+                      <FeatureStatusBadge
+                        featureName="LLM"
+                        enabled={!settings.config.llmDisabled}
+                      />
                       <LLMToggle disabled={settings.config.llmDisabled} />
                     </div>
                   </div>
@@ -111,20 +150,63 @@ export default async function SettingsPage() {
 
                 {/* Wrapped Generation Configuration */}
                 <div className="border border-slate-700 rounded-lg p-4">
-                  <div className="mb-3">
-                    <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-                      <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                      </svg>
-                      Wrapped Generation
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">Configuration for generating Plex Wrapped content</p>
+                  <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <h3 className="text-sm font-semibold text-white flex items-center gap-2">
+                        <svg className="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        Wrapped Generation
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">Feature controls for generating Plex Wrapped content</p>
+                    </div>
+                    <FeatureStatusBadge
+                      featureName="Plex Wrapped"
+                      enabled={settings.config.wrappedEnabled ?? true}
+                    />
                   </div>
-                  <LLMProviderForm
-                    provider={settings.wrappedLLMProvider}
-                    purpose="wrapped"
-                  />
+                  <div className="space-y-4">
+                    <WrappedSettingsForm
+                      enabled={settings.config.wrappedEnabled ?? true}
+                      year={settings.config.wrappedYear}
+                    />
+                    <div className="pt-4 border-t border-slate-700">
+                      <LLMProviderForm
+                        provider={settings.wrappedLLMProvider}
+                        purpose="wrapped"
+                      />
+                    </div>
+                  </div>
                 </div>
+              </div>
+            </div>
+
+            {/* Discord Integration */}
+            <div className="bg-slate-800/50 backdrop-blur-sm border border-slate-700 rounded-lg overflow-hidden">
+              <div className="p-4 border-b border-slate-700 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <svg className="w-5 h-5 text-indigo-400" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M8.22 3.5a1 1 0 0 1 .78-.38h6a1 1 0 0 1 .78.38l1.5 1.86a1 1 0 0 0 .77.37h1.74a1 1 0 0 1 1 1V18a3 3 0 0 1-3 3h-9.5a3 3 0 0 1-3-3V4.5a1 1 0 0 1 .93-1z" />
+                    </svg>
+                    Discord Linked Roles
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Centralize the Discord Linked Roles feature that controls bot access.
+                  </p>
+                </div>
+                <FeatureStatusBadge
+                  featureName="Discord Linked Roles"
+                  enabled={Boolean(settings.discordIntegration?.isEnabled)}
+                />
+              </div>
+              <div className="p-4">
+                <DiscordIntegrationForm
+                  integration={settings.discordIntegration}
+                  linkedCount={settings.discordLinkedCount}
+                  portalUrl={discordPortalUrl}
+                  verificationUrl={`${baseUrl}/api/discord/verify`}
+                />
               </div>
             </div>
 
@@ -149,15 +231,10 @@ export default async function SettingsPage() {
                       </svg>
                       Plex Server
                     </h3>
-                    {settings.plexServer ? (
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600 rounded text-xs font-medium">
-                        Not Configured
-                      </span>
-                    )}
+                    <FeatureStatusBadge
+                      featureName="Plex integration"
+                      enabled={Boolean(settings.plexServer)}
+                    />
                   </div>
                   <ServerForm type="plex" server={settings.plexServer} />
                 </div>
@@ -171,15 +248,10 @@ export default async function SettingsPage() {
                       </svg>
                       Tautulli
                     </h3>
-                    {settings.tautulli ? (
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600 rounded text-xs font-medium">
-                        Not Configured
-                      </span>
-                    )}
+                    <FeatureStatusBadge
+                      featureName="Tautulli integration"
+                      enabled={Boolean(settings.tautulli)}
+                    />
                   </div>
                   <ServerForm type="tautulli" server={settings.tautulli} />
                 </div>
@@ -193,15 +265,10 @@ export default async function SettingsPage() {
                       </svg>
                       Overseerr
                     </h3>
-                    {settings.overseerr ? (
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600 rounded text-xs font-medium">
-                        Not Configured
-                      </span>
-                    )}
+                    <FeatureStatusBadge
+                      featureName="Overseerr integration"
+                      enabled={Boolean(settings.overseerr)}
+                    />
                   </div>
                   <ServerForm type="overseerr" server={settings.overseerr} />
                 </div>
@@ -215,15 +282,10 @@ export default async function SettingsPage() {
                       </svg>
                       Sonarr
                     </h3>
-                    {settings.sonarr ? (
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600 rounded text-xs font-medium">
-                        Not Configured
-                      </span>
-                    )}
+                    <FeatureStatusBadge
+                      featureName="Sonarr integration"
+                      enabled={Boolean(settings.sonarr)}
+                    />
                   </div>
                   <ServerForm type="sonarr" server={settings.sonarr} />
                 </div>
@@ -237,15 +299,10 @@ export default async function SettingsPage() {
                       </svg>
                       Radarr
                     </h3>
-                    {settings.radarr ? (
-                      <span className="px-2 py-1 bg-green-500/20 text-green-400 border border-green-500/30 rounded text-xs font-medium">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 bg-slate-700/50 text-slate-400 border border-slate-600 rounded text-xs font-medium">
-                        Not Configured
-                      </span>
-                    )}
+                    <FeatureStatusBadge
+                      featureName="Radarr integration"
+                      enabled={Boolean(settings.radarr)}
+                    />
                   </div>
                   <ServerForm type="radarr" server={settings.radarr} />
                 </div>

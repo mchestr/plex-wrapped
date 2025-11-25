@@ -1,11 +1,12 @@
 "use client"
 
+import { getWrappedSettings } from "@/actions/admin"
 import { generatePlexWrapped, getUserPlexWrapped } from "@/actions/users"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useEffect, useState, useCallback } from "react"
 import { WrappedGeneratingAnimation } from "@/components/generator/wrapped-generating-animation"
 import { WrappedShareButton } from "@/components/wrapped/wrapped-share-button"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useCallback, useEffect, useState } from "react"
 
 interface WrappedHomeButtonProps {
   userId: string
@@ -18,32 +19,44 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
   const [wrapped, setWrapped] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [wrappedSettings, setWrappedSettings] = useState<{ enabled: boolean; year: number } | null>(null)
 
-  const currentYear = new Date().getFullYear()
-  const heroTitle = `${serverName} Manager`
+  const heroTitle = serverName
+
+  // Load wrapped settings
+  useEffect(() => {
+    getWrappedSettings().then((settings) => {
+      setWrappedSettings({
+        enabled: settings.wrappedEnabled,
+        year: settings.wrappedYear,
+      })
+    })
+  }, [])
+
+  const wrappedYear = wrappedSettings?.year ?? new Date().getFullYear()
 
   const loadWrapped = useCallback(async () => {
-    if (!userId) return
+    if (!userId || !wrappedSettings) return
 
     setIsLoading(true)
     setError(null)
     try {
-      const wrappedData = await getUserPlexWrapped(userId, currentYear)
+      const wrappedData = await getUserPlexWrapped(userId, wrappedYear)
       setWrapped(wrappedData)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load wrapped")
     } finally {
       setIsLoading(false)
     }
-  }, [userId, currentYear])
+  }, [userId, wrappedYear, wrappedSettings])
 
   useEffect(() => {
-    if (userId) {
+    if (userId && wrappedSettings) {
       loadWrapped()
-    } else {
+    } else if (!wrappedSettings) {
       setIsLoading(false)
     }
-  }, [userId, loadWrapped])
+  }, [userId, wrappedSettings, loadWrapped])
 
   // Poll for wrapped completion when generating
   useEffect(() => {
@@ -53,7 +66,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
 
     const pollInterval = setInterval(async () => {
       try {
-        const wrappedData = await getUserPlexWrapped(userId, currentYear)
+        const wrappedData = await getUserPlexWrapped(userId, wrappedYear)
         setWrapped(wrappedData)
 
         if (wrappedData?.status === "completed") {
@@ -72,7 +85,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
     }, 2000) // Poll every 2 seconds
 
     return () => clearInterval(pollInterval)
-  }, [userId, isGenerating, wrapped?.status, currentYear, router, loadWrapped])
+  }, [userId, isGenerating, wrapped?.status, wrappedYear, router, loadWrapped])
 
   const handleGenerate = async () => {
     if (!userId) return
@@ -80,7 +93,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
     setIsGenerating(true)
     setError(null)
     try {
-      const result = await generatePlexWrapped(userId, currentYear)
+      const result = await generatePlexWrapped(userId, wrappedYear)
       if (result.success) {
         // Reload wrapped data
         await loadWrapped()
@@ -95,7 +108,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
   }
 
   if (isGenerating || wrapped?.status === "generating") {
-    return <WrappedGeneratingAnimation year={currentYear} compact />
+    return <WrappedGeneratingAnimation year={wrappedYear} compact />
   }
 
   if (isLoading) {
@@ -161,7 +174,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
           Let's Get Started!
         </Link>
         {wrapped.shareToken && (
-          <WrappedShareButton shareToken={wrapped.shareToken} year={currentYear} />
+          <WrappedShareButton shareToken={wrapped.shareToken} year={wrappedYear} />
         )}
       </div>
     )
@@ -207,6 +220,20 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
     )
   }
 
+  // Show message if wrapped is disabled
+  if (wrappedSettings && !wrappedSettings.enabled) {
+    return (
+      <div className="flex flex-col items-center gap-6">
+        <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold text-center mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent px-4">
+          {heroTitle}
+        </h1>
+        <p className="text-sm text-slate-400 text-center max-w-xl">
+          Wrapped generation is currently disabled. Please check back later or contact your administrator.
+        </p>
+      </div>
+    )
+  }
+
   // No wrapped exists, show button to generate
   return (
     <div className="flex flex-col items-center gap-6">
@@ -223,7 +250,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
       )}
       <button
         onClick={handleGenerate}
-        disabled={isGenerating}
+        disabled={isGenerating || !wrappedSettings?.enabled}
         className="px-12 py-6 flex items-center justify-center gap-3 text-white text-xl font-semibold rounded-xl bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
       >
         <svg
@@ -240,7 +267,7 @@ export function WrappedHomeButton({ userId, serverName }: WrappedHomeButtonProps
             d="M13 10V3L4 14h7v7l9-11h-7z"
           />
         </svg>
-        Generate My Wrapped
+        Generate My {wrappedYear} Wrapped
       </button>
     </div>
   )

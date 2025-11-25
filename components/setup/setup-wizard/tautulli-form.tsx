@@ -197,6 +197,7 @@ export function TautulliForm({ onComplete, onBack }: TautulliFormProps) {
         <div className={onBack ? "ml-auto" : "ml-auto"}>
           <button
             type="submit"
+            data-testid="setup-form-submit"
             disabled={isPending || isSuccess}
             className="inline-flex justify-center rounded-md py-2 px-6 text-sm font-medium text-white shadow-lg focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:ring-offset-2 focus:ring-offset-slate-900 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500"
           >

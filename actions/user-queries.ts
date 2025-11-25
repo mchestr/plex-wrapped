@@ -73,6 +73,7 @@ export async function getUserDetails(userId: string): Promise<UserDetails | null
           },
         },
         llmUsage: true,
+        discordConnection: true,
       },
     })
 
@@ -116,6 +117,20 @@ export async function getUserDetails(userId: string): Promise<UserDetails | null
     // Aggregate LLM usage
     const llmUsage = aggregateLlmUsage(user.llmUsage || [])
 
+    const discordConnection = user.discordConnection
+      ? {
+          discordUserId: user.discordConnection.discordUserId,
+          username: user.discordConnection.username,
+          discriminator: user.discordConnection.discriminator,
+          globalName: user.discordConnection.globalName,
+          avatar: user.discordConnection.avatar,
+          metadataSyncedAt: user.discordConnection.metadataSyncedAt,
+          linkedAt: user.discordConnection.linkedAt,
+          revokedAt: user.discordConnection.revokedAt,
+          lastError: user.discordConnection.lastError,
+        }
+      : null
+
     return {
       id: user.id,
       name: user.name,
@@ -130,6 +145,7 @@ export async function getUserDetails(userId: string): Promise<UserDetails | null
       totalShares,
       totalVisits,
       llmUsage,
+      discordConnection,
     }
   } catch (error) {
     logger.error("Error getting user details", error)

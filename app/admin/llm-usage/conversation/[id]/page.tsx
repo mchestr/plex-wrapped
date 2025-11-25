@@ -2,6 +2,7 @@ import { getLLMUsageRecords } from "@/actions/admin"
 import { aggregateLlmUsage } from "@/lib/utils"
 import Link from "next/link"
 import Image from "next/image"
+import { ConversationUsageRow } from "@/components/admin/llm-usage/conversation-usage-row"
 
 export const dynamic = "force-dynamic"
 
@@ -75,9 +76,10 @@ function getLastUserSnippet(prompt: string, maxLength: number = 80): string | nu
 export default async function LLMConversationPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
-  const conversationId = params.id
+  const { id } = await params
+  const conversationId = id
 
   // For now, fetch first page with a generous page size – chatbot conversations are short
   const { records } = await getLLMUsageRecords(1, 100, undefined, conversationId)
@@ -232,55 +234,22 @@ export default async function LLMConversationPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-700">
-                {records.map((record, index) => {
-                  const promptSnippet = getLastUserSnippet(record.prompt)
-                  return (
-                  <tr key={record.id} className="hover:bg-slate-700/20 transition-colors">
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-slate-300">
-                      #{index + 1}
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="text-xs sm:text-sm text-slate-300">
-                        {formatDateTime(record.createdAt)}
-                      </div>
-                      {promptSnippet && (
-                        <div className="mt-1 text-[11px] text-slate-500 line-clamp-1">
-                          <span className="uppercase tracking-wide mr-1">User:</span>
-                          {promptSnippet}
-                        </div>
-                      )}
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap hidden lg:table-cell">
-                      <div className="text-sm text-slate-300 font-mono truncate max-w-[160px]">
-                        {record.model || <span className="text-slate-500">—</span>}
-                      </div>
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm">
-                        <div className="text-white font-medium">
-                          {record.totalTokens.toLocaleString()}
-                        </div>
-                        <div className="text-xs text-slate-400 hidden sm:block">
-                          {record.promptTokens.toLocaleString()} +{" "}
-                          {record.completionTokens.toLocaleString()}
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-green-400 font-medium">
-                        ${record.cost.toFixed(4)}
-                      </div>
-                    </td>
-                    <td className="px-3 sm:px-6 py-4 whitespace-nowrap">
-                      <Link
-                        href={`/admin/llm-usage/${record.id}`}
-                        className="px-2 sm:px-3 py-1 sm:py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-xs font-medium rounded transition-colors inline-block"
-                      >
-                        View Request
-                      </Link>
-                    </td>
-                  </tr>
-                )})}
+                {records.map((record, index) => (
+                  <ConversationUsageRow
+                    key={record.id}
+                    record={{
+                      id: record.id,
+                      createdAt: record.createdAt,
+                      model: record.model,
+                      totalTokens: record.totalTokens,
+                      promptTokens: record.promptTokens,
+                      completionTokens: record.completionTokens,
+                      cost: record.cost,
+                      prompt: record.prompt,
+                    }}
+                    index={index}
+                  />
+                ))}
               </tbody>
             </table>
           </div>

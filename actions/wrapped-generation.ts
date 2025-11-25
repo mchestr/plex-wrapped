@@ -4,15 +4,16 @@
 // The fetch timeout in lib/wrapped/api-calls.ts is set to 5 minutes by default
 // and can be configured via LLM_REQUEST_TIMEOUT_MS environment variable
 
+import { getWrappedSettings } from "@/actions/admin"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import { generateWrappedWithLLM } from "@/lib/wrapped/llm"
 import {
-    fetchOverseerrStatistics,
-    fetchPlexServerStatistics,
-    fetchTautulliStatistics,
-    fetchTopContentLeaderboards,
-    fetchWatchTimeLeaderboard,
+  fetchOverseerrStatistics,
+  fetchPlexServerStatistics,
+  fetchTautulliStatistics,
+  fetchTopContentLeaderboards,
+  fetchWatchTimeLeaderboard,
 } from "@/lib/wrapped/statistics"
 import { WrappedStatistics } from "@/types/wrapped"
 import { getServerSession } from "next-auth"
@@ -28,6 +29,12 @@ export async function generatePlexWrapped(
   year: number = new Date().getFullYear()
 ): Promise<{ success: boolean; error?: string; wrappedId?: string }> {
   try {
+    // Check if wrapped feature is enabled
+    const wrappedSettings = await getWrappedSettings()
+    if (!wrappedSettings.wrappedEnabled) {
+      return { success: false, error: "Wrapped generation is currently disabled" }
+    }
+
     // Get current session
     const session = await getServerSession(authOptions)
     if (!session) {

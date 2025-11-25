@@ -98,33 +98,80 @@ export function FinalSuccessAnimation({ onComplete, title = "Setup Complete!", s
           <div className="relative">
             {/* Rocket SVG */}
             <svg
-              width="80"
-              height="120"
-              viewBox="0 0 80 120"
+              width="96"
+              height="160"
+              viewBox="0 0 96 160"
               fill="none"
               xmlns="http://www.w3.org/2000/svg"
               className="drop-shadow-2xl"
             >
               {/* Rocket Body */}
               <path
-                d="M40 10 L50 100 L40 110 L30 100 Z"
-                fill="url(#rocketGradient)"
-                stroke="rgba(255, 255, 255, 0.3)"
+                d="M48 6C57.8 22 66 44.5 66 69.5V119C66 137.5 57.6 154 48 158C38.4 154 30 137.5 30 119V69.5C30 44.5 38.2 22 48 6Z"
+                fill="url(#rocketBodyGradient)"
+                stroke="rgba(255, 255, 255, 0.4)"
+                strokeWidth="1.2"
+              />
+              {/* Inner Highlight */}
+              <path
+                d="M48 16C55 29 60 47 60 69V119C60 131 55.5 144 48 148C40.5 144 36 131 36 119V69C36 47 41 29 48 16Z"
+                fill="url(#rocketHighlightGradient)"
+                opacity="0.7"
+              />
+              {/* Mid Stripe */}
+              <rect x="34" y="90" width="28" height="12" rx="6" fill="rgba(15, 23, 42, 0.35)" stroke="rgba(255, 255, 255, 0.15)" />
+              {/* Rocket Window */}
+              <circle cx="48" cy="62" r="14" fill="url(#rocketWindowGradient)" stroke="rgba(255, 255, 255, 0.4)" strokeWidth="1.5" />
+              <circle cx="48" cy="62" r="7" fill="rgba(15, 23, 42, 0.8)" />
+              {/* Nose Cone Detail */}
+              <path d="M48 6C42 16 38 30 38 36C43 32 53 32 58 36C58 30 54 16 48 6Z" fill="rgba(255, 255, 255, 0.18)" />
+              {/* Rocket Fins */}
+              <path
+                d="M30 104L16 140L34 132L38 110"
+                fill="url(#rocketFinGradient)"
+                stroke="rgba(15, 23, 42, 0.3)"
                 strokeWidth="1"
               />
-              {/* Rocket Window */}
-              <circle cx="40" cy="40" r="12" fill="rgba(34, 211, 238, 0.6)" />
-              <circle cx="40" cy="40" r="8" fill="rgba(168, 85, 247, 0.4)" />
-              {/* Rocket Fins */}
-              <path d="M30 100 L20 110 L30 110 Z" fill="rgba(168, 85, 247, 0.8)" />
-              <path d="M50 100 L60 110 L50 110 Z" fill="rgba(168, 85, 247, 0.8)" />
-              {/* Gradient Definition */}
+              <path
+                d="M66 104L80 140L62 132L58 110"
+                fill="url(#rocketFinGradient)"
+                stroke="rgba(15, 23, 42, 0.3)"
+                strokeWidth="1"
+              />
+              {/* Engine Nozzle */}
+              <path
+                d="M36 118H60L56 150H40L36 118Z"
+                fill="url(#rocketEngineGradient)"
+                stroke="rgba(15, 23, 42, 0.35)"
+                strokeWidth="1"
+              />
+              <rect x="46.5" y="118" width="3" height="18" rx="1.5" fill="rgba(255, 255, 255, 0.3)" />
+              {/* Gradient Definitions */}
               <defs>
-                <linearGradient id="rocketGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                <linearGradient id="rocketBodyGradient" x1="30" y1="6" x2="66" y2="158" gradientUnits="userSpaceOnUse">
                   <stop offset="0%" stopColor="#22d3ee" />
-                  <stop offset="50%" stopColor="#a855f7" />
+                  <stop offset="45%" stopColor="#a855f7" />
                   <stop offset="100%" stopColor="#ec4899" />
                 </linearGradient>
+                <linearGradient id="rocketHighlightGradient" x1="36" y1="16" x2="60" y2="148" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="rgba(255,255,255,0.85)" />
+                  <stop offset="60%" stopColor="rgba(255,255,255,0.25)" />
+                  <stop offset="100%" stopColor="rgba(255,255,255,0.05)" />
+                </linearGradient>
+                <linearGradient id="rocketFinGradient" x1="16" y1="104" x2="38" y2="140" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#a855f7" />
+                  <stop offset="100%" stopColor="#ec4899" />
+                </linearGradient>
+                <linearGradient id="rocketEngineGradient" x1="36" y1="118" x2="60" y2="150" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#0f172a" />
+                  <stop offset="50%" stopColor="#1e293b" />
+                  <stop offset="100%" stopColor="#334155" />
+                </linearGradient>
+                <radialGradient id="rocketWindowGradient" cx="48" cy="62" r="14" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#22d3ee" />
+                  <stop offset="60%" stopColor="#38bdf8" />
+                  <stop offset="100%" stopColor="#0ea5e9" />
+                </radialGradient>
               </defs>
             </svg>
 

@@ -58,13 +58,24 @@ export async function completeOnboarding() {
  */
 export async function getOnboardingInfo() {
   try {
-    const overseerr = await prisma.overseerr.findFirst({
-      where: { isActive: true },
-      select: {
-        publicUrl: true,
-        url: true,
-      },
-    })
+    const [overseerr, discordIntegration] = await Promise.all([
+      prisma.overseerr.findFirst({
+        where: { isActive: true },
+        select: {
+          publicUrl: true,
+          url: true,
+        },
+      }),
+      prisma.discordIntegration.findUnique({
+        where: { id: "discord" },
+        select: {
+          isEnabled: true,
+          clientId: true,
+          clientSecret: true,
+          instructions: true,
+        },
+      }),
+    ])
 
     let overseerrUrl = null
     if (overseerr) {
@@ -80,10 +91,16 @@ export async function getOnboardingInfo() {
 
     return {
       overseerrUrl,
+      discordEnabled: Boolean(discordIntegration?.isEnabled && discordIntegration?.clientId && discordIntegration?.clientSecret),
+      discordInstructions: discordIntegration?.instructions ?? null,
     }
   } catch (error) {
     logger.error("Error fetching onboarding info", error)
-    return { overseerrUrl: null }
+    return {
+      overseerrUrl: null,
+      discordEnabled: false,
+      discordInstructions: null,
+    }
   }
 }
 

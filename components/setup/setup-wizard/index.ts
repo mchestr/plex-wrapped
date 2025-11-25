@@ -1,4 +1,5 @@
 export { FinalSuccessAnimation } from "@/components/setup/setup-wizard/final-success-animation"
+export { DiscordIntegrationForm } from "@/components/setup/setup-wizard/discord-integration-form"
 export { LLMProviderForm } from "@/components/setup/setup-wizard/llm-provider-form"
 export { OverseerrForm } from "@/components/setup/setup-wizard/overseerr-form"
 export { PlexServerForm } from "@/components/setup/setup-wizard/plex-server-form"

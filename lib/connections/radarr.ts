@@ -98,8 +98,20 @@ export async function searchRadarrMovies(config: RadarrParsed, term: string) {
   return response.json()
 }
 
-export async function getRadarrHistory(config: RadarrParsed, pageSize = 20) {
-  const url = `${config.url}/api/v3/history?pageSize=${pageSize}&sortKey=date&sortDir=desc`
+export async function getRadarrHistory(
+  config: RadarrParsed,
+  pageSize = 20,
+  movieId?: number
+) {
+  const params = new URLSearchParams({
+    pageSize: pageSize.toString(),
+    sortKey: "date",
+    sortDir: "desc",
+  })
+  if (movieId !== undefined) {
+    params.append("movieId", movieId.toString())
+  }
+  const url = `${config.url}/api/v3/history?${params.toString()}`
   const response = await fetch(url, {
     headers: { "X-Api-Key": config.apiKey },
   })

@@ -43,6 +43,18 @@ export interface WrappedSummary {
   shareVisits: number
 }
 
+export interface DiscordConnectionDetails {
+  discordUserId: string
+  username: string
+  discriminator: string | null
+  globalName: string | null
+  avatar: string | null
+  metadataSyncedAt: Date | null
+  linkedAt: Date
+  revokedAt: Date | null
+  lastError: string | null
+}
+
 export interface UserDetails {
   id: string
   name: string | null
@@ -57,6 +69,7 @@ export interface UserDetails {
   totalShares: number
   totalVisits: number
   llmUsage: LlmUsageStats | null
+  discordConnection: DiscordConnectionDetails | null
 }
 
 export interface UserQueryOptions {

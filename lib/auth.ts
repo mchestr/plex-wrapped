@@ -232,16 +232,14 @@ export const authOptions: NextAuthOptions = {
   },
   callbacks: {
     async session({ session, token }) {
-      console.log('[AUTH] Session callback - token:', { sub: token.sub, email: token.email, isAdmin: token.isAdmin })
       if (session.user && token.sub) {
         session.user.id = token.sub
         session.user.name = token.name as string
         session.user.email = token.email as string
         session.user.image = token.picture as string
         session.user.isAdmin = token.isAdmin as boolean
-        console.log('[AUTH] Session callback - returning session:', { id: session.user.id, email: session.user.email, isAdmin: session.user.isAdmin })
       } else {
-        console.warn('[AUTH] Session callback - missing token.sub or session.user', { hasTokenSub: !!token.sub, hasSessionUser: !!session.user })
+        console.warn(`[AUTH] Session callback - missing token.sub or session.user: hasTokenSub=${!!token.sub} hasSessionUser=${!!session.user}`)
       }
       return session
     },

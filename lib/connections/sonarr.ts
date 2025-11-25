@@ -98,8 +98,24 @@ export async function searchSonarrSeries(config: SonarrParsed, term: string) {
   return response.json()
 }
 
-export async function getSonarrHistory(config: SonarrParsed, pageSize = 20) {
-  const url = `${config.url}/api/v3/history?pageSize=${pageSize}&sortKey=date&sortDir=desc`
+export async function getSonarrHistory(
+  config: SonarrParsed,
+  pageSize = 20,
+  seriesId?: number,
+  episodeId?: number
+) {
+  const params = new URLSearchParams({
+    pageSize: pageSize.toString(),
+    sortKey: "date",
+    sortDir: "desc",
+  })
+  if (seriesId !== undefined) {
+    params.append("seriesId", seriesId.toString())
+  }
+  if (episodeId !== undefined) {
+    params.append("episodeId", episodeId.toString())
+  }
+  const url = `${config.url}/api/v3/history?${params.toString()}`
   const response = await fetch(url, {
     headers: { "X-Api-Key": config.apiKey },
   })
@@ -162,5 +178,23 @@ export async function getSonarrQualityProfiles(config: SonarrParsed) {
     headers: { "X-Api-Key": config.apiKey },
   })
   if (!response.ok) throw new Error(`Sonarr quality profiles error: ${response.statusText}`)
+  return response.json()
+}
+
+export async function getSonarrEpisodes(config: SonarrParsed, seriesId: number) {
+  const url = `${config.url}/api/v3/episode?seriesId=${seriesId}`
+  const response = await fetch(url, {
+    headers: { "X-Api-Key": config.apiKey },
+  })
+  if (!response.ok) throw new Error(`Sonarr episodes error: ${response.statusText}`)
+  return response.json()
+}
+
+export async function getSonarrEpisodeById(config: SonarrParsed, episodeId: number) {
+  const url = `${config.url}/api/v3/episode/${episodeId}`
+  const response = await fetch(url, {
+    headers: { "X-Api-Key": config.apiKey },
+  })
+  if (!response.ok) throw new Error(`Sonarr episode detail error: ${response.statusText}`)
   return response.json()
 }

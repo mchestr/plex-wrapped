@@ -69,7 +69,7 @@ export const TOOLS: ChatTool[] = [
     type: "function",
     function: {
       name: "search_sonarr_series",
-      description: "Search for a TV series in Sonarr to check if it exists or get its metadata",
+      description: "Search for a TV series in Sonarr to check if it exists or get its metadata. Returns results with 'sonarrId' field if the series is already in the library (use this ID for episode queries and history).",
       parameters: {
         type: "object",
         properties: {
@@ -86,13 +86,25 @@ export const TOOLS: ChatTool[] = [
     type: "function",
     function: {
       name: "get_sonarr_history",
-      description: "Get recent history from Sonarr to check for download issues or successes",
+      description: "Get recent history from Sonarr to check for download issues or successes. Can filter by series name, series ID, or episode ID. IMPORTANT: Use seriesId or episodeId from search_sonarr_series or get_sonarr_episodes results for accurate filtering.",
       parameters: {
         type: "object",
         properties: {
           pageSize: {
             type: "integer",
             description: "Number of history items to retrieve (default 20)",
+          },
+          seriesName: {
+            type: "string",
+            description: "Filter history by series name (will search for series first)",
+          },
+          seriesId: {
+            type: "integer",
+            description: "Filter history by series ID (preferred - use sonarrId from search_sonarr_series results)",
+          },
+          episodeId: {
+            type: "integer",
+            description: "Filter history by episode ID (use id from get_sonarr_episodes results)",
           },
         },
       },
@@ -102,7 +114,7 @@ export const TOOLS: ChatTool[] = [
     type: "function",
     function: {
       name: "search_radarr_movies",
-      description: "Search for a movie in Radarr to check if it exists or get its metadata",
+      description: "Search for a movie in Radarr to check if it exists or get its metadata. Returns results with 'radarrId' field if the movie is already in the library (use this ID for history queries).",
       parameters: {
         type: "object",
         properties: {
@@ -119,13 +131,21 @@ export const TOOLS: ChatTool[] = [
     type: "function",
     function: {
       name: "get_radarr_history",
-      description: "Get recent history from Radarr to check for download issues or successes",
+      description: "Get recent history from Radarr to check for download issues or successes. Can filter by movie name or movie ID. IMPORTANT: Use movieId from search_radarr_movies results (radarrId field) for accurate filtering.",
       parameters: {
         type: "object",
         properties: {
           pageSize: {
             type: "integer",
             description: "Number of history items to retrieve (default 20)",
+          },
+          movieName: {
+            type: "string",
+            description: "Filter history by movie name (will search for movie first)",
+          },
+          movieId: {
+            type: "integer",
+            description: "Filter history by movie ID (preferred - use radarrId from search_radarr_movies results)",
           },
         },
       },
@@ -160,16 +180,58 @@ export const TOOLS: ChatTool[] = [
     type: "function",
     function: {
       name: "get_sonarr_series_details",
-      description: "Get detailed information about a specific TV series in Sonarr",
+      description: "Get detailed information about a specific TV series in Sonarr. Use the sonarrId from search_sonarr_series results.",
       parameters: {
         type: "object",
         properties: {
           seriesId: {
             type: "integer",
-            description: "The Sonarr series ID",
+            description: "The Sonarr series ID (use sonarrId from search_sonarr_series results)",
           },
         },
         required: ["seriesId"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_sonarr_episodes",
+      description: "Get episodes for a TV series in Sonarr. Use this to find episode IDs for history queries. Requires seriesId from search_sonarr_series or get_sonarr_series results.",
+      parameters: {
+        type: "object",
+        properties: {
+          seriesId: {
+            type: "integer",
+            description: "The Sonarr series ID (use sonarrId from search_sonarr_series results)",
+          },
+          seasonNumber: {
+            type: "integer",
+            description: "Optional: Filter episodes by season number",
+          },
+          episodeNumber: {
+            type: "integer",
+            description: "Optional: Filter episodes by episode number within a season",
+          },
+        },
+        required: ["seriesId"],
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "get_sonarr_episode_details",
+      description: "Get detailed information about a specific episode in Sonarr. Use episode ID from get_sonarr_episodes results.",
+      parameters: {
+        type: "object",
+        properties: {
+          episodeId: {
+            type: "integer",
+            description: "The Sonarr episode ID (use id from get_sonarr_episodes results)",
+          },
+        },
+        required: ["episodeId"],
       },
     },
   },
@@ -238,13 +300,13 @@ export const TOOLS: ChatTool[] = [
     type: "function",
     function: {
       name: "get_radarr_movie_details",
-      description: "Get detailed information about a specific movie in Radarr",
+      description: "Get detailed information about a specific movie in Radarr. Use the radarrId from search_radarr_movies results.",
       parameters: {
         type: "object",
         properties: {
           movieId: {
             type: "integer",
-            description: "The Radarr movie ID",
+            description: "The Radarr movie ID (use radarrId from search_radarr_movies results)",
           },
         },
         required: ["movieId"],
@@ -534,9 +596,26 @@ export const TOOLS: ChatTool[] = [
   },
 ]
 
-export function generateSystemPrompt(): string {
-  // Generate tool list dynamically from TOOLS array
-  const toolList = TOOLS.map((tool) => `- ${tool.function.name}: ${tool.function.description}`).join("\n    ")
+const DISCORD_SAFE_TOOL_NAME_LIST = [
+  "get_plex_status",
+  "get_plex_sessions",
+  "get_tautulli_status",
+  "get_tautulli_activity",
+  "get_overseerr_status",
+  "get_sonarr_status",
+  "get_sonarr_queue",
+  "get_sonarr_history",
+  "get_radarr_status",
+  "get_radarr_queue",
+  "get_radarr_history",
+] as const
+
+export const DISCORD_SAFE_TOOL_NAMES = new Set<string>(DISCORD_SAFE_TOOL_NAME_LIST)
+
+export const DISCORD_SAFE_TOOLS = TOOLS.filter((tool) => DISCORD_SAFE_TOOL_NAMES.has(tool.function.name))
+
+export function generateSystemPrompt(toolset: ChatTool[] = TOOLS): string {
+  const toolList = toolset.map((tool) => `- ${tool.function.name}: ${tool.function.description}`).join("\n    ")
 
   return `You are a specialized troubleshooting and diagnostic assistant for a Plex media server management system.
 Your role is to help administrators troubleshoot issues, check service status, and answer inquiries about their media infrastructure.
@@ -585,22 +664,33 @@ You have access to the following tools for retrieving real-time service data:
 Use this decision tree to select the appropriate tool(s):
 
 **For TV Series Questions:**
-- History/download issues → get_sonarr_history
-- Search for series → search_sonarr_series
+- Search for series → search_sonarr_series (returns sonarrId if in library - use this for episode/history queries)
 - List all series → get_sonarr_series
-- Series details → get_sonarr_series_details
+- Series details → get_sonarr_series_details (use sonarrId from search)
+- Get episodes for a series → get_sonarr_episodes (use sonarrId from search, returns episode IDs)
+- Episode details → get_sonarr_episode_details (use episode ID from get_sonarr_episodes)
+- History/download issues → get_sonarr_history (use seriesId or episodeId from search/episode results)
 - Upcoming episodes → get_sonarr_calendar
 - Missing episodes → get_sonarr_wanted_missing
 - Queue status → get_sonarr_queue
 
+**IMPORTANT: When querying history for a specific episode:**
+1. First search for the series using search_sonarr_series to get the sonarrId
+2. Then get episodes using get_sonarr_episodes with the sonarrId to find the episode ID
+3. Finally query history using get_sonarr_history with the episodeId
+
 **For Movie Questions:**
-- History/download issues → get_radarr_history
-- Search for movie → search_radarr_movies
+- Search for movie → search_radarr_movies (returns radarrId if in library - use this for history queries)
 - List all movies → get_radarr_movies
-- Movie details → get_radarr_movie_details
+- Movie details → get_radarr_movie_details (use radarrId from search)
+- History/download issues → get_radarr_history (use movieId/radarrId from search results)
 - Upcoming releases → get_radarr_calendar
 - Missing movies → get_radarr_wanted_missing
 - Queue status → get_radarr_queue
+
+**IMPORTANT: When querying history for a specific movie:**
+1. First search for the movie using search_radarr_movies to get the radarrId
+2. Then query history using get_radarr_history with the movieId (radarrId from search)
 
 **For Service Status/Health:**
 - Sonarr status/health → get_sonarr_status
@@ -710,5 +800,38 @@ For each user question, follow this pattern:
 Current Date: ${new Date().toISOString()}
 
 Remember: You are a tool-driven assistant. Your value comes from providing accurate, real-time information from the services, not from general knowledge.`
+}
+
+export function generateDiscordSystemPrompt(toolset: ChatTool[]): string {
+  const toolList = toolset.map((tool) => `- ${tool.function.name}: ${tool.function.description}`).join("\n    ")
+
+  return `You are the Plex Wrapped Discord support co-pilot. You help moderators triage quick issues in a shared public support channel.
+
+=== CORE PRINCIPLES ===
+- **Audience**: General Plex users in Discord. Keep answers concise, friendly, and free of jargon.
+- **Scope**: Only discuss Plex, Tautulli, Overseerr, Sonarr, and Radarr status, queues, and high-level troubleshooting. No admin-only details, credentials, or user metadata.
+- **Privacy**: Never mention names, emails, IPs, account IDs, or session IDs. Refer to people generically ("a viewer", "a Plex user").
+- **Tools**: You may ONLY use these tools:
+    ${toolList}
+  If a request needs data from another tool or admin action, say so and suggest contacting an admin.
+
+=== WORKFLOW ===
+1. Confirm the question is within supported services. Decline politely if not.
+2. Decide if a tool call is required. Always base answers on live tool data when available.
+3. Summarize findings in 2–3 short sentences (or a bullet list) with clear attribution, e.g., "According to Sonarr status..."
+4. Offer one actionable next step or reassurance when appropriate.
+
+=== MUST-NOTs ===
+- Do not speculate or invent data when a tool fails—explain the failure and suggest next steps.
+- Do not expose sensitive identifiers even if tools return them (omit or anonymize).
+- Do not provide step-by-step admin fixes, scripts, or code edits. Point users to an admin if advanced action is required.
+- Do not answer general tech questions (e.g., networking basics, hardware recommendations) that fall outside the five services.
+
+=== RESPONSE TEMPLATE ===
+1. **Status summary** (plain sentence or bullet) referencing the tool used.
+2. **Impact or next steps** (short guidance, e.g., "Try pausing and resuming playback" or "An admin may need to restart Sonarr").
+3. **Privacy reminder** if the user shared sensitive info.
+
+If multiple tools are relevant, synthesize them in a single cohesive response. Always stay calm, neutral, and professional.`
 }
 

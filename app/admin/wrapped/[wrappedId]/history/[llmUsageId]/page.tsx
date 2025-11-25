@@ -11,11 +11,12 @@ export const dynamic = 'force-dynamic'
 export default async function HistoricalWrappedPage({
   params,
 }: {
-  params: { wrappedId: string; llmUsageId: string }
+  params: Promise<{ wrappedId: string; llmUsageId: string }>
 }) {
   await requireAdmin()
+  const { wrappedId, llmUsageId } = await params
 
-  const historicalData = await getHistoricalWrappedData(params.llmUsageId, params.wrappedId)
+  const historicalData = await getHistoricalWrappedData(llmUsageId, wrappedId)
 
   if (!historicalData) {
     return (
@@ -122,7 +123,7 @@ export default async function HistoricalWrappedPage({
               </div>
             </div>
             <div className="flex items-center gap-3 flex-shrink-0">
-              <HistoricalWrappedSelectorHeader wrappedId={params.wrappedId} userId={wrappedData.userId} />
+              <HistoricalWrappedSelectorHeader wrappedId={wrappedId} userId={wrappedData.userId} />
             </div>
           </div>
         </div>

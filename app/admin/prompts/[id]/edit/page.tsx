@@ -11,11 +11,12 @@ export const dynamic = 'force-dynamic'
 export default async function EditPromptTemplatePage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
   const session = await getServerSession(authOptions)
+  const { id } = await params
 
-  const result = await getPromptTemplate(params.id)
+  const result = await getPromptTemplate(id)
   if (!result.success || !result.data) {
     notFound()
   }
@@ -31,7 +32,7 @@ export default async function EditPromptTemplatePage({
       <div className="max-w-7xl mx-auto">
           <div className="mb-8">
             <Link
-              href={`/admin/prompts/${params.id}`}
+              href={`/admin/prompts/${id}`}
               className="inline-flex items-center gap-2 text-sm text-slate-400 hover:text-cyan-400 mb-6 transition-colors group"
             >
               <svg className="w-4 h-4 group-hover:-translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -14,6 +14,7 @@ import { plexServerSchema, type PlexServerInput, type PlexServerParsed } from "@
 import { radarrSchema, type RadarrInput, type RadarrParsed } from "@/lib/validations/radarr"
 import { sonarrSchema, type SonarrInput, type SonarrParsed } from "@/lib/validations/sonarr"
 import { tautulliSchema, type TautulliInput, type TautulliParsed } from "@/lib/validations/tautulli"
+import { discordIntegrationSchema, type DiscordIntegrationInput } from "@/lib/validations/discord"
 import { revalidatePath } from "next/cache"
 
 export async function getSetupStatus() {
@@ -332,24 +333,24 @@ export async function saveRadarr(data: RadarrInput) {
   }
 }
 
-export async function saveLLMProvider(data: LLMProviderInput) {
+export async function saveDiscordIntegration(data: DiscordIntegrationInput) {
   try {
-    // Require admin if setup is already complete
     const setupStatus = await getSetupStatus()
     if (setupStatus.isComplete) {
       await requireAdmin()
     }
 
-    const validated = llmProviderSchema.parse(data)
+    const validated = discordIntegrationSchema.parse(data)
+    const isEnabled = validated.isEnabled ?? false
 
-    // Test connection before saving
-    const connectionTest = await testLLMProviderConnection(validated)
-    if (!connectionTest.success) {
-      return { success: false, error: connectionTest.error || "Failed to connect to LLM provider" }
+    if (isEnabled && (!validated.clientId || !validated.clientSecret)) {
+      return {
+        success: false,
+        error: "Client ID and Client Secret are required when enabling Discord integration",
+      }
     }
 
     await prisma.$transaction(async (tx) => {
-      // Update setup record
       const setup = await tx.setup.findFirst({
         orderBy: { createdAt: "desc" },
       })
@@ -369,19 +370,93 @@ export async function saveLLMProvider(data: LLMProviderInput) {
         })
       }
 
-      // Create or update LLM provider configuration (only one active provider at a time)
-      // First, deactivate any existing wrapped providers
+      await tx.discordIntegration.upsert({
+        where: { id: "discord" },
+        update: {
+          isEnabled,
+          clientId: validated.clientId,
+          clientSecret: validated.clientSecret,
+          guildId: validated.guildId,
+          metadataKey: validated.metadataKey,
+          metadataValue: validated.metadataValue,
+          platformName: validated.platformName,
+          instructions: validated.instructions,
+          botSharedSecret: validated.botSharedSecret,
+        },
+        create: {
+          id: "discord",
+          isEnabled,
+          clientId: validated.clientId,
+          clientSecret: validated.clientSecret,
+          guildId: validated.guildId,
+          metadataKey: validated.metadataKey,
+          metadataValue: validated.metadataValue,
+          platformName: validated.platformName,
+          instructions: validated.instructions,
+          botSharedSecret: validated.botSharedSecret,
+        },
+      })
+    })
+
+    revalidatePath("/setup")
+    revalidatePath("/discord/link")
+    revalidatePath("/admin/settings")
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: error.message }
+    }
+    return { success: false, error: "Failed to save Discord integration" }
+  }
+}
+
+async function saveLLMProviderForPurpose(
+  data: LLMProviderInput,
+  purpose: "chat" | "wrapped",
+  nextStep: number
+) {
+  try {
+    const setupStatus = await getSetupStatus()
+    if (setupStatus.isComplete) {
+      await requireAdmin()
+    }
+
+    const validated = llmProviderSchema.parse(data)
+
+    const connectionTest = await testLLMProviderConnection(validated)
+    if (!connectionTest.success) {
+      return { success: false, error: connectionTest.error || "Failed to connect to LLM provider" }
+    }
+
+    await prisma.$transaction(async (tx) => {
+      const setup = await tx.setup.findFirst({
+        orderBy: { createdAt: "desc" },
+      })
+
+      if (setup) {
+        await tx.setup.update({
+          where: { id: setup.id },
+          data: {
+            currentStep: nextStep,
+          },
+        })
+      } else {
+        await tx.setup.create({
+          data: {
+            currentStep: nextStep,
+          },
+        })
+      }
+
       await tx.lLMProvider.updateMany({
-        where: { isActive: true, purpose: "wrapped" },
+        where: { isActive: true, purpose },
         data: { isActive: false },
       })
 
-      // Create new LLM provider configuration for wrapped generation
-      // Model is required - use default if not provided
       await tx.lLMProvider.create({
         data: {
           provider: validated.provider,
-          purpose: "wrapped",
+          purpose,
           apiKey: validated.apiKey,
           model: validated.model || "gpt-4o-mini",
           temperature: validated.temperature ?? null,
@@ -399,6 +474,14 @@ export async function saveLLMProvider(data: LLMProviderInput) {
     }
     return { success: false, error: "Failed to save LLM provider configuration" }
   }
+}
+
+export async function saveChatLLMProvider(data: LLMProviderInput) {
+  return saveLLMProviderForPurpose(data, "chat", 8)
+}
+
+export async function saveLLMProvider(data: LLMProviderInput) {
+  return saveLLMProviderForPurpose(data, "wrapped", 9)
 }
 
 export async function completeSetup() {
