@@ -6,8 +6,8 @@
  * which causes all connection test functions to return success immediately.
  */
 
+import { PrismaClient } from '@/lib/generated/prisma/client';
 import { expect, test } from '@playwright/test';
-import { PrismaClient } from '@prisma/client';
 import globalSetup from './global-setup';
 import { navigateAndVerify, waitForLoadingGone } from './helpers/test-utils';
 
@@ -16,7 +16,7 @@ test.describe('Setup Wizard', () => {
   let prisma: PrismaClient;
 
   test.beforeAll(async () => {
-    prisma = new PrismaClient();
+    prisma = new PrismaClient({} as any);
   });
 
   test.afterAll(async () => {

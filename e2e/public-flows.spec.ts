@@ -1,5 +1,5 @@
+import { PrismaClient } from '@/lib/generated/prisma/client';
 import { expect, test } from '@playwright/test';
-import { PrismaClient } from '@prisma/client';
 import { navigateAndVerify, waitForLoadingGone } from './helpers/test-utils';
 
 test.describe('Public Flows', () => {
@@ -61,7 +61,7 @@ test.describe('Public Flows', () => {
   });
 
   test('shared wrapped page loads for unauthenticated user', async ({ page }) => {
-    const prisma = new PrismaClient();
+    const prisma = new PrismaClient({} as any);
     const shareToken = `test-share-${Date.now()}`;
 
     // Mock wrapped data
