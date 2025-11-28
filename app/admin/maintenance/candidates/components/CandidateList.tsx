@@ -65,7 +65,7 @@ export function CandidateList({
 
   if (candidates.length === 0) {
     return (
-      <div className="text-center py-12 bg-slate-800/50 rounded-lg border border-slate-700">
+      <div className="text-center py-12 bg-slate-800/50 rounded-lg border border-slate-700" data-testid="candidates-empty-state">
         <svg className="w-12 h-12 text-slate-500 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
@@ -100,7 +100,7 @@ export function CandidateList({
           </thead>
           <tbody className="divide-y divide-slate-700">
             {candidates.map((candidate) => (
-              <tr key={candidate.id} className="hover:bg-slate-800/50 transition-colors">
+              <tr key={candidate.id} className="hover:bg-slate-800/50 transition-colors" data-testid={`candidate-row-${candidate.id}`}>
                 <td className="px-6 py-4">
                   <StyledCheckbox
                     checked={selectedCandidates.has(candidate.id)}
@@ -174,6 +174,7 @@ export function CandidateList({
                           disabled={isPending}
                           className="text-green-400 hover:text-green-300 transition-colors disabled:opacity-50"
                           title="Approve"
+                          data-testid={`approve-candidate-${candidate.id}`}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
@@ -184,6 +185,7 @@ export function CandidateList({
                           disabled={isPending}
                           className="text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
                           title="Reject"
+                          data-testid={`reject-candidate-${candidate.id}`}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

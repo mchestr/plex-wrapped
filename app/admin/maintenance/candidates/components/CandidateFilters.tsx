@@ -17,7 +17,7 @@ export function CandidateFilters({
   onMediaTypeChange,
 }: CandidateFiltersProps) {
   return (
-    <div className="flex gap-3 flex-wrap">
+    <div className="flex gap-3 flex-wrap" data-testid="candidate-filters-container">
       <div>
         <label className="text-xs text-slate-400 mb-1 block">Review Status</label>
         <StyledDropdown
