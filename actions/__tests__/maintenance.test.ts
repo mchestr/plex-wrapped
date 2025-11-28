@@ -23,6 +23,13 @@ import { prisma } from '@/lib/prisma'
 import { maintenanceQueue, deletionQueue } from '@/lib/maintenance/queue'
 import { getServerSession } from 'next-auth'
 import { revalidatePath } from 'next/cache'
+import type {
+  MaintenanceRule,
+  MaintenanceCandidate,
+  MaintenanceScan,
+  UserMediaMark,
+} from '@prisma/client'
+import type { Session } from 'next-auth'
 
 jest.mock('@/lib/admin', () => ({
   requireAdmin: jest.fn(),
@@ -85,7 +92,7 @@ const mockDeletionQueue = deletionQueue as jest.Mocked<typeof deletionQueue>
 const mockRevalidatePath = revalidatePath as jest.MockedFunction<typeof revalidatePath>
 
 describe('Maintenance Actions', () => {
-  const mockAdminSession = {
+  const mockAdminSession: Partial<Session> = {
     user: {
       id: 'admin-1',
       email: 'admin@example.com',
@@ -94,7 +101,7 @@ describe('Maintenance Actions', () => {
     },
   }
 
-  const mockUserSession = {
+  const mockUserSession: Partial<Session> = {
     user: {
       id: 'user-1',
       email: 'user@example.com',
@@ -109,7 +116,7 @@ describe('Maintenance Actions', () => {
 
   describe('getMaintenanceRules', () => {
     it('should return all maintenance rules with scan counts', async () => {
-      const mockRules = [
+      const mockRules: Partial<MaintenanceRule>[] = [
         {
           id: 'rule-1',
           name: 'Old Movies',
@@ -134,8 +141,8 @@ describe('Maintenance Actions', () => {
         },
       ]
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.findMany.mockResolvedValue(mockRules as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findMany.mockResolvedValue(mockRules as MaintenanceRule[])
 
       const result = await getMaintenanceRules()
 
@@ -173,7 +180,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle database errors', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceRule.findMany.mockRejectedValue(new Error('DB error'))
 
       const result = await getMaintenanceRules()
@@ -208,15 +215,15 @@ describe('Maintenance Actions', () => {
     }
 
     it('should create maintenance rule successfully', async () => {
-      const mockCreated = {
+      const mockCreated: Partial<MaintenanceRule> = {
         id: 'rule-1',
         ...validInput,
         createdAt: new Date(),
         updatedAt: new Date(),
       }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.create.mockResolvedValue(mockCreated as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.create.mockResolvedValue(mockCreated as MaintenanceRule)
 
       const result = await createMaintenanceRule(validInput)
 
@@ -246,7 +253,7 @@ describe('Maintenance Actions', () => {
     it('should return validation error for invalid input', async () => {
       const invalidInput = { name: '', mediaType: 'INVALID' }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
 
       const result = await createMaintenanceRule(invalidInput)
 
@@ -256,7 +263,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle database errors', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceRule.create.mockRejectedValue(new Error('DB error'))
 
       const result = await createMaintenanceRule(validInput)
@@ -274,7 +281,7 @@ describe('Maintenance Actions', () => {
     }
 
     it('should update maintenance rule successfully', async () => {
-      const mockUpdated = {
+      const mockUpdated: Partial<MaintenanceRule> = {
         id: 'rule-1',
         ...updateInput,
         mediaType: 'MOVIE',
@@ -282,8 +289,8 @@ describe('Maintenance Actions', () => {
         actionType: 'FLAG_FOR_REVIEW',
       }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.update.mockResolvedValue(mockUpdated as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.update.mockResolvedValue(mockUpdated as MaintenanceRule)
 
       const result = await updateMaintenanceRule('rule-1', updateInput)
 
@@ -313,7 +320,7 @@ describe('Maintenance Actions', () => {
     it('should return validation error for invalid input', async () => {
       const invalidInput = { name: '' }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
 
       const result = await updateMaintenanceRule('rule-1', invalidInput)
 
@@ -323,7 +330,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle database errors', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceRule.update.mockRejectedValue(new Error('Rule not found'))
 
       const result = await updateMaintenanceRule('nonexistent', updateInput)
@@ -335,8 +342,10 @@ describe('Maintenance Actions', () => {
 
   describe('deleteMaintenanceRule', () => {
     it('should delete maintenance rule successfully', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.delete.mockResolvedValue({} as any)
+      const mockDeleted: Partial<MaintenanceRule> = { id: 'rule-1' }
+
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.delete.mockResolvedValue(mockDeleted as MaintenanceRule)
 
       const result = await deleteMaintenanceRule('rule-1')
 
@@ -354,7 +363,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle database errors', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceRule.delete.mockRejectedValue(new Error('Rule not found'))
 
       const result = await deleteMaintenanceRule('nonexistent')
@@ -366,14 +375,14 @@ describe('Maintenance Actions', () => {
 
   describe('toggleMaintenanceRule', () => {
     it('should enable maintenance rule successfully', async () => {
-      const mockRule = {
+      const mockRule: Partial<MaintenanceRule> = {
         id: 'rule-1',
         name: 'Test Rule',
         enabled: true,
       }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.update.mockResolvedValue(mockRule as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.update.mockResolvedValue(mockRule as MaintenanceRule)
 
       const result = await toggleMaintenanceRule('rule-1', true)
 
@@ -387,14 +396,14 @@ describe('Maintenance Actions', () => {
     })
 
     it('should disable maintenance rule successfully', async () => {
-      const mockRule = {
+      const mockRule: Partial<MaintenanceRule> = {
         id: 'rule-1',
         name: 'Test Rule',
         enabled: false,
       }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.update.mockResolvedValue(mockRule as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.update.mockResolvedValue(mockRule as MaintenanceRule)
 
       const result = await toggleMaintenanceRule('rule-1', false)
 
@@ -411,7 +420,7 @@ describe('Maintenance Actions', () => {
 
   describe('getMaintenanceCandidates', () => {
     it('should return all candidates without filters', async () => {
-      const mockCandidates = [
+      const mockCandidates: Partial<MaintenanceCandidate>[] = [
         {
           id: 'candidate-1',
           reviewStatus: 'PENDING',
@@ -423,8 +432,10 @@ describe('Maintenance Actions', () => {
         },
       ]
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(mockCandidates as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
+        mockCandidates as MaintenanceCandidate[]
+      )
 
       const result = await getMaintenanceCandidates()
 
@@ -450,7 +461,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should filter candidates by review status', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([])
 
       await getMaintenanceCandidates({ reviewStatus: 'APPROVED' })
@@ -463,7 +474,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should filter candidates by media type', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([])
 
       await getMaintenanceCandidates({ mediaType: 'TV_SERIES' })
@@ -476,7 +487,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should filter candidates by scan ID', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([])
 
       await getMaintenanceCandidates({ scanId: 'scan-1' })
@@ -489,7 +500,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should apply multiple filters', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([])
 
       await getMaintenanceCandidates({
@@ -518,7 +529,7 @@ describe('Maintenance Actions', () => {
 
   describe('updateCandidateReviewStatus', () => {
     it('should update candidate review status successfully', async () => {
-      const mockCandidate = {
+      const mockCandidate: Partial<MaintenanceCandidate> = {
         id: 'candidate-1',
         reviewStatus: 'APPROVED',
         reviewedAt: new Date(),
@@ -526,8 +537,8 @@ describe('Maintenance Actions', () => {
         reviewNote: 'Looks good',
       }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.update.mockResolvedValue(mockCandidate as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.update.mockResolvedValue(mockCandidate as MaintenanceCandidate)
 
       const result = await updateCandidateReviewStatus('candidate-1', 'APPROVED', 'Looks good')
 
@@ -546,15 +557,15 @@ describe('Maintenance Actions', () => {
     })
 
     it('should update without review note', async () => {
-      const mockCandidate = {
+      const mockCandidate: Partial<MaintenanceCandidate> = {
         id: 'candidate-1',
         reviewStatus: 'REJECTED',
         reviewedAt: new Date(),
         reviewedBy: 'admin-1',
       }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.update.mockResolvedValue(mockCandidate as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.update.mockResolvedValue(mockCandidate as MaintenanceCandidate)
 
       const result = await updateCandidateReviewStatus('candidate-1', 'REJECTED')
 
@@ -579,7 +590,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle database errors', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceCandidate.update.mockRejectedValue(new Error('Candidate not found'))
 
       const result = await updateCandidateReviewStatus('nonexistent', 'APPROVED')
@@ -591,8 +602,8 @@ describe('Maintenance Actions', () => {
 
   describe('bulkUpdateCandidates', () => {
     it('should bulk update candidates successfully', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.updateMany.mockResolvedValue({ count: 3 } as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.updateMany.mockResolvedValue({ count: 3 })
 
       const result = await bulkUpdateCandidates(
         ['candidate-1', 'candidate-2', 'candidate-3'],
@@ -625,7 +636,7 @@ describe('Maintenance Actions', () => {
 
   describe('triggerManualScan', () => {
     it('should trigger manual scan for enabled rule', async () => {
-      const mockRule = {
+      const mockRule: Partial<MaintenanceRule> = {
         id: 'rule-1',
         name: 'Test Rule',
         enabled: true,
@@ -633,8 +644,9 @@ describe('Maintenance Actions', () => {
 
       const mockJob = { id: 'job-123' }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as MaintenanceRule)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockMaintenanceQueue.add.mockResolvedValue(mockJob as any)
 
       const result = await triggerManualScan('rule-1')
@@ -655,7 +667,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when rule not found', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceRule.findUnique.mockResolvedValue(null)
 
       const result = await triggerManualScan('nonexistent')
@@ -666,14 +678,14 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when rule is disabled', async () => {
-      const mockRule = {
+      const mockRule: Partial<MaintenanceRule> = {
         id: 'rule-1',
         name: 'Test Rule',
         enabled: false,
       }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as MaintenanceRule)
 
       const result = await triggerManualScan('rule-1')
 
@@ -689,10 +701,10 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle queue errors', async () => {
-      const mockRule = { id: 'rule-1', enabled: true }
+      const mockRule: Partial<MaintenanceRule> = { id: 'rule-1', enabled: true }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as MaintenanceRule)
       mockMaintenanceQueue.add.mockRejectedValue(new Error('Queue error'))
 
       const result = await triggerManualScan('rule-1')
@@ -704,15 +716,18 @@ describe('Maintenance Actions', () => {
 
   describe('triggerDeletion', () => {
     it('should trigger deletion for approved candidates', async () => {
-      const mockCandidates = [
+      const mockCandidates: Partial<MaintenanceCandidate>[] = [
         { id: 'candidate-1', reviewStatus: 'APPROVED' },
         { id: 'candidate-2', reviewStatus: 'APPROVED' },
       ]
 
       const mockJob = { id: 'job-456' }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(mockCandidates as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
+        mockCandidates as MaintenanceCandidate[]
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockDeletionQueue.add.mockResolvedValue(mockJob as any)
 
       const result = await triggerDeletion(['candidate-1', 'candidate-2'], true)
@@ -734,11 +749,16 @@ describe('Maintenance Actions', () => {
     })
 
     it('should support deletion without removing files', async () => {
-      const mockCandidates = [{ id: 'candidate-1', reviewStatus: 'APPROVED' }]
+      const mockCandidates: Partial<MaintenanceCandidate>[] = [
+        { id: 'candidate-1', reviewStatus: 'APPROVED' },
+      ]
       const mockJob = { id: 'job-789' }
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(mockCandidates as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
+        mockCandidates as MaintenanceCandidate[]
+      )
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       mockDeletionQueue.add.mockResolvedValue(mockJob as any)
 
       const result = await triggerDeletion(['candidate-1'], false)
@@ -754,7 +774,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when no candidates found', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([])
 
       const result = await triggerDeletion(['nonexistent'], true)
@@ -765,10 +785,14 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when some candidates not found', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([
+      const mockCandidates: Partial<MaintenanceCandidate>[] = [
         { id: 'candidate-1', reviewStatus: 'APPROVED' },
-      ])
+      ]
+
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
+        mockCandidates as MaintenanceCandidate[]
+      )
 
       const result = await triggerDeletion(['candidate-1', 'candidate-2'], true)
 
@@ -777,11 +801,15 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when candidates not approved', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([
+      const mockCandidates: Partial<MaintenanceCandidate>[] = [
         { id: 'candidate-1', reviewStatus: 'APPROVED' },
         { id: 'candidate-2', reviewStatus: 'PENDING' },
-      ])
+      ]
+
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
+        mockCandidates as MaintenanceCandidate[]
+      )
 
       const result = await triggerDeletion(['candidate-1', 'candidate-2'], true)
 
@@ -798,7 +826,7 @@ describe('Maintenance Actions', () => {
 
   describe('getUserMediaMarks', () => {
     it('should return user media marks without filters', async () => {
-      const mockMarks = [
+      const mockMarks: Partial<UserMediaMark>[] = [
         {
           id: 'mark-1',
           userId: 'user-1',
@@ -808,8 +836,8 @@ describe('Maintenance Actions', () => {
         },
       ]
 
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
-      mockPrisma.userMediaMark.findMany.mockResolvedValue(mockMarks as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
+      mockPrisma.userMediaMark.findMany.mockResolvedValue(mockMarks as UserMediaMark[])
 
       const result = await getUserMediaMarks()
 
@@ -822,7 +850,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should filter marks by media type', async () => {
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
       mockPrisma.userMediaMark.findMany.mockResolvedValue([])
 
       await getUserMediaMarks({ mediaType: 'TV_SERIES' })
@@ -838,7 +866,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should filter marks by mark type', async () => {
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
       mockPrisma.userMediaMark.findMany.mockResolvedValue([])
 
       await getUserMediaMarks({ markType: 'KEEP_FOREVER' })
@@ -863,7 +891,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle database errors', async () => {
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
       mockPrisma.userMediaMark.findMany.mockRejectedValue(new Error('DB error'))
 
       const result = await getUserMediaMarks()
@@ -885,16 +913,16 @@ describe('Maintenance Actions', () => {
     }
 
     it('should create user media mark successfully', async () => {
-      const mockCreated = {
+      const mockCreated: Partial<UserMediaMark> = {
         id: 'mark-1',
         userId: 'user-1',
         ...validInput,
         markedAt: new Date(),
       }
 
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
       mockPrisma.userMediaMark.findFirst.mockResolvedValue(null)
-      mockPrisma.userMediaMark.create.mockResolvedValue(mockCreated as any)
+      mockPrisma.userMediaMark.create.mockResolvedValue(mockCreated as UserMediaMark)
 
       const result = await createUserMediaMark(validInput)
 
@@ -922,15 +950,15 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when mark already exists', async () => {
-      const existingMark = {
+      const existingMark: Partial<UserMediaMark> = {
         id: 'mark-1',
         userId: 'user-1',
         plexRatingKey: '12345',
         markType: 'FINISHED_WATCHING',
       }
 
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
-      mockPrisma.userMediaMark.findFirst.mockResolvedValue(existingMark as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
+      mockPrisma.userMediaMark.findFirst.mockResolvedValue(existingMark as UserMediaMark)
 
       const result = await createUserMediaMark(validInput)
 
@@ -951,7 +979,7 @@ describe('Maintenance Actions', () => {
     it('should return validation error for invalid input', async () => {
       const invalidInput = { mediaType: 'INVALID', plexRatingKey: '', title: '' }
 
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
 
       const result = await createUserMediaMark(invalidInput)
 
@@ -963,11 +991,11 @@ describe('Maintenance Actions', () => {
 
   describe('deleteUserMediaMark', () => {
     it('should delete user media mark successfully', async () => {
-      const mockMark = { id: 'mark-1', userId: 'user-1' }
+      const mockMark: Partial<UserMediaMark> = { id: 'mark-1', userId: 'user-1' }
 
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
-      mockPrisma.userMediaMark.findUnique.mockResolvedValue(mockMark as any)
-      mockPrisma.userMediaMark.delete.mockResolvedValue(mockMark as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
+      mockPrisma.userMediaMark.findUnique.mockResolvedValue(mockMark as UserMediaMark)
+      mockPrisma.userMediaMark.delete.mockResolvedValue(mockMark as UserMediaMark)
 
       const result = await deleteUserMediaMark('mark-1')
 
@@ -979,7 +1007,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when mark not found', async () => {
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
       mockPrisma.userMediaMark.findUnique.mockResolvedValue(null)
 
       const result = await deleteUserMediaMark('nonexistent')
@@ -990,10 +1018,10 @@ describe('Maintenance Actions', () => {
     })
 
     it('should return error when mark belongs to different user', async () => {
-      const mockMark = { id: 'mark-1', userId: 'other-user' }
+      const mockMark: Partial<UserMediaMark> = { id: 'mark-1', userId: 'other-user' }
 
-      mockGetServerSession.mockResolvedValue(mockUserSession as any)
-      mockPrisma.userMediaMark.findUnique.mockResolvedValue(mockMark as any)
+      mockGetServerSession.mockResolvedValue(mockUserSession as Session)
+      mockPrisma.userMediaMark.findUnique.mockResolvedValue(mockMark as UserMediaMark)
 
       const result = await deleteUserMediaMark('mark-1')
 
@@ -1014,7 +1042,7 @@ describe('Maintenance Actions', () => {
 
   describe('getMaintenanceStats', () => {
     it('should return maintenance statistics successfully', async () => {
-      const mockRecentScans = [
+      const mockRecentScans: Partial<MaintenanceScan>[] = [
         {
           id: 'scan-1',
           status: 'COMPLETED',
@@ -1023,7 +1051,7 @@ describe('Maintenance Actions', () => {
         },
       ]
 
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceRule.count
         .mockResolvedValueOnce(10) // totalRules
         .mockResolvedValueOnce(7) // enabledRules
@@ -1032,7 +1060,7 @@ describe('Maintenance Actions', () => {
         .mockResolvedValueOnce(30) // pendingCandidates
         .mockResolvedValueOnce(15) // approvedCandidates
         .mockResolvedValueOnce(5) // rejectedCandidates
-      mockPrisma.maintenanceScan.findMany.mockResolvedValue(mockRecentScans as any)
+      mockPrisma.maintenanceScan.findMany.mockResolvedValue(mockRecentScans as MaintenanceScan[])
       mockPrisma.maintenanceDeletionLog.count.mockResolvedValue(100)
 
       const result = await getMaintenanceStats()
@@ -1062,7 +1090,7 @@ describe('Maintenance Actions', () => {
     })
 
     it('should handle database errors', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as any)
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
       mockPrisma.maintenanceRule.count.mockRejectedValue(new Error('DB error'))
 
       const result = await getMaintenanceStats()
