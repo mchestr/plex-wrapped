@@ -18,7 +18,7 @@ test.describe('Admin Maintenance Feature', () => {
       await waitForAdminPageReady(adminPage, 30000);
 
       // Click create rule button
-      await adminPage.getByTestId('maintenance-rules-create').click();
+      await adminPage.getByTestId('maintenance-rule-create').click();
 
       // Verify we're on the create page
       await waitForAdminContent(adminPage, [
