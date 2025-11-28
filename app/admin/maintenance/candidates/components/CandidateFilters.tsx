@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReviewStatus, MediaType } from "@/lib/validations/maintenance"
+import { StyledSelect } from "@/components/ui/styled-select"
 
 interface CandidateFiltersProps {
   reviewStatusFilter: ReviewStatus | "ALL"
@@ -19,30 +20,32 @@ export function CandidateFilters({
     <div className="flex gap-3 flex-wrap">
       <div>
         <label className="text-xs text-slate-400 mb-1 block">Review Status</label>
-        <select
+        <StyledSelect
           value={reviewStatusFilter}
-          onChange={(e) => onReviewStatusChange(e.target.value as ReviewStatus | "ALL")}
-          className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400"
-        >
-          <option value="ALL">All Status</option>
-          <option value="PENDING">Pending</option>
-          <option value="APPROVED">Approved</option>
-          <option value="REJECTED">Rejected</option>
-        </select>
+          onChange={(value) => onReviewStatusChange(value as ReviewStatus | "ALL")}
+          options={[
+            { value: "ALL", label: "All Status" },
+            { value: "PENDING", label: "Pending" },
+            { value: "APPROVED", label: "Approved" },
+            { value: "REJECTED", label: "Rejected" },
+          ]}
+          data-testid="review-status-filter"
+        />
       </div>
 
       <div>
         <label className="text-xs text-slate-400 mb-1 block">Media Type</label>
-        <select
+        <StyledSelect
           value={mediaTypeFilter}
-          onChange={(e) => onMediaTypeChange(e.target.value as MediaType | "ALL")}
-          className="bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-400"
-        >
-          <option value="ALL">All Types</option>
-          <option value="MOVIE">Movie</option>
-          <option value="TV_SERIES">TV Series</option>
-          <option value="EPISODE">Episode</option>
-        </select>
+          onChange={(value) => onMediaTypeChange(value as MediaType | "ALL")}
+          options={[
+            { value: "ALL", label: "All Types" },
+            { value: "MOVIE", label: "Movie" },
+            { value: "TV_SERIES", label: "TV Series" },
+            { value: "EPISODE", label: "Episode" },
+          ]}
+          data-testid="media-type-filter"
+        />
       </div>
     </div>
   )

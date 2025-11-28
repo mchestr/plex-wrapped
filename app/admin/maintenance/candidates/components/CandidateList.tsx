@@ -1,6 +1,7 @@
 "use client"
 
 import type { ReviewStatus } from "@/lib/validations/maintenance"
+import { StyledCheckbox } from "@/components/ui/styled-checkbox"
 
 type MaintenanceCandidate = {
   id: string
@@ -81,11 +82,10 @@ export function CandidateList({
           <thead>
             <tr className="bg-slate-900/50 border-b border-slate-700">
               <th className="px-6 py-4">
-                <input
-                  type="checkbox"
+                <StyledCheckbox
                   checked={selectedCandidates.size === candidates.length && candidates.length > 0}
                   onChange={onToggleAll}
-                  className="rounded border-slate-600 text-cyan-600 focus:ring-cyan-500"
+                  data-testid="select-all-candidates"
                 />
               </th>
               <th className="px-6 py-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">Media</th>
@@ -102,11 +102,10 @@ export function CandidateList({
             {candidates.map((candidate) => (
               <tr key={candidate.id} className="hover:bg-slate-800/50 transition-colors">
                 <td className="px-6 py-4">
-                  <input
-                    type="checkbox"
+                  <StyledCheckbox
                     checked={selectedCandidates.has(candidate.id)}
                     onChange={() => onToggleCandidate(candidate.id)}
-                    className="rounded border-slate-600 text-cyan-600 focus:ring-cyan-500"
+                    data-testid={`select-candidate-${candidate.id}`}
                   />
                 </td>
                 <td className="px-6 py-4">

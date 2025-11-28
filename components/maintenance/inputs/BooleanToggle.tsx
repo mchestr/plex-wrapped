@@ -1,6 +1,7 @@
 "use client"
 
 import type { Condition } from "@/lib/validations/maintenance"
+import { Button } from "@/components/ui/button"
 
 interface BooleanToggleProps {
   condition: Condition
@@ -15,28 +16,24 @@ export function BooleanToggle({
 
   return (
     <div className="flex-1 flex items-center gap-3">
-      <button
+      <Button
         type="button"
         onClick={() => onChange({ ...condition, value: true })}
-        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-          value === true
-            ? 'bg-green-600 text-white'
-            : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-        }`}
+        variant={value === true ? "success" : "secondary"}
+        size="md"
+        data-testid="boolean-toggle-true"
       >
         True
-      </button>
-      <button
+      </Button>
+      <Button
         type="button"
         onClick={() => onChange({ ...condition, value: false })}
-        className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
-          value === false
-            ? 'bg-red-600 text-white'
-            : 'bg-slate-700 text-slate-400 hover:bg-slate-600'
-        }`}
+        variant={value === false ? "danger" : "secondary"}
+        size="md"
+        data-testid="boolean-toggle-false"
       >
         False
-      </button>
+      </Button>
     </div>
   )
 }
