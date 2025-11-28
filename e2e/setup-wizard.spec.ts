@@ -73,6 +73,9 @@ test.describe('Setup Wizard', () => {
       for (const [name, value] of Object.entries(fields)) {
         const input = page.locator(`input[name="${name}"], select[name="${name}"], textarea[name="${name}"]`).first();
 
+        // Wait for element to be attached to DOM first
+        await input.waitFor({ state: 'attached', timeout: 5000 });
+
         // Check if input is hidden and skip if so
         const isHidden = await input.evaluate((el) => {
           return el instanceof HTMLInputElement && el.type === 'hidden';
