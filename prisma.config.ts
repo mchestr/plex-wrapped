@@ -8,6 +8,6 @@ export default defineConfig({
     seed: 'ts-node --compiler-options {"module":"CommonJS"} prisma/seed.ts',
   },
   datasource: {
-    url: process.env.DATABASE_URL!,
+    url: process.env.DATABASE_URL || (() => { throw new Error('DATABASE_URL is required') })(),
   },
 })

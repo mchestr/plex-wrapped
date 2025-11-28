@@ -7,10 +7,11 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { PrismaClient } from '../lib/generated/prisma/client';
 import globalSetup from './global-setup';
 import { createE2EPrismaClient } from './helpers/prisma';
 import { navigateAndVerify, waitForLoadingGone } from './helpers/test-utils';
+
+import type { PrismaClient } from '../lib/generated/prisma/client';
 
 test.describe('Setup Wizard', () => {
   test.describe.configure({ mode: 'serial' });
