@@ -77,15 +77,18 @@ export function WrappedPlayground({ templates, initialTemplateId }: WrappedPlayg
         if (response.ok) {
           const data = await response.json()
           setPlexUsers(data.users || [])
+        } else {
+          toast.showError("Failed to fetch Plex users")
         }
       } catch (error) {
         console.error("Failed to fetch Plex users:", error)
+        toast.showError(error instanceof Error ? error.message : "Failed to fetch Plex users")
       } finally {
         setLoadingUsers(false)
       }
     }
     fetchUsers()
-  }, [])
+  }, [toast])
 
   // Fetch models
   useEffect(() => {
@@ -97,15 +100,18 @@ export function WrappedPlayground({ templates, initialTemplateId }: WrappedPlayg
           const data = await response.json()
           setModels(data.models || [])
           setConfiguredModel(data.configuredModel || "")
+        } else {
+          toast.showError("Failed to fetch models")
         }
       } catch (error) {
         console.error("Failed to fetch models:", error)
+        toast.showError(error instanceof Error ? error.message : "Failed to fetch models")
       } finally {
         setLoadingModels(false)
       }
     }
     fetchModels()
-  }, [])
+  }, [toast])
 
   // Fetch statistics when user/year changes
   useEffect(() => {
