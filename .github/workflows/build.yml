@@ -81,9 +81,7 @@ jobs:
         uses: actions/upload-artifact@v5
         with:
           name: build-output
-          path: |
-            .next/
-            public/
+          path: .next/
           retention-days: 1
 
   e2e:
