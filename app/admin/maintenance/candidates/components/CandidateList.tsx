@@ -3,6 +3,7 @@
 import type { ReviewStatus } from "@/lib/validations/maintenance"
 import { StyledCheckbox } from "@/components/ui/styled-checkbox"
 import { formatFileSize, formatDate, getMediaTypeLabel } from "@/lib/utils/formatters"
+import { Button } from "@/components/ui/button"
 
 type MaintenanceCandidate = {
   id: string
@@ -152,28 +153,32 @@ export function CandidateList({
                   <div className="flex items-center gap-2">
                     {candidate.reviewStatus === 'PENDING' && (
                       <>
-                        <button
+                        <Button
                           onClick={() => onApprove(candidate.id)}
                           disabled={isPending}
-                          className="text-green-400 hover:text-green-300 transition-colors disabled:opacity-50"
+                          variant="ghost"
+                          size="sm"
+                          className="text-green-400 hover:text-green-300"
                           title="Approve"
                           data-testid={`approve-candidate-${candidate.id}`}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           onClick={() => onReject(candidate.id)}
                           disabled={isPending}
-                          className="text-red-400 hover:text-red-300 transition-colors disabled:opacity-50"
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-300"
                           title="Reject"
                           data-testid={`reject-candidate-${candidate.id}`}
                         >
                           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
-                        </button>
+                        </Button>
                       </>
                     )}
                   </div>
