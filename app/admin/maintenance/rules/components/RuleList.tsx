@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { getMediaTypeLabel } from "@/lib/utils/formatters"
 
 type MaintenanceRule = {
   id: string
@@ -40,10 +41,6 @@ export function RuleList({
   isTogglePending,
   isScanPending,
 }: RuleListProps) {
-  function getMediaTypeLabel(mediaType: string) {
-    return mediaType.replace('_', ' ')
-  }
-
   function getActionTypeLabel(actionType: string) {
     switch (actionType) {
       case 'FLAG_FOR_REVIEW':

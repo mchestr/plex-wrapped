@@ -2,6 +2,7 @@
 
 import type { ReviewStatus } from "@/lib/validations/maintenance"
 import { StyledCheckbox } from "@/components/ui/styled-checkbox"
+import { formatFileSize, formatDate, getMediaTypeLabel } from "@/lib/utils/formatters"
 
 type MaintenanceCandidate = {
   id: string
@@ -45,24 +46,6 @@ export function CandidateList({
   onReject,
   isPending,
 }: CandidateListProps) {
-  function formatFileSize(bytes: bigint | number | null): string {
-    if (!bytes) return 'Unknown'
-    const numBytes = typeof bytes === 'bigint' ? Number(bytes) : bytes
-    const gb = numBytes / (1024 ** 3)
-    if (gb >= 1) return `${gb.toFixed(2)} GB`
-    const mb = numBytes / (1024 ** 2)
-    return `${mb.toFixed(2)} MB`
-  }
-
-  function formatDate(date: Date | null): string {
-    if (!date) return 'Never'
-    return new Date(date).toLocaleDateString()
-  }
-
-  function getMediaTypeLabel(mediaType: string) {
-    return mediaType.replace('_', ' ')
-  }
-
   if (candidates.length === 0) {
     return (
       <div className="text-center py-12 bg-slate-800/50 rounded-lg border border-slate-700">

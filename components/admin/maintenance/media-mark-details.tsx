@@ -7,6 +7,7 @@ import { addMediaToDeletionQueue, ignoreMediaForever } from "@/actions/user-feed
 import { useToast } from "@/components/ui/toast"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
 import { MarkType } from "@/lib/validations/maintenance"
+import { formatFileSize } from "@/lib/utils/formatters"
 
 interface MediaMarkDetailsViewProps {
   details: MediaDetails
@@ -51,12 +52,6 @@ export function MediaMarkDetailsView({ details }: MediaMarkDetailsViewProps) {
     } finally {
       setLoading(false)
     }
-  }
-
-  const formatFileSize = (bytes: bigint | null) => {
-    if (!bytes) return "N/A"
-    const gb = Number(bytes) / (1024 * 1024 * 1024)
-    return `${gb.toFixed(2)} GB`
   }
 
   const getMarkTypeLabel = (markType: MarkType) => {

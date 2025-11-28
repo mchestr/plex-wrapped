@@ -1,6 +1,7 @@
 "use client"
 
 import type { CandidateWithDetails } from "@/types/maintenance"
+import { formatFileSize, formatDate } from "@/lib/utils/formatters"
 
 interface CandidateCardProps {
   candidate: CandidateWithDetails
@@ -9,21 +10,6 @@ interface CandidateCardProps {
 }
 
 export function CandidateCard({ candidate, onApprove, onReject }: CandidateCardProps) {
-  const formatFileSize = (size: bigint | null): string => {
-    if (!size) return "Unknown"
-    const sizeInGB = Number(size) / (1024 * 1024 * 1024)
-    if (sizeInGB >= 1) {
-      return `${sizeInGB.toFixed(2)} GB`
-    }
-    const sizeInMB = Number(size) / (1024 * 1024)
-    return `${sizeInMB.toFixed(2)} MB`
-  }
-
-  const formatDate = (date: Date | null): string => {
-    if (!date) return "Never"
-    return new Date(date).toLocaleDateString()
-  }
-
   return (
     <div className="bg-slate-800/50 border border-slate-700 rounded-lg p-4 hover:border-slate-600 transition-colors">
       <div className="flex gap-4">
