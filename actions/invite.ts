@@ -367,6 +367,10 @@ export async function deleteInvite(id: string) {
 
 /**
  * Validate an invite code (public)
+ *
+ * NOTE: This performs non-atomic validation for UI/display purposes only.
+ * For actually consuming an invite, use processInvite() which uses atomic
+ * validation via validateAndUseInvite() to prevent TOCTOU race conditions.
  */
 export async function validateInvite(code: string) {
   try {
