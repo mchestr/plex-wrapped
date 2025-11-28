@@ -1,9 +1,9 @@
 "use client"
 
-import { InputHTMLAttributes, forwardRef } from "react"
+import { TextareaHTMLAttributes, forwardRef } from "react"
 import { cn } from "@/lib/utils"
 
-interface StyledInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
+interface StyledTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "size"> {
   size?: "sm" | "md" | "lg"
   error?: boolean
 }
@@ -14,10 +14,10 @@ const sizeClasses = {
   lg: "px-4 py-2.5 text-base",
 }
 
-export const StyledInput = forwardRef<HTMLInputElement, StyledInputProps>(
+export const StyledTextarea = forwardRef<HTMLTextAreaElement, StyledTextareaProps>(
   ({ size = "md", className, error = false, ...props }, ref) => {
     return (
-      <input
+      <textarea
         ref={ref}
         className={cn(
           "w-full bg-slate-800/50 border rounded-lg text-white placeholder-slate-400 shadow-sm",
@@ -35,5 +35,4 @@ export const StyledInput = forwardRef<HTMLInputElement, StyledInputProps>(
   }
 )
 
-StyledInput.displayName = "StyledInput"
-
+StyledTextarea.displayName = "StyledTextarea"
