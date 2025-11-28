@@ -49,9 +49,9 @@ export function ConditionValueInput({ fieldDef, condition, onChange }: Condition
 
     case 'number':
       if (condition.operator === 'between') {
-        return <RangeInput condition={condition} onChange={onChange} unit={fieldDef.unit} />
+        return <RangeInput condition={condition} onChange={onChange} unit={fieldDef.unit} min={fieldDef.min} max={fieldDef.max} />
       }
-      return <NumberInput condition={condition} onChange={onChange} unit={fieldDef.unit} />
+      return <NumberInput condition={condition} onChange={onChange} unit={fieldDef.unit} min={fieldDef.min} max={fieldDef.max} />
 
     case 'date':
       if (condition.operator === 'olderThan' || condition.operator === 'newerThan') {

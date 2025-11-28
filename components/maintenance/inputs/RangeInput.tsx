@@ -6,12 +6,16 @@ interface RangeInputProps {
   condition: Condition
   onChange: (condition: Condition) => void
   unit?: string
+  min?: number
+  max?: number
 }
 
 export function RangeInput({
   condition,
   onChange,
   unit,
+  min: minLimit,
+  max: maxLimit,
 }: RangeInputProps) {
   const values = (condition.value as number[]) || [0, 0]
   const [min, max] = values
@@ -53,6 +57,8 @@ export function RangeInput({
         placeholder="Min"
         className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
         step="any"
+        min={minLimit}
+        max={maxLimit}
       />
       <span className="text-slate-400">to</span>
       <input
@@ -62,6 +68,8 @@ export function RangeInput({
         placeholder="Max"
         className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
         step="any"
+        min={minLimit}
+        max={maxLimit}
       />
       {unit && (
         <span className="text-xs text-slate-400">

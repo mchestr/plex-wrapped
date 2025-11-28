@@ -6,12 +6,16 @@ interface NumberInputProps {
   condition: Condition
   onChange: (condition: Condition) => void
   unit?: string
+  min?: number
+  max?: number
 }
 
 export function NumberInput({
   condition,
   onChange,
   unit,
+  min,
+  max,
 }: NumberInputProps) {
   const getPlaceholder = () => {
     if (unit === 'bytes') return 'Size in GB (e.g., 10)'
@@ -59,6 +63,8 @@ export function NumberInput({
         placeholder={getPlaceholder()}
         className="flex-1 bg-slate-900 border border-slate-600 rounded px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-cyan-500"
         step="any"
+        min={min}
+        max={max}
       />
       {unit && (
         <span className="text-xs text-slate-400">

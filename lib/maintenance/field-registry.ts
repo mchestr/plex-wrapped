@@ -57,6 +57,8 @@ export interface FieldDefinition {
   enumValues?: Array<{ value: string; label: string }> // For enum types
   unit?: 'bytes' | 'seconds' | 'minutes' | 'hours' | 'days' | 'kbps' // For display/conversion
   category: 'metadata' | 'playback' | 'file' | 'quality' | 'external' // For UI grouping
+  min?: number // Minimum value for number fields
+  max?: number // Maximum value for number fields
 }
 
 // Comprehensive field registry
@@ -86,6 +88,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'notEquals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     category: 'metadata',
+    min: 1900,
+    max: 2100,
   },
 
   // Source API: Tautulli get_library_media_info → item.rating
@@ -99,6 +103,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between', 'null', 'notNull'],
     category: 'metadata',
+    min: 0,
+    max: 10,
   },
 
   // Source API: Tautulli get_library_media_info → item.audience_rating
@@ -112,6 +118,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between', 'null', 'notNull'],
     category: 'metadata',
+    min: 0,
+    max: 10,
   },
 
   // Source API: Tautulli get_library_media_info → item.content_rating
@@ -177,6 +185,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     category: 'playback',
+    min: 0,
   },
 
   // Source API: Computed from Tautulli data
@@ -235,6 +244,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     allowedOperators: ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     unit: 'bytes',
     category: 'file',
+    min: 0,
   },
 
   // Source API: Tautulli get_library_media_info → item.file
@@ -260,6 +270,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     allowedOperators: ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     unit: 'minutes',
     category: 'file',
+    min: 0,
   },
 
   // === QUALITY CATEGORY ===
@@ -354,6 +365,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     allowedOperators: ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     unit: 'kbps',
     category: 'quality',
+    min: 0,
   },
 
   // === RADARR FIELDS (Movies only) ===
@@ -399,6 +411,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE'],
     allowedOperators: ['equals', 'notEquals', 'in', 'notIn'],
     category: 'external',
+    min: 1,
   },
 
   // Source API: Radarr /api/v3/movie → movie.minimumAvailability
@@ -468,6 +481,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'],
     category: 'external',
+    min: 0,
   },
 
   // Source API: Sonarr /api/v3/series → series.percentOfEpisodes
@@ -482,6 +496,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'],
     category: 'external',
+    min: 0,
+    max: 100,
   },
 ]
 
