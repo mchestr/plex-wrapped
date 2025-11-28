@@ -32,6 +32,8 @@ export interface FieldDefinition {
   enumValues?: Array<{ value: string; label: string }> // For enum types
   unit?: 'bytes' | 'seconds' | 'minutes' | 'hours' | 'days' | 'kbps' // For display/conversion
   category: 'metadata' | 'playback' | 'file' | 'quality' | 'external' // For UI grouping
+  min?: number // Minimum value for number fields
+  max?: number // Maximum value for number fields
 }
 
 // Comprehensive field registry
@@ -54,6 +56,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'notEquals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     category: 'metadata',
+    min: 1900,
+    max: 2100,
   },
   {
     key: 'rating',
@@ -64,6 +68,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between', 'null', 'notNull'],
     category: 'metadata',
+    min: 0,
+    max: 10,
   },
   {
     key: 'audienceRating',
@@ -74,6 +80,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between', 'null', 'notNull'],
     category: 'metadata',
+    min: 0,
+    max: 10,
   },
   {
     key: 'contentRating',
@@ -122,6 +130,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE', 'TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     category: 'playback',
+    min: 0,
   },
   {
     key: 'neverWatched',
@@ -164,6 +173,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     allowedOperators: ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     unit: 'bytes',
     category: 'file',
+    min: 0,
   },
   {
     key: 'filePath',
@@ -183,6 +193,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     allowedOperators: ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     unit: 'minutes',
     category: 'file',
+    min: 0,
   },
 
   // === QUALITY CATEGORY ===
@@ -260,6 +271,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     allowedOperators: ['greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual', 'between'],
     unit: 'kbps',
     category: 'quality',
+    min: 0,
   },
 
   // === RADARR FIELDS (Movies only) ===
@@ -289,6 +301,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['MOVIE'],
     allowedOperators: ['equals', 'notEquals', 'in', 'notIn'],
     category: 'external',
+    min: 1,
   },
   {
     key: 'radarr.minimumAvailability',
@@ -338,6 +351,7 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'],
     category: 'external',
+    min: 0,
   },
   {
     key: 'sonarr.percentOfEpisodes',
@@ -348,6 +362,8 @@ export const FIELD_DEFINITIONS: FieldDefinition[] = [
     mediaTypes: ['TV_SERIES'],
     allowedOperators: ['equals', 'greaterThan', 'greaterThanOrEqual', 'lessThan', 'lessThanOrEqual'],
     category: 'external',
+    min: 0,
+    max: 100,
   },
 ]
 
