@@ -43,6 +43,7 @@
  */
 
 import type { RuleCriteria, Condition, ConditionGroup } from "@/lib/validations/maintenance"
+import { migrateLegacyRuleCriteria } from "@/lib/validations/maintenance"
 import type {
   StringOperator,
   NumberOperator,
@@ -209,7 +210,6 @@ export function evaluateRule(item: MediaItem, criteria: RuleCriteria | any): boo
   // Check if this is legacy format (has properties like neverWatched, maxPlayCount, etc.)
   if (criteria && typeof criteria === 'object' && !criteria.type) {
     // Legacy format detected - migrate it
-    const { migrateLegacyRuleCriteria } = require('@/lib/validations/maintenance')
     criteria = migrateLegacyRuleCriteria(criteria)
   }
 
