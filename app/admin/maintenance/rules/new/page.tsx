@@ -7,8 +7,10 @@ import { StyledInput } from "@/components/ui/styled-input"
 import { StyledTextarea } from "@/components/ui/styled-textarea"
 import { useToast } from "@/components/ui/toast"
 import type { ActionType, MediaType, RuleCriteria } from "@/lib/validations/maintenance"
+import { radarrServerListSchema } from "@/lib/validations/radarr"
+import { sonarrServerListSchema } from "@/lib/validations/sonarr"
 import { useRouter } from "next/navigation"
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { useQuery } from "@tanstack/react-query"
 
 export default function NewRulePage() {
@@ -32,39 +34,42 @@ export default function NewRulePage() {
 
   // Fetch Radarr servers
   const { data: radarrData, isLoading: radarrLoading, error: radarrError } = useQuery({
-    queryKey: ['radarr-servers'],
+    queryKey: ['admin', 'maintenance', 'radarr-servers'],
     queryFn: async () => {
       const response = await fetch('/api/admin/radarr')
       if (!response.ok) throw new Error('Failed to fetch Radarr servers')
-      return response.json() as Promise<{ servers: Array<{ id: string; name: string }> }>
+      const data = await response.json()
+      return radarrServerListSchema.parse(data)
     },
   })
 
   // Fetch Sonarr servers
   const { data: sonarrData, isLoading: sonarrLoading, error: sonarrError } = useQuery({
-    queryKey: ['sonarr-servers'],
+    queryKey: ['admin', 'maintenance', 'sonarr-servers'],
     queryFn: async () => {
       const response = await fetch('/api/admin/sonarr')
       if (!response.ok) throw new Error('Failed to fetch Sonarr servers')
-      return response.json() as Promise<{ servers: Array<{ id: string; name: string }> }>
+      const data = await response.json()
+      return sonarrServerListSchema.parse(data)
     },
   })
 
-  const radarrServers = radarrData?.servers || []
-  const sonarrServers = sonarrData?.servers || []
-
-  // Show error toasts when server fetching fails
+  // Handle Radarr fetch errors
   useEffect(() => {
     if (radarrError) {
       toast.showError(`Failed to load Radarr servers: ${radarrError instanceof Error ? radarrError.message : 'Unknown error'}`)
     }
   }, [radarrError, toast])
 
+  // Handle Sonarr fetch errors
   useEffect(() => {
     if (sonarrError) {
       toast.showError(`Failed to load Sonarr servers: ${sonarrError instanceof Error ? sonarrError.message : 'Unknown error'}`)
     }
   }, [sonarrError, toast])
+
+  const radarrServers = radarrData?.servers || []
+  const sonarrServers = sonarrData?.servers || []
 
   // Update criteria when media type changes
   const handleMediaTypeChange = (newMediaType: MediaType) => {
