@@ -9,6 +9,7 @@ import { useToast } from "@/components/ui/toast"
 import type { ActionType, MediaType, RuleCriteria } from "@/lib/validations/maintenance"
 import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
+import { useQuery } from "@tanstack/react-query"
 
 export default function NewRulePage() {
   const toast = useToast()
@@ -29,35 +30,41 @@ export default function NewRulePage() {
   // Criteria state - start with default hierarchical structure
   const [criteria, setCriteria] = useState<RuleCriteria>(() => createDefaultCriteria("MOVIE"))
 
-  // Server instances
-  const [radarrServers, setRadarrServers] = useState<Array<{ id: string; name: string }>>([])
-  const [sonarrServers, setSonarrServers] = useState<Array<{ id: string; name: string }>>([])
+  // Fetch Radarr servers
+  const { data: radarrData, isLoading: radarrLoading, error: radarrError } = useQuery({
+    queryKey: ['radarr-servers'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/radarr')
+      if (!response.ok) throw new Error('Failed to fetch Radarr servers')
+      return response.json() as Promise<{ servers: Array<{ id: string; name: string }> }>
+    },
+  })
 
-  // Load server instances
+  // Fetch Sonarr servers
+  const { data: sonarrData, isLoading: sonarrLoading, error: sonarrError } = useQuery({
+    queryKey: ['sonarr-servers'],
+    queryFn: async () => {
+      const response = await fetch('/api/admin/sonarr')
+      if (!response.ok) throw new Error('Failed to fetch Sonarr servers')
+      return response.json() as Promise<{ servers: Array<{ id: string; name: string }> }>
+    },
+  })
+
+  const radarrServers = radarrData?.servers || []
+  const sonarrServers = sonarrData?.servers || []
+
+  // Show error toasts when server fetching fails
   useEffect(() => {
-    async function loadServers() {
-      try {
-        const [radarrResponse, sonarrResponse] = await Promise.all([
-          fetch("/api/admin/radarr"),
-          fetch("/api/admin/sonarr"),
-        ])
-
-        if (radarrResponse.ok) {
-          const radarrData = await radarrResponse.json()
-          setRadarrServers(radarrData.servers || [])
-        }
-
-        if (sonarrResponse.ok) {
-          const sonarrData = await sonarrResponse.json()
-          setSonarrServers(sonarrData.servers || [])
-        }
-      } catch (error) {
-        console.error("Failed to load servers:", error)
-      }
+    if (radarrError) {
+      toast.showError(`Failed to load Radarr servers: ${radarrError instanceof Error ? radarrError.message : 'Unknown error'}`)
     }
+  }, [radarrError, toast])
 
-    loadServers()
-  }, [])
+  useEffect(() => {
+    if (sonarrError) {
+      toast.showError(`Failed to load Sonarr servers: ${sonarrError instanceof Error ? sonarrError.message : 'Unknown error'}`)
+    }
+  }, [sonarrError, toast])
 
   // Update criteria when media type changes
   const handleMediaTypeChange = (newMediaType: MediaType) => {
@@ -207,42 +214,54 @@ export default function NewRulePage() {
 
               {/* Server instance selection */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {mediaType === "MOVIE" && radarrServers.length > 0 && (
+                {mediaType === "MOVIE" && (radarrLoading || radarrServers.length > 0) && (
                   <div>
                     <label htmlFor="radarrId" className="block text-sm font-medium text-slate-400 mb-2">
                       Radarr Server (Optional)
                     </label>
-                    <StyledDropdown
-                      id="radarrId"
-                      value={radarrId ?? ""}
-                      onChange={(value) => setRadarrId(value || undefined)}
-                      options={[
-                        { value: "", label: "Use active server" },
-                        ...radarrServers.map(s => ({ value: s.id, label: s.name }))
-                      ]}
-                      size="md"
-                    />
+                    {radarrLoading ? (
+                      <div className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-2 text-slate-400">
+                        Loading servers...
+                      </div>
+                    ) : (
+                      <StyledDropdown
+                        id="radarrId"
+                        value={radarrId ?? ""}
+                        onChange={(value) => setRadarrId(value || undefined)}
+                        options={[
+                          { value: "", label: "Use active server" },
+                          ...radarrServers.map(s => ({ value: s.id, label: s.name }))
+                        ]}
+                        size="md"
+                      />
+                    )}
                     <p className="text-xs text-slate-500 mt-1">
                       Defaults to the active Radarr instance if not specified.
                     </p>
                   </div>
                 )}
 
-                {(mediaType === "TV_SERIES" || mediaType === "EPISODE") && sonarrServers.length > 0 && (
+                {(mediaType === "TV_SERIES" || mediaType === "EPISODE") && (sonarrLoading || sonarrServers.length > 0) && (
                   <div>
                     <label htmlFor="sonarrId" className="block text-sm font-medium text-slate-400 mb-2">
                       Sonarr Server (Optional)
                     </label>
-                    <StyledDropdown
-                      id="sonarrId"
-                      value={sonarrId ?? ""}
-                      onChange={(value) => setSonarrId(value || undefined)}
-                      options={[
-                        { value: "", label: "Use active server" },
-                        ...sonarrServers.map(s => ({ value: s.id, label: s.name }))
-                      ]}
-                      size="md"
-                    />
+                    {sonarrLoading ? (
+                      <div className="w-full bg-slate-800/50 border border-slate-600 rounded-lg px-4 py-2 text-slate-400">
+                        Loading servers...
+                      </div>
+                    ) : (
+                      <StyledDropdown
+                        id="sonarrId"
+                        value={sonarrId ?? ""}
+                        onChange={(value) => setSonarrId(value || undefined)}
+                        options={[
+                          { value: "", label: "Use active server" },
+                          ...sonarrServers.map(s => ({ value: s.id, label: s.name }))
+                        ]}
+                        size="md"
+                      />
+                    )}
                     <p className="text-xs text-slate-500 mt-1">
                       Defaults to the active Sonarr instance if not specified.
                     </p>
