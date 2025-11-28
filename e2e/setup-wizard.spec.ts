@@ -76,7 +76,10 @@ test.describe('Setup Wizard', () => {
         // Check if input is hidden and skip if so
         const isHidden = await input.evaluate((el) => {
           return el instanceof HTMLInputElement && el.type === 'hidden';
-        }).catch(() => false);
+        }).catch((error) => {
+          console.log(`[TEST] Could not evaluate input ${name}:`, error.message);
+          return false;
+        });
 
         if (isHidden) {
           console.log(`[TEST] Skipping hidden input: ${name}`);
