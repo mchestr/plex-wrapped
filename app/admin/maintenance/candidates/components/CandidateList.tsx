@@ -160,9 +160,10 @@ export function CandidateList({
                           size="sm"
                           className="text-green-400 hover:text-green-300"
                           title="Approve"
+                          aria-label="Approve"
                           data-testid={`approve-candidate-${candidate.id}`}
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
                         </Button>
@@ -173,9 +174,10 @@ export function CandidateList({
                           size="sm"
                           className="text-red-400 hover:text-red-300"
                           title="Reject"
+                          aria-label="Reject"
                           data-testid={`reject-candidate-${candidate.id}`}
                         >
-                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                           </svg>
                         </Button>
