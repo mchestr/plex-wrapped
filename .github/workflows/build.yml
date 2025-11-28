@@ -129,6 +129,7 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           name: build-output
+          path: .next/
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
