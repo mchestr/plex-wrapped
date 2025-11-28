@@ -1,6 +1,7 @@
 import { Client, Events, GatewayIntentBits } from "discord.js"
 import winston from "winston"
 import { clearDiscordChat, handleDiscordChat, verifyDiscordUser } from "./services"
+import { MARK_COMMANDS, handleMarkCommand, handleSelectionResponse } from "./commands/media-marking"
 
 const REQUIRED_ENV = [
   "DISCORD_BOT_TOKEN",
@@ -208,6 +209,48 @@ export class DiscordBot {
               allowedMentions: { users: [message.author.id] },
             })
             return
+          }
+        }
+
+        // Check for media marking commands
+        const firstWord = normalizedContent.split(/\s+/)[0]
+        const isMarkCommand = Object.keys(MARK_COMMANDS).includes(firstWord)
+        if (isMarkCommand) {
+          const args = message.content.trim().split(/\s+/).slice(1)
+          try {
+            await handleMarkCommand(message, firstWord, args)
+            return
+          } catch (error) {
+            this.logger.error("Error handling mark command", error, {
+              discordUserId: message.author.id,
+              channelId: message.channelId,
+              command: firstWord,
+            })
+            await message.reply({
+              content: "Sorry, I couldn't process your mark command right now. Please try again in a moment.",
+              allowedMentions: { users: [message.author.id] },
+            })
+            return
+          }
+        }
+
+        // Check for numeric selection responses (1-5)
+        const trimmedContent = message.content.trim()
+        if (/^[1-5]$/.test(trimmedContent)) {
+          const selection = parseInt(trimmedContent, 10)
+          try {
+            const handled = await handleSelectionResponse(message, selection)
+            if (handled) {
+              return
+            }
+            // If not handled, fall through to chatbot
+          } catch (error) {
+            this.logger.error("Error handling selection response", error, {
+              discordUserId: message.author.id,
+              channelId: message.channelId,
+              selection,
+            })
+            // Fall through to chatbot if selection handling fails
           }
         }
 

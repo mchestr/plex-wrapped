@@ -1,4 +1,4 @@
-import { getTautulliActivity, getTautulliHistory, getTautulliLibraryMediaInfo, getTautulliLibraryNames, getTautulliMostWatched, getTautulliRecentlyWatched, getTautulliServerInfo, getTautulliTopUsers, getTautulliUserWatchTimeStats, getTautulliUsers } from "@/lib/connections/tautulli"
+import { getTautulliActivity, getTautulliHistory, getTautulliLibraryNames, getTautulliMostWatched, getTautulliRecentlyWatched, getTautulliServerInfo, getTautulliTopUsers, getTautulliUserWatchTimeStats, getTautulliUsers } from "@/lib/connections/tautulli"
 import { prisma } from "@/lib/prisma"
 
 export async function executeTautulliTool(
@@ -100,7 +100,7 @@ export async function executeTautulliTool(
       return JSON.stringify(activity)
     }
     case "get_tautulli_library_stats": {
-      const stats = await getTautulliLibraryMediaInfo(config)
+      const stats = await getTautulliLibraryNames(config)
       return JSON.stringify(stats)
     }
     case "get_tautulli_library_names": {

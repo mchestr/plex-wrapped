@@ -5,6 +5,7 @@ import { executePlexTool } from "./plex"
 import { executeRadarrTool } from "./radarr"
 import { executeSonarrTool } from "./sonarr"
 import { executeTautulliTool } from "./tautulli"
+import { executeMediaMarkingTool } from "./media-marking"
 
 const logger = createLogger("CHATBOT_EXECUTOR")
 
@@ -59,6 +60,10 @@ const TOOL_SERVICE_MAP: Record<string, (toolName: string, args: Record<string, u
   get_radarr_wanted_missing: executeRadarrTool,
   get_radarr_root_folders: executeRadarrTool,
   get_radarr_quality_profiles: executeRadarrTool,
+  // Media marking tools
+  mark_media_finished: executeMediaMarkingTool,
+  mark_media_keep: executeMediaMarkingTool,
+  get_my_marks: executeMediaMarkingTool,
 }
 
 export async function executeToolCall(

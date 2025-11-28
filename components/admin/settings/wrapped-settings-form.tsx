@@ -80,7 +80,6 @@ export function WrappedSettingsForm({ enabled, year, startDate, endDate }: Wrapp
   const toast = useToast()
   const [isEditing, setIsEditing] = useState(false)
   const [isPending, startTransition] = useTransition()
-  const [error, setError] = useState<string | null>(null)
 
   // Calculate effective year from start date or use provided year
   const effectiveYear = startDate ? new Date(startDate).getFullYear() : (year ?? new Date().getFullYear())
@@ -109,14 +108,12 @@ export function WrappedSettingsForm({ enabled, year, startDate, endDate }: Wrapp
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault()
-    setError(null)
 
     // Validate date range: if one is set, both must be set
     const hasStart = formData.startMonth && formData.startDay
     const hasEnd = formData.endMonth && formData.endDay
     if ((hasStart && !hasEnd) || (!hasStart && hasEnd)) {
       const errorMsg = "Both start and end dates must be set, or both must be empty"
-      setError(errorMsg)
       toast.showError(errorMsg)
       return
     }
@@ -153,7 +150,6 @@ export function WrappedSettingsForm({ enabled, year, startDate, endDate }: Wrapp
         router.refresh()
       } else {
         const errorMsg = result.error || "Failed to update wrapped settings"
-        setError(errorMsg)
         toast.showError(errorMsg)
       }
     })
@@ -243,12 +239,6 @@ export function WrappedSettingsForm({ enabled, year, startDate, endDate }: Wrapp
         </button>
       </div>
 
-      {error && (
-        <div className="text-sm text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
-          {error}
-        </div>
-      )}
-
       <div className="flex gap-2">
         <button
           type="submit"
@@ -261,7 +251,6 @@ export function WrappedSettingsForm({ enabled, year, startDate, endDate }: Wrapp
           type="button"
           onClick={() => {
             setIsEditing(false)
-            setError(null)
             setFormData({
               enabled,
               startMonth: extractMonth(startDate),

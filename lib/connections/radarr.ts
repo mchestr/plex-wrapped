@@ -176,3 +176,91 @@ export async function getRadarrQualityProfiles(config: RadarrParsed) {
   if (!response.ok) throw new Error(`Radarr quality profiles error: ${response.statusText}`)
   return response.json()
 }
+
+export async function getRadarrMovieFile(config: RadarrParsed, movieId: number) {
+  const url = `${config.url}/api/v3/moviefile?movieId=${movieId}`
+  const response = await fetch(url, {
+    headers: { "X-Api-Key": config.apiKey },
+  })
+  if (!response.ok) throw new Error(`Radarr movie file error: ${response.statusText}`)
+  return response.json()
+}
+
+export async function deleteRadarrMovie(
+  config: RadarrParsed,
+  movieId: number,
+  deleteFiles = false,
+  addExclusion = false
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const params = new URLSearchParams({
+      deleteFiles: deleteFiles.toString(),
+      addExclusion: addExclusion.toString(),
+    })
+    const url = `${config.url}/api/v3/movie/${movieId}?${params.toString()}`
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: { "X-Api-Key": config.apiKey },
+    })
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { success: false, error: "Movie not found" }
+      }
+      return { success: false, error: `Delete failed: ${response.statusText}` }
+    }
+
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: `Delete error: ${error.message}` }
+    }
+    return { success: false, error: "Failed to delete movie" }
+  }
+}
+
+export async function bulkDeleteRadarrMovies(
+  config: RadarrParsed,
+  movieIds: number[],
+  deleteFiles = false,
+  addExclusion = false
+): Promise<{ success: boolean; deleted: number; errors?: string[] }> {
+  try {
+    const url = `${config.url}/api/v3/movie/bulk`
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "X-Api-Key": config.apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        movieIds,
+        deleteFiles,
+        addImportExclusion: addExclusion,
+      }),
+    })
+
+    if (!response.ok) {
+      return {
+        success: false,
+        deleted: 0,
+        errors: [`Bulk delete failed: ${response.statusText}`],
+      }
+    }
+
+    return { success: true, deleted: movieIds.length }
+  } catch (error) {
+    if (error instanceof Error) {
+      return {
+        success: false,
+        deleted: 0,
+        errors: [`Bulk delete error: ${error.message}`],
+      }
+    }
+    return {
+      success: false,
+      deleted: 0,
+      errors: ["Failed to bulk delete movies"],
+    }
+  }
+}

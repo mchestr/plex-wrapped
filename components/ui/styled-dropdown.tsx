@@ -1,5 +1,31 @@
 "use client"
 
+/**
+ * StyledDropdown - Standard dropdown component for the project
+ *
+ * This is the primary dropdown component used throughout the application for consistent styling.
+ * It provides a custom-styled dropdown with support for:
+ * - Flat option lists
+ * - Option groups (optgroups)
+ * - Multiple sizes (sm, md, lg)
+ * - Disabled states
+ * - Custom styling via className
+ *
+ * @example
+ * ```tsx
+ * <StyledDropdown
+ *   value={selectedValue}
+ *   onChange={(value) => setSelectedValue(value)}
+ *   options={[
+ *     { value: "option1", label: "Option 1" },
+ *     { value: "option2", label: "Option 2" },
+ *   ]}
+ *   placeholder="Select an option"
+ *   size="md"
+ * />
+ * ```
+ */
+
 import { useState, useRef, useEffect, ReactNode } from "react"
 
 export interface DropdownOption {
@@ -8,10 +34,16 @@ export interface DropdownOption {
   disabled?: boolean
 }
 
+export interface DropdownOptGroup {
+  label: string
+  options: DropdownOption[]
+}
+
 interface StyledDropdownProps {
   value: string
   onChange: (value: string) => void
-  options: DropdownOption[]
+  options?: DropdownOption[]
+  optgroups?: DropdownOptGroup[]
   placeholder?: string
   className?: string
   disabled?: boolean
@@ -36,7 +68,8 @@ const iconSizeClasses = {
 export function StyledDropdown({
   value,
   onChange,
-  options,
+  options = [],
+  optgroups = [],
   placeholder,
   className = "",
   disabled = false,
@@ -48,7 +81,13 @@ export function StyledDropdown({
   const [isOpen, setIsOpen] = useState(false)
   const dropdownRef = useRef<HTMLDivElement>(null)
 
-  const selectedOption = options.find((opt) => opt.value === value)
+  // Flatten all options from both options array and optgroups
+  const allOptions = [
+    ...options,
+    ...optgroups.flatMap((group) => group.options),
+  ]
+
+  const selectedOption = allOptions.find((opt) => opt.value === value)
   const displayText = selectedOption
     ? typeof selectedOption.label === "string"
       ? selectedOption.label
@@ -77,7 +116,7 @@ export function StyledDropdown({
   }, [isOpen])
 
   const handleSelect = (optionValue: string) => {
-    if (options.find((opt) => opt.value === optionValue)?.disabled) {
+    if (allOptions.find((opt) => opt.value === optionValue)?.disabled) {
       return
     }
     onChange(optionValue)
@@ -131,31 +170,68 @@ export function StyledDropdown({
           {/* Dropdown menu */}
           <div className="absolute top-full left-0 right-0 mt-2 z-[200] bg-slate-800 border border-slate-700 rounded-lg shadow-xl max-h-64 overflow-y-auto">
             <div className="p-1">
-              {options.map((option) => {
-                const isSelected = option.value === value
-                const isDisabled = option.disabled
+              {/* Render flat options if provided */}
+              {options.length > 0 &&
+                options.map((option) => {
+                  const isSelected = option.value === value
+                  const isDisabled = option.disabled
 
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => handleSelect(option.value)}
-                    disabled={isDisabled}
-                    data-testid={testId ? `${testId}-option-${option.value}` : undefined}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
-                      isSelected
-                        ? "bg-cyan-500/20 border border-cyan-500/50 text-cyan-300"
-                        : isDisabled
-                        ? "text-slate-500 cursor-not-allowed"
-                        : "hover:bg-slate-700/50 text-slate-300 hover:text-white"
-                    }`}
-                  >
-                    {typeof option.label === "string"
-                      ? option.label
-                      : option.label}
-                  </button>
-                )
-              })}
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => handleSelect(option.value)}
+                      disabled={isDisabled}
+                      data-testid={testId ? `${testId}-option-${option.value}` : undefined}
+                      className={`w-full text-left px-3 py-2 rounded-md text-sm transition-colors ${
+                        isSelected
+                          ? "bg-cyan-500/20 border border-cyan-500/50 text-cyan-300"
+                          : isDisabled
+                          ? "text-slate-500 cursor-not-allowed"
+                          : "hover:bg-slate-700/50 text-slate-300 hover:text-white"
+                      }`}
+                    >
+                      {typeof option.label === "string"
+                        ? option.label
+                        : option.label}
+                    </button>
+                  )
+                })}
+
+              {/* Render optgroups if provided */}
+              {optgroups.length > 0 &&
+                optgroups.map((group) => (
+                  <div key={group.label}>
+                    <div className="px-3 py-1.5 text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                      {group.label}
+                    </div>
+                    {group.options.map((option) => {
+                      const isSelected = option.value === value
+                      const isDisabled = option.disabled
+
+                      return (
+                        <button
+                          key={option.value}
+                          type="button"
+                          onClick={() => handleSelect(option.value)}
+                          disabled={isDisabled}
+                          data-testid={testId ? `${testId}-option-${option.value}` : undefined}
+                          className={`w-full text-left px-6 py-2 rounded-md text-sm transition-colors ${
+                            isSelected
+                              ? "bg-cyan-500/20 border border-cyan-500/50 text-cyan-300"
+                              : isDisabled
+                              ? "text-slate-500 cursor-not-allowed"
+                              : "hover:bg-slate-700/50 text-slate-300 hover:text-white"
+                          }`}
+                        >
+                          {typeof option.label === "string"
+                            ? option.label
+                            : option.label}
+                        </button>
+                      )
+                    })}
+                  </div>
+                ))}
             </div>
           </div>
         </>

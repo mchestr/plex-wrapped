@@ -405,7 +405,7 @@ describe('AdminNav', () => {
       const { container } = render(<AdminNav />)
 
       const sectionHeaders = container.querySelectorAll('.text-xs.font-semibold.text-slate-500')
-      expect(sectionHeaders.length).toBe(2) // Analytics and Configuration
+      expect(sectionHeaders.length).toBe(3) // Library Maintenance, Analytics, and Prompts & Testing
     })
   })
 

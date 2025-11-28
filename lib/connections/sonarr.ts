@@ -198,3 +198,82 @@ export async function getSonarrEpisodeById(config: SonarrParsed, episodeId: numb
   if (!response.ok) throw new Error(`Sonarr episode detail error: ${response.statusText}`)
   return response.json()
 }
+
+export async function deleteSonarrSeries(
+  config: SonarrParsed,
+  seriesId: number,
+  deleteFiles = false,
+  addImportExclusion = false
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const params = new URLSearchParams({
+      deleteFiles: deleteFiles.toString(),
+      addImportExclusion: addImportExclusion.toString(),
+    })
+    const url = `${config.url}/api/v3/series/${seriesId}?${params.toString()}`
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "X-Api-Key": config.apiKey,
+      },
+    })
+
+    if (!response.ok) {
+      if (response.status === 404) {
+        return { success: false, error: "Series not found" }
+      }
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, error: "Invalid API key" }
+      }
+      return { success: false, error: `Failed to delete series: ${response.statusText}` }
+    }
+
+    return { success: true }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, error: `Error deleting series: ${error.message}` }
+    }
+    return { success: false, error: "Failed to delete series" }
+  }
+}
+
+export async function bulkDeleteSonarrEpisodeFiles(
+  config: SonarrParsed,
+  episodeFileIds: number[]
+): Promise<{ success: boolean; deleted: number; errors?: string[] }> {
+  try {
+    const url = `${config.url}/api/v3/episodefile/bulk`
+    const response = await fetch(url, {
+      method: "DELETE",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": config.apiKey,
+      },
+      body: JSON.stringify({ episodeFileIds }),
+    })
+
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        return { success: false, deleted: 0, errors: ["Invalid API key"] }
+      }
+      return { success: false, deleted: 0, errors: [`Failed to delete episode files: ${response.statusText}`] }
+    }
+
+    // Sonarr bulk delete returns 200 on success
+    return { success: true, deleted: episodeFileIds.length }
+  } catch (error) {
+    if (error instanceof Error) {
+      return { success: false, deleted: 0, errors: [`Error deleting episode files: ${error.message}`] }
+    }
+    return { success: false, deleted: 0, errors: ["Failed to delete episode files"] }
+  }
+}
+
+export async function getSonarrSeriesStatistics(config: SonarrParsed, seriesId: number) {
+  const url = `${config.url}/api/v3/series/${seriesId}`
+  const response = await fetch(url, {
+    headers: { "X-Api-Key": config.apiKey },
+  })
+  if (!response.ok) throw new Error(`Sonarr series statistics error: ${response.statusText}`)
+  return response.json()
+}

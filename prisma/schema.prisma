@@ -26,6 +26,8 @@ model User {
   inviteUsages        InviteUsage[]
   discordConnection   DiscordConnection?
   discordOAuthStates  DiscordOAuthState[]
+  userMediaMarks      UserMediaMark[]
+  userWatchIntents    UserWatchIntent[]
   createdAt           DateTime      @default(now())
   updatedAt           DateTime      @updatedAt
 
@@ -95,6 +97,9 @@ model Sonarr {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  // Relations
+  maintenanceRules MaintenanceRule[]
+
   @@index([isActive])
 }
 
@@ -107,6 +112,9 @@ model Radarr {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // Relations
+  maintenanceRules MaintenanceRule[]
 
   @@index([isActive])
 }
@@ -350,4 +358,247 @@ model InviteUsage {
 
   @@index([inviteId])
   @@index([userId])
+}
+
+// Library Maintenance Models
+model MaintenanceRule {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  enabled     Boolean  @default(true)
+  mediaType   MediaType
+
+  // Rule criteria stored as JSON
+  criteria    Json
+
+  // Actions
+  actionType  ActionType
+  actionDelayDays Int? // Optional delay before executing action (in days)
+
+  // Target server instances (optional - defaults to active server if not specified)
+  radarrId    String?
+  radarr      Radarr?  @relation(fields: [radarrId], references: [id], onDelete: SetNull)
+  sonarrId    String?
+  sonarr      Sonarr?  @relation(fields: [sonarrId], references: [id], onDelete: SetNull)
+
+  // Schedule (cron expression)
+  schedule    String?
+
+  // Statistics
+  lastRunAt   DateTime?
+  nextRunAt   DateTime?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  scans       MaintenanceScan[]
+
+  @@index([enabled])
+  @@index([nextRunAt])
+  @@index([mediaType])
+}
+
+model MaintenanceScan {
+  id              String   @id @default(cuid())
+  ruleId          String
+  rule            MaintenanceRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+
+  status          ScanStatus
+  startedAt       DateTime?
+  completedAt     DateTime?
+  error           String?
+
+  // Statistics
+  itemsScanned    Int      @default(0)
+  itemsFlagged    Int      @default(0)
+
+  createdAt       DateTime @default(now())
+
+  // Relations
+  candidates      MaintenanceCandidate[]
+
+  @@index([ruleId, createdAt])
+  @@index([status])
+}
+
+model MaintenanceCandidate {
+  id              String   @id @default(cuid())
+  scanId          String
+  scan            MaintenanceScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+
+  // Media identification
+  mediaType       MediaType
+  plexRatingKey   String
+  radarrId        Int?
+  sonarrId        Int?
+  tmdbId          Int?
+  tvdbId          Int?
+
+  // Media details (cached for display)
+  title           String
+  year            Int?
+  poster          String?
+  filePath        String?
+  fileSize        BigInt?
+
+  // Watch statistics
+  playCount       Int      @default(0)
+  lastWatchedAt   DateTime?
+  addedAt         DateTime?
+
+  // Rule evaluation
+  matchedRules    Json
+  flaggedAt       DateTime @default(now())
+
+  // Review status
+  reviewStatus    ReviewStatus
+  reviewedAt      DateTime?
+  reviewedBy      String?
+  reviewNote      String?
+
+  // Deletion tracking
+  deletedAt       DateTime?
+  deletionError   String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([scanId, reviewStatus])
+  @@index([mediaType, reviewStatus])
+  @@index([reviewStatus, flaggedAt])
+  @@unique([scanId, plexRatingKey])
+}
+
+model MaintenanceDeletionLog {
+  id              String   @id @default(cuid())
+  candidateId     String?
+
+  mediaType       MediaType
+  title           String
+  year            Int?
+  fileSize        BigInt?
+
+  deletedBy       String
+  deletedAt       DateTime @default(now())
+
+  deletedFrom     String
+  filesDeleted    Boolean
+
+  ruleNames       Json
+
+  @@index([deletedAt])
+  @@index([deletedBy])
+}
+
+model UserMediaMark {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Media identification
+  mediaType       MediaType
+  plexRatingKey   String
+
+  // Radarr/Sonarr IDs (if available)
+  radarrId        Int?
+  radarrTitleSlug String?
+  sonarrId        Int?
+  sonarrTitleSlug String?
+
+  // Media metadata (cached for display)
+  title           String
+  year            Int?
+  seasonNumber    Int?
+  episodeNumber   Int?
+  parentTitle     String?
+
+  // Mark details
+  markType        MarkType
+  note            String?
+
+  // Tracking
+  markedAt        DateTime @default(now())
+  markedVia       String
+  discordChannelId String?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([userId, mediaType])
+  @@index([plexRatingKey])
+  @@index([markType])
+  @@index([markedAt])
+  @@unique([userId, plexRatingKey, markType])
+}
+
+model UserWatchIntent {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  plexRatingKey   String
+  mediaType       MediaType
+  title           String
+
+  // Intent tracking
+  intentType      IntentType
+  priority        Int        @default(0)
+
+  // Progress (for TV series)
+  currentSeason   Int?
+  currentEpisode  Int?
+
+  addedAt         DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  completedAt     DateTime?
+
+  @@index([userId, intentType])
+  @@index([plexRatingKey])
+  @@unique([userId, plexRatingKey])
+}
+
+enum MediaType {
+  MOVIE
+  TV_SERIES
+  EPISODE
+}
+
+enum ScanStatus {
+  PENDING
+  RUNNING
+  COMPLETED
+  FAILED
+}
+
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  DELETED
+}
+
+enum ActionType {
+  FLAG_FOR_REVIEW      // Flag media for manual review
+  AUTO_DELETE          // Automatically delete from disk and remove from Radarr/Sonarr
+  UNMONITOR_AND_DELETE // Unmonitor in Radarr/Sonarr and delete from disk
+  UNMONITOR_AND_KEEP   // Unmonitor in Radarr/Sonarr but keep files
+  DO_NOTHING           // Take no action (useful for reporting only)
+}
+
+enum MarkType {
+  FINISHED_WATCHING
+  NOT_INTERESTED
+  KEEP_FOREVER
+  REWATCH_CANDIDATE
+  POOR_QUALITY
+  WRONG_VERSION
+}
+
+enum IntentType {
+  PLAN_TO_WATCH
+  WATCHING
+  COMPLETED
+  DROPPED
+  ON_HOLD
 }

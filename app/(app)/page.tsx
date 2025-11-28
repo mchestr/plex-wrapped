@@ -91,13 +91,13 @@ export default async function Home() {
                 loadingText="Preparing..."
                 buttonClassName="px-12 py-6 flex justify-center items-center gap-3 text-white text-xl font-semibold rounded-xl bg-gradient-to-r from-cyan-600 via-purple-600 to-pink-600 hover:from-cyan-500 hover:via-purple-500 hover:to-pink-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg"
               />
-              <div className="w-full grid gap-3 text-left text-sm text-slate-300 sm:grid-cols-2">
+              <div className="w-full grid gap-3 text-center text-sm text-slate-300 sm:grid-cols-2">
                 {publicHighlights.map((highlight) => (
                   <div
                     key={highlight}
-                    className="flex items-start gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
+                    className="flex items-center justify-center gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-3"
                   >
-                    <span className="mt-0.5 h-2 w-2 rounded-full bg-cyan-400" aria-hidden="true" />
+                    <span className="h-2 w-2 rounded-full bg-cyan-400 flex-shrink-0" aria-hidden="true" />
                     <p>{highlight}</p>
                   </div>
                 ))}

@@ -185,15 +185,28 @@ export function LLMProviderForm({ purpose, onComplete, onBack }: LLMProviderForm
         >
           Provider
         </label>
-        <select
+        <StyledDropdown
           id="provider"
           name="provider"
           value={formData.provider}
-          onChange={handleChange}
-          className="mt-1 block w-full rounded-md bg-slate-800/50 border border-slate-600 text-white shadow-sm focus:border-cyan-400 focus:ring-cyan-400 focus:ring-1 sm:text-sm px-3 py-2 transition-colors"
-        >
-          <option value="openai" className="bg-slate-800">OpenAI</option>
-        </select>
+          onChange={(value) => {
+            setFormData((prev) => {
+              const updated = {
+                ...prev,
+                provider: value as "openai",
+              }
+              // Reset model when provider changes
+              updated.model = ""
+              setUseCustomModel(false)
+              return updated
+            })
+          }}
+          options={[
+            { value: "openai", label: "OpenAI" },
+          ]}
+          size="md"
+          className="mt-1"
+        />
         <p className="mt-1 text-xs text-slate-400">
           OpenAI is currently the supported provider for this experience.
         </p>

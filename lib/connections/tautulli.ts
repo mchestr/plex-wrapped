@@ -66,8 +66,21 @@ export async function getTautulliServerInfo(config: TautulliParsed) {
   return response.json()
 }
 
-export async function getTautulliLibraryMediaInfo(config: TautulliParsed) {
-  const url = `${config.url}/api/v2?apikey=${config.apiKey}&cmd=get_library_media_info`
+export async function getTautulliLibraryMediaInfo(
+  config: TautulliParsed,
+  sectionId: string | number,
+  options?: {
+    orderColumn?: string
+    start?: number
+    length?: number
+    search?: string
+  }
+) {
+  let url = `${config.url}/api/v2?apikey=${config.apiKey}&cmd=get_library_media_info&section_id=${sectionId}`
+  if (options?.orderColumn) url += `&order_column=${options.orderColumn}`
+  if (options?.start !== undefined) url += `&start=${options.start}`
+  if (options?.length !== undefined) url += `&length=${options.length}`
+  if (options?.search) url += `&search=${encodeURIComponent(options.search)}`
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Tautulli library media info error: ${response.statusText}`)
   return response.json()
@@ -121,5 +134,19 @@ export async function getTautulliUserWatchTimeStats(config: TautulliParsed, user
   if (userId) url += `&user_id=${userId}`
   const response = await fetch(url)
   if (!response.ok) throw new Error(`Tautulli user watch time stats error: ${response.statusText}`)
+  return response.json()
+}
+
+export async function getTautulliMediaWatchStats(config: TautulliParsed, ratingKey: string | number) {
+  const url = `${config.url}/api/v2?apikey=${config.apiKey}&cmd=get_metadata&rating_key=${ratingKey}`
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Tautulli media watch stats error: ${response.statusText}`)
+  return response.json()
+}
+
+export async function getTautulliUnwatchedMedia(config: TautulliParsed, sectionId: string | number) {
+  const url = `${config.url}/api/v2?apikey=${config.apiKey}&cmd=get_library_media_info&section_id=${sectionId}`
+  const response = await fetch(url)
+  if (!response.ok) throw new Error(`Tautulli unwatched media error: ${response.statusText}`)
   return response.json()
 }

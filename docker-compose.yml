@@ -19,10 +19,12 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/plex_wrapped?schema=public
+      - REDIS_URL=redis://redis:6379
       - NEXT_PUBLIC_APP_URL=http://localhost:3000
       - NEXTAUTH_URL=http://localhost:3000
     depends_on:
       - db
+      - redis
     stdin_open: true
     tty: true
 
@@ -49,6 +51,21 @@ services:
     volumes:
       - db-data-playwright:/var/lib/postgresql/data
 
+  redis:
+    image: redis:7-alpine
+    container_name: plex-wrapped-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
 volumes:
   db-data:
   db-data-playwright:
+  redis-data:
