@@ -42,7 +42,7 @@ export function LLMToggle({ initialDisabled }: LLMToggleProps) {
           disabled={isSaving}
           className="sr-only peer"
           role="switch"
-          aria-checked={llmDisabled}
+          aria-checked={!llmDisabled}
           aria-labelledby="llm-toggle-label"
           aria-describedby="llm-toggle-status"
         />
