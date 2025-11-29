@@ -17,7 +17,14 @@ Automated PR status check repair workflow that diagnoses and fixes failing GitHu
 
 This command runs an automated agent that:
 
-1. **Discovery Phase**
+1. **Start from a clean main branch**
+   - Stash any local changes: `git stash --include-untracked` (if there are changes)
+   - Checkout main branch: `git checkout main`
+   - Fetch latest from origin: `git fetch origin`
+   - Reset main to match origin: `git reset --hard origin/main`
+   - Verify main is up to date: `git log -1 --oneline` and compare with `git log -1 --oneline origin/main`
+
+2. **Discovery Phase**
    - Validate PR number argument is provided
    - Fetch PR status checks: `gh pr checks <pr-number>`
    - Identify failing status checks
@@ -26,14 +33,14 @@ This command runs an automated agent that:
    - For each failing check, get run details and logs
    - Create todo list tracking all failures
 
-2. **Analysis Phase**
+3. **Analysis Phase**
    For each failure:
    - Categorize failure type (build, test, lint, type error, dependency, etc.)
    - Extract specific error messages and file locations
    - Identify root cause (changed APIs, missing dependencies, test failures, etc.)
    - Prioritize fixes (blocking issues first)
 
-3. **Fix Phase** (Iterative)
+4. **Fix Phase** (Iterative)
    For each identified issue:
    - Mark as "in_progress" in todo list
    - Apply appropriate fix based on failure type
@@ -46,20 +53,21 @@ This command runs an automated agent that:
      - Try alternative fix
      - Maximum 2 retry attempts per issue
 
-4. **Commit Phase**
-   - Stage all fixes
+5. **Commit Phase**
+   - Stage all fixes: `git add -A`
    - Create descriptive commit message with all fixes
-   - Push to PR branch
+   - Commit changes: `git commit -m "fix: resolve failing status checks for PR #<pr-number>"`
+   - Push to PR branch: `git push origin <branch-name>`
    - Link commit to PR in message: "Fixes failing status checks for PR #<pr-number>"
 
-5. **Verification Phase**
+6. **Verification Phase**
    - Wait for status checks to update after push
    - Check PR status: `gh pr checks <pr-number>`
    - Verify which checks now pass
    - For any checks that can be manually re-run, offer to trigger them
    - Report success or remaining failures
 
-6. **Documentation Phase**
+7. **Documentation Phase**
    - Summary of all fixes applied
    - PR URL with current status check results
    - Any issues requiring manual intervention
