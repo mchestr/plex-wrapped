@@ -7,13 +7,13 @@ import { TEST_USERS } from '../fixtures/auth';
  */
 export const WAIT_TIMEOUTS = {
   /** Timeout for error boundary to render (shorter wait) */
-  ERROR_BOUNDARY: 5000,
+  ERROR_BOUNDARY: 3000,
   /** Timeout for step transitions in flows (e.g., onboarding) */
-  STEP_TRANSITION: 10000,
+  STEP_TRANSITION: 8000,
   /** Timeout for general page content visibility */
-  PAGE_CONTENT: 15000,
+  PAGE_CONTENT: 10000,
   /** Timeout for admin page operations that may involve data fetching */
-  ADMIN_CONTENT: 30000,
+  ADMIN_CONTENT: 15000,
 } as const;
 
 /**
@@ -24,7 +24,7 @@ export async function navigateAndVerify(
   path: string,
   options?: { waitForSelector?: string; timeout?: number }
 ): Promise<void> {
-  const timeout = options?.timeout || 15000;
+  const timeout = options?.timeout || WAIT_TIMEOUTS.PAGE_CONTENT;
 
   // Navigate using the default load behavior.
   // In Next.js dev mode, waiting for "networkidle" is flaky because of
@@ -43,7 +43,7 @@ export async function navigateAndVerify(
 /**
  * Wait for application loading screens to disappear
  */
-export async function waitForLoadingGone(page: Page, timeout = 15000): Promise<void> {
+export async function waitForLoadingGone(page: Page, timeout: number = WAIT_TIMEOUTS.PAGE_CONTENT): Promise<void> {
   // Wait for common loading indicators to disappear
   const loadingSelectors = [
     'text=/Loading/i',
@@ -59,7 +59,7 @@ export async function waitForLoadingGone(page: Page, timeout = 15000): Promise<v
       const count = await elements.count();
       if (count > 0) {
         // Wait for first visible element to be hidden (others will follow)
-        await expect(elements.first()).not.toBeVisible({ timeout: Math.min(timeout, 5000) }).catch(() => {
+        await expect(elements.first()).not.toBeVisible({ timeout: Math.min(timeout, WAIT_TIMEOUTS.ERROR_BOUNDARY) }).catch(() => {
           // Element may not exist or already hidden - that's fine
         });
       }
@@ -151,7 +151,7 @@ export async function verifyPageUnauthorized(page: Page): Promise<void> {
  * Wait for navigation to complete and page to be stable
  */
 export async function waitForStablePage(page: Page, options?: { timeout?: number }): Promise<void> {
-  const timeout = options?.timeout || 15000;
+  const timeout = options?.timeout || WAIT_TIMEOUTS.PAGE_CONTENT;
   await page.waitForLoadState('networkidle', { timeout });
   await waitForLoadingGone(page, timeout);
 }
@@ -159,7 +159,7 @@ export async function waitForStablePage(page: Page, options?: { timeout?: number
 /**
  * Wait for admin page to be fully loaded with navigation and content
  */
-export async function waitForAdminPageReady(page: Page, timeout = 20000): Promise<void> {
+export async function waitForAdminPageReady(page: Page, timeout: number = WAIT_TIMEOUTS.ADMIN_CONTENT): Promise<void> {
   // Wait for network to be idle and loading states to disappear
   await page.waitForLoadState('networkidle', { timeout });
   await waitForLoadingGone(page, timeout);
@@ -260,7 +260,7 @@ export async function waitForAdminContent(
   contentSelectors: Array<{ type: 'heading' | 'text' | 'selector'; value: string | RegExp; level?: number }>,
   options?: { timeout?: number }
 ): Promise<void> {
-  const timeout = options?.timeout || 20000;
+  const timeout = options?.timeout || WAIT_TIMEOUTS.ADMIN_CONTENT;
   await waitForAdminPageReady(page, timeout);
 
   // Wait for specific content to appear
