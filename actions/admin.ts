@@ -3,7 +3,7 @@
 import { requireAdmin } from "@/lib/admin"
 import { prisma } from "@/lib/prisma"
 import { createLogger } from "@/lib/utils/logger"
-import type { Prisma } from "@prisma/client"
+import type { Prisma } from "@/lib/generated/prisma/client"
 
 // Type for LLMUsage records with included user
 type LLMUsageWithUser = Prisma.LLMUsageGetPayload<{
