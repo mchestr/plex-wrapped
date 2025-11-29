@@ -1,6 +1,8 @@
 import { expect, test } from './fixtures/auth';
 import { waitForAdminContent, waitForAdminPageReady, waitForToast, WAIT_TIMEOUTS } from './helpers/test-utils';
 import { seedMaintenanceData, cleanupMaintenanceData, resetCandidateStatuses, MAINTENANCE_TEST_DATA } from './helpers/maintenance-seed';
+import { createE2EPrismaClient } from './helpers/prisma';
+import type { PrismaClient } from '../lib/generated/prisma/client';
 
 /**
  * Admin Maintenance Feature E2E Tests
@@ -12,6 +14,16 @@ import { seedMaintenanceData, cleanupMaintenanceData, resetCandidateStatuses, MA
  * - Viewing deletion history
  */
 test.describe('Admin Maintenance Feature', () => {
+  // Shared Prisma client for all maintenance tests to avoid creating multiple connection pools
+  let prisma: PrismaClient;
+
+  test.beforeAll(async () => {
+    prisma = createE2EPrismaClient();
+  });
+
+  test.afterAll(async () => {
+    await prisma.$disconnect();
+  });
   test.describe('Maintenance Rules', () => {
     test.describe('UI Structure', () => {
       test('should access maintenance rules page', async ({ adminPage }) => {
@@ -157,15 +169,15 @@ test.describe('Admin Maintenance Feature', () => {
 
     test.describe('Candidate Review Workflow', () => {
       test.beforeAll(async () => {
-        await seedMaintenanceData();
+        await seedMaintenanceData(prisma);
       });
 
       test.afterAll(async () => {
-        await cleanupMaintenanceData();
+        await cleanupMaintenanceData(prisma);
       });
 
       test.beforeEach(async () => {
-        await resetCandidateStatuses();
+        await resetCandidateStatuses(prisma);
       });
 
       test('should display seeded candidates', async ({ adminPage }) => {
@@ -323,11 +335,11 @@ test.describe('Admin Maintenance Feature', () => {
 
   test.describe('Maintenance History', () => {
     test.beforeAll(async () => {
-      await seedMaintenanceData();
+      await seedMaintenanceData(prisma);
     });
 
     test.afterAll(async () => {
-      await cleanupMaintenanceData();
+      await cleanupMaintenanceData(prisma);
     });
 
     test('should access history page', async ({ adminPage }) => {
