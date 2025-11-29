@@ -88,7 +88,8 @@ export function WrappedPlayground({ templates, initialTemplateId }: WrappedPlayg
       }
     }
     fetchUsers()
-  }, [toast])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch models
   useEffect(() => {
@@ -111,7 +112,8 @@ export function WrappedPlayground({ templates, initialTemplateId }: WrappedPlayg
       }
     }
     fetchModels()
-  }, [toast])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Fetch statistics when user/year changes
   useEffect(() => {
