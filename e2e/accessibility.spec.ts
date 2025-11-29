@@ -1,13 +1,13 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from './fixtures/auth';
-import { waitForAdminContent } from './helpers/test-utils';
+import { waitForAdminContent, WAIT_TIMEOUTS } from './helpers/test-utils';
 
 test.describe('Accessibility Tests', () => {
   test.describe('Admin Pages', () => {
     test('admin users page should have no critical accessibility violations', async ({ adminPage }) => {
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Users' }
-      ], { timeout: 30000 });
+      ]);
 
       const accessibilityScanResults = await new AxeBuilder({ page: adminPage })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -35,7 +35,7 @@ test.describe('Accessibility Tests', () => {
       await adminPage.locator('aside').getByTestId('admin-nav-settings').first().click();
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Settings' }
-      ], { timeout: 30000 });
+      ]);
 
       const accessibilityScanResults = await new AxeBuilder({ page: adminPage })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -52,7 +52,7 @@ test.describe('Accessibility Tests', () => {
       await adminPage.locator('aside').getByTestId('admin-nav-invites').first().click();
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Invites' }
-      ], { timeout: 30000 });
+      ]);
 
       const accessibilityScanResults = await new AxeBuilder({ page: adminPage })
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
@@ -104,7 +104,7 @@ test.describe('Accessibility Tests', () => {
       await adminPage.locator('aside').getByTestId('admin-nav-invites').first().click();
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Invites' }
-      ], { timeout: 30000 });
+      ]);
 
       // Check if there are any invites to delete
       const deleteButton = adminPage.locator('button[aria-label*="Delete invite"]').first();
@@ -146,7 +146,7 @@ test.describe('Accessibility Tests', () => {
       await adminPage.locator('aside').getByTestId('admin-nav-invites').first().click();
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Invites' }
-      ], { timeout: 30000 });
+      ]);
 
       // Click create invite button
       const createButton = adminPage.getByRole('button', { name: /Generate Invite/i });
@@ -180,7 +180,7 @@ test.describe('Accessibility Tests', () => {
     test('icon buttons should have accessible names', async ({ adminPage }) => {
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Users' }
-      ], { timeout: 30000 });
+      ]);
 
       // Check that all buttons have accessible names
       const buttons = adminPage.locator('button');
