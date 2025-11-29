@@ -7,22 +7,28 @@ tags:
 
 You are tasked with updating a pull request by rebasing it and addressing review comments. Follow these steps:
 
-1. **Fetch the PR details** using the `gh` CLI:
+1. **Start from a clean main branch**:
+   - Stash any local changes: `git stash --include-untracked` (if there are changes)
+   - Checkout main branch: `git checkout main`
+   - Fetch latest from origin: `git fetch origin`
+   - Reset main to match origin: `git reset --hard origin/main`
+   - Verify main is up to date: `git log -1 --oneline` and compare with `git log -1 --oneline origin/main`
+
+2. **Fetch the PR details** using the `gh` CLI:
    - Use `gh pr view <pr-number> --json number,title,body,state,headRefName,reviews,comments`
    - Parse the JSON response to extract PR info and review feedback
    - Also run `gh pr diff <pr-number>` to see the changes
 
-2. **Check for review comments**:
+3. **Check for review comments**:
    - Use `gh api repos/{owner}/{repo}/pulls/<pr-number>/comments` to get inline code review comments
    - Look for any change requests or suggestions in the reviews
    - Identify specific action items that need to be addressed
 
-3. **Checkout and update the PR branch**:
-   - Run `git fetch origin` to get latest changes
+4. **Checkout and update the PR branch**:
    - Checkout the PR branch: `git checkout <headRefName>`
    - Verify current branch with `git branch --show-current`
 
-4. **Rebase on main**:
+5. **Rebase on main**:
    - Run `git rebase origin/main`
    - If conflicts occur, resolve them carefully:
      - Use `git status` to see conflicted files
@@ -31,28 +37,31 @@ You are tasked with updating a pull request by rebasing it and addressing review
      - Continue rebase with `git rebase --continue`
    - If rebase fails and you can't resolve it, inform the user
 
-5. **Create implementation plan for addressing comments**:
+6. **Create implementation plan for addressing comments**:
    - Use the TodoWrite tool to track tasks for addressing review comments
    - Include specific tasks for each requested change
    - Add verification tasks (tests, build, lint)
 
-6. **Address review comments**:
+7. **Address review comments**:
    - Implement each requested change from the review
    - Follow project conventions from CLAUDE.md
    - Mark todos as in_progress/completed as you work
    - Ensure changes align with the reviewer's feedback
 
-7. **Verify changes**:
+8. **Verify changes**:
    - Run relevant tests: `npm test` or specific test files
    - Run build: `npm run build`
    - Run lint: `npm run lint`
    - Ensure all checks pass
 
-8. **Push updated branch**:
+9. **Commit and push updated branch**:
+   - Stage all changes: `git add -A`
+   - Create a descriptive commit message summarizing the review feedback addressed
+   - Commit changes: `git commit -m "address PR review feedback: <summary of changes>"`
    - Push with force-with-lease to preserve history safely: `git push origin <branch-name> --force-with-lease`
    - Verify push was successful
 
-9. **Create GitHub issue for follow-up tasks** (if applicable):
+10. **Create GitHub issue for follow-up tasks** (if applicable):
    - Review all comments from the code review
    - Identify any items marked as:
      - "Optional but recommended"
@@ -89,7 +98,7 @@ You are tasked with updating a pull request by rebasing it and addressing review
        ```
    - Report the issue number to the user after creation
 
-10. **Provide summary**:
+11. **Provide summary**:
    - Summarize what review comments were addressed
    - Confirm the PR is rebased on latest main
    - List any verification steps completed
