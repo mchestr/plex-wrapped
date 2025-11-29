@@ -65,16 +65,14 @@ export default function NewRulePage() {
     if (radarrError) {
       toast.showError(`Failed to load Radarr servers: ${radarrError instanceof Error ? radarrError.message : 'Unknown error'}`)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [radarrError])
+  }, [radarrError, toast])
 
   // Handle Sonarr fetch errors
   useEffect(() => {
     if (sonarrError) {
       toast.showError(`Failed to load Sonarr servers: ${sonarrError instanceof Error ? sonarrError.message : 'Unknown error'}`)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sonarrError])
+  }, [sonarrError, toast])
 
   const radarrServers = radarrData?.servers || []
   const sonarrServers = sonarrData?.servers || []
