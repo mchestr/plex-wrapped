@@ -37,7 +37,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -77,7 +77,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Generate Prisma Client
         run: npx prisma generate
@@ -128,7 +128,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --include=optional
 
       - name: Generate Prisma Client
         run: npx prisma generate
