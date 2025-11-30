@@ -1,4 +1,4 @@
-import { Client, Events, GatewayIntentBits } from "discord.js"
+import { Client, Events, GatewayIntentBits, type Attachment } from "discord.js"
 import winston from "winston"
 import { clearDiscordChat, handleDiscordChat, verifyDiscordUser } from "./services"
 import { MARK_COMMANDS, handleMarkCommand, handleSelectionResponse } from "./commands/media-marking"
@@ -539,7 +539,7 @@ export class DiscordBot {
   }
 
 
-  private buildChatInput({ content, attachments, botId }: { content: string; attachments: any[]; botId: string | null }) {
+  private buildChatInput({ content, attachments, botId }: { content: string; attachments: Attachment[]; botId: string | null }) {
     const strippedMention = this.stripBotMention(content, botId)
     const strippedCommand = this.stripCommandPrefix(strippedMention)
     const attachmentSummary = this.describeAttachments(attachments)
@@ -572,7 +572,7 @@ export class DiscordBot {
     return trimmed
   }
 
-  private describeAttachments(attachments: any[]) {
+  private describeAttachments(attachments: Attachment[]) {
     if (!attachments || attachments.length === 0) {
       return ""
     }

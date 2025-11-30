@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import type { RuleCriteria } from "@/types/maintenance"
+import type { LegacyRuleCriteriaFlat as RuleCriteria } from "@/types/maintenance"
 import { StyledInput } from "@/components/ui/styled-input"
 import { StyledDropdown } from "@/components/ui/styled-dropdown"
 import { StyledCheckbox } from "@/components/ui/styled-checkbox"

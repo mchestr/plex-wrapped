@@ -72,19 +72,26 @@ export async function validateCSRF(request: NextRequest): Promise<{
 }
 
 /**
+ * Next.js App Router route handler context
+ */
+interface RouteHandlerContext {
+  params?: Record<string, string | string[]>
+}
+
+/**
  * CSRF protection middleware wrapper
  * Use this for API routes that perform state-changing operations
  */
 export function withCSRFProtection(
-  handler: (request: NextRequest, ...args: any[]) => Promise<NextResponse>
+  handler: (request: NextRequest, context?: RouteHandlerContext) => Promise<NextResponse>
 ) {
-  return async (request: NextRequest, ...args: any[]) => {
+  return async (request: NextRequest, context?: RouteHandlerContext) => {
     const csrfCheck = await validateCSRF(request)
     if (!csrfCheck.valid && csrfCheck.response) {
       return csrfCheck.response
     }
 
-    return handler(request, ...args)
+    return handler(request, context)
   }
 }
 

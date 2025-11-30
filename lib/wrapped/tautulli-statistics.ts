@@ -4,6 +4,13 @@
 
 import { createLogger } from "@/lib/utils/logger"
 import type {
+  TautulliHistoryItem,
+  TautulliUser,
+  TautulliItemUserStat,
+  TautulliHomeStatsRow,
+  TautulliHomeStat,
+} from "@/lib/validations/tautulli"
+import type {
   TautulliConfig,
   TautulliStatisticsData,
   TopMedia,
@@ -67,36 +74,36 @@ export async function fetchTautulliStatistics(
       : usersData.response?.data?.users || []
 
     // Find user by email (most reliable) or username
-    let tautulliUser: any = null
+    let tautulliUser: TautulliUser | null = null
 
     if (userEmail) {
       // Try to match by email first (most reliable)
       tautulliUser = users.find(
-        (u: any) => u.email?.toLowerCase() === userEmail.toLowerCase()
-      )
+        (u: TautulliUser) => u.email?.toLowerCase() === userEmail.toLowerCase()
+      ) ?? null
     }
 
     // If no email match, try matching by username or friendly_name
     if (!tautulliUser) {
       // Try to get username from Plex user info if available
       tautulliUser = users.find(
-        (u: any) =>
+        (u: TautulliUser) =>
           u.username?.toLowerCase() === userEmail?.toLowerCase() ||
           u.friendly_name?.toLowerCase() === userEmail?.toLowerCase()
-      )
+      ) ?? null
     }
 
     // Last resort: try matching by Plex user ID if it's stored in Tautulli
     if (!tautulliUser) {
       tautulliUser = users.find(
-        (u: any) =>
+        (u: TautulliUser) =>
           u.plex_id?.toString() === plexUserId ||
           u.user_id?.toString() === plexUserId
-      )
+      ) ?? null
     }
 
     if (!tautulliUser) {
-      const availableUsers = users.map((u: any) =>
+      const availableUsers = users.map((u: TautulliUser) =>
         `${u.username || u.friendly_name || "Unknown"} (${u.email || "no email"})`
       ).join(", ")
 
@@ -129,7 +136,7 @@ export async function fetchTautulliStatistics(
 
     // Fetch watch history WITHOUT date filters (Tautulli's date filtering seems unreliable)
     // We'll filter by date in code instead
-    let allHistory: any[] = []
+    let allHistory: TautulliHistoryItem[] = []
     let start = 0
     const length = 1000 // Tautulli default page size
     let hasMore = true
@@ -164,13 +171,13 @@ export async function fetchTautulliStatistics(
       }
 
       // Handle different response structures - Tautulli can return data directly or nested
-      let historyPage: any[] = []
+      let historyPage: TautulliHistoryItem[] = []
       if (Array.isArray(historyData.response?.data)) {
         // Data is directly an array
-        historyPage = historyData.response.data
+        historyPage = historyData.response.data as TautulliHistoryItem[]
       } else if (historyData.response?.data?.data) {
         // Data is nested in data.data (paginated response)
-        historyPage = historyData.response.data.data
+        historyPage = historyData.response.data.data as TautulliHistoryItem[]
       } else if (historyData.response?.data) {
         // Try to use data directly if it's an object with array-like structure
         historyPage = []
@@ -185,7 +192,7 @@ export async function fetchTautulliStatistics(
     }
 
     // Filter history by date range in code (more reliable than Tautulli's date filtering)
-    const history = allHistory.filter((item: any) => {
+    const history = allHistory.filter((item: TautulliHistoryItem) => {
       // Use 'date' field (when the watch happened) for filtering
       const itemDate = item.date || item.started || 0
       return itemDate >= startDate && itemDate <= endDate
@@ -386,7 +393,7 @@ export async function fetchTautulliStatistics(
         showsWatchTime,
         moviesWatched: moviesMap.size,
         showsWatched: showsMap.size,
-        episodesWatched: history.filter((item: any) => item.media_type === "episode").length,
+        episodesWatched: history.filter((item: TautulliHistoryItem) => item.media_type === "episode").length,
         topMovies,
         topShows,
         watchTimeByMonth,
@@ -448,8 +455,8 @@ export async function fetchItemLeaderboard(
       }
     }
 
-    const stats = data.response?.data || []
-    const leaderboard = stats.map((stat: any) => {
+    const stats = (data.response?.data || []) as TautulliItemUserStat[]
+    const leaderboard = stats.map((stat: TautulliItemUserStat) => {
       // Tautulli's get_item_user_stats returns duration in seconds
       // Try multiple possible field names for duration
       const durationSeconds = stat.total_duration || stat.duration || stat.time || 0
@@ -460,8 +467,8 @@ export async function fetchItemLeaderboard(
         username: stat.username || stat.friendly_name || "Unknown",
         friendlyName: stat.friendly_name || stat.username || "Unknown",
         watchTime: watchTimeMinutes,
-        playCount: parseInt(stat.plays || "0", 10),
-        episodesWatched: mediaType === "show" ? parseInt(stat.plays || "0", 10) : undefined,
+        playCount: parseInt(String(stat.plays || "0"), 10),
+        episodesWatched: mediaType === "show" ? parseInt(String(stat.plays || "0"), 10) : undefined,
       }
     })
 
@@ -530,11 +537,11 @@ export async function fetchWatchTimeLeaderboard(
 
     // Extract user stats from home stats response
     // The response contains an array of stat objects, each with a rows array
-    const stats = data.response?.data || []
+    const stats = (data.response?.data || []) as TautulliHomeStat[]
 
     // Find the stat object that contains user watch time data
     // Look for stat_id like "top_users" or check rows for user data
-    let userRows: any[] = []
+    let userRows: TautulliHomeStatsRow[] = []
 
     // First, try to find a stat with user-specific stat_id
     for (const stat of stats) {
@@ -550,7 +557,7 @@ export async function fetchWatchTimeLeaderboard(
       for (const stat of stats) {
         if (stat.rows && Array.isArray(stat.rows)) {
           // Check if this stat contains user data (rows with user or friendly_name fields)
-          const hasUserData = stat.rows.some((row: any) => row.user || row.friendly_name || row.user_id)
+          const hasUserData = stat.rows.some((row: TautulliHomeStatsRow) => row.user || row.friendly_name || row.user_id)
           if (hasUserData) {
             userRows = stat.rows
             break
@@ -563,24 +570,24 @@ export async function fetchWatchTimeLeaderboard(
     if (userRows.length === 0) {
       for (const stat of stats) {
         if (stat.rows && Array.isArray(stat.rows)) {
-          userRows = userRows.concat(stat.rows.filter((row: any) => row.user || row.friendly_name || row.user_id))
+          userRows = userRows.concat(stat.rows.filter((row: TautulliHomeStatsRow) => row.user || row.friendly_name || row.user_id))
         }
       }
     }
 
     const leaderboard = userRows
-      .filter((row: any) => {
+      .filter((row: TautulliHomeStatsRow) => {
         // Only include users with watch time > 0
-        const totalDuration = parseInt(row.total_duration || row.duration || "0", 10)
+        const totalDuration = parseInt(String(row.total_duration || row.duration || "0"), 10)
         return totalDuration > 0 && (row.user || row.friendly_name || row.user_id)
       })
-      .map((row: any) => {
+      .map((row: TautulliHomeStatsRow) => {
         // Tautulli returns duration in seconds
-        const totalDuration = parseInt(row.total_duration || row.duration || "0", 10)
+        const totalDuration = parseInt(String(row.total_duration || row.duration || "0"), 10)
         // For home stats, we might not have separate movies/shows duration
         // Try to extract from the row or default to 0
-        const moviesDuration = parseInt(row.movies_duration || "0", 10)
-        const showsDuration = parseInt(row.shows_duration || "0", 10)
+        const moviesDuration = parseInt(String(row.movies_duration || "0"), 10)
+        const showsDuration = parseInt(String(row.shows_duration || "0"), 10)
 
         // Extract user ID - could be in user_id, user, or need to look up
         const userId = row.user_id?.toString() || row.user?.toString() || ""
@@ -594,7 +601,7 @@ export async function fetchWatchTimeLeaderboard(
           showsWatchTime: Math.floor(showsDuration / 60),
         }
       })
-      .filter((entry: any) => entry.userId) // Remove entries without user ID
+      .filter((entry) => entry.userId) // Remove entries without user ID
 
     // Sort by total watch time descending
     leaderboard.sort((a: { totalWatchTime: number }, b: { totalWatchTime: number }) => b.totalWatchTime - a.totalWatchTime)
