@@ -39,7 +39,7 @@ export function WrappedShareSummary({
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <h1 className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 data-testid="wrapped-share-heading" className="text-5xl md:text-6xl font-bold mb-4 bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             {displayName}'s {year} Plex Wrapped
           </h1>
           {summary && (
@@ -61,25 +61,25 @@ export function WrappedShareSummary({
           transition={{ delay: 0.4, duration: 0.6 }}
           className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12"
         >
-          <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700 rounded-lg p-6 text-center">
+          <div data-testid="wrapped-total-watch-time" className="bg-slate-800/60 backdrop-blur-sm border border-slate-700 rounded-lg p-6 text-center">
             <div className="text-3xl font-bold text-cyan-400 mb-2">
               {formatWatchTimeHours(stats.totalWatchTime.total)}
             </div>
-            <div className="text-slate-400 text-sm">Total Watch Time</div>
+            <div data-testid="wrapped-total-watch-time-label" className="text-slate-400 text-sm">Total Watch Time</div>
           </div>
 
-          <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700 rounded-lg p-6 text-center">
+          <div data-testid="wrapped-movies-watched" className="bg-slate-800/60 backdrop-blur-sm border border-slate-700 rounded-lg p-6 text-center">
             <div className="text-3xl font-bold text-purple-400 mb-2">
               {stats.moviesWatched.toLocaleString()}
             </div>
-            <div className="text-slate-400 text-sm">Movies Watched</div>
+            <div data-testid="wrapped-movies-watched-label" className="text-slate-400 text-sm">Movies Watched</div>
           </div>
 
-          <div className="bg-slate-800/60 backdrop-blur-sm border border-slate-700 rounded-lg p-6 text-center">
+          <div data-testid="wrapped-shows-watched" className="bg-slate-800/60 backdrop-blur-sm border border-slate-700 rounded-lg p-6 text-center">
             <div className="text-3xl font-bold text-pink-400 mb-2">
               {stats.showsWatched.toLocaleString()}
             </div>
-            <div className="text-slate-400 text-sm">Shows Watched</div>
+            <div data-testid="wrapped-shows-watched-label" className="text-slate-400 text-sm">Shows Watched</div>
           </div>
         </motion.div>
 

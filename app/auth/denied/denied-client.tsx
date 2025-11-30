@@ -148,6 +148,7 @@ export function DeniedAccessPageClient() {
             className="text-center"
           >
             <motion.h1
+              data-testid="access-denied-heading"
               className="text-3xl font-bold text-red-400 mb-3"
               animate={{
                 scale: [1, 1.05, 1],
@@ -183,6 +184,7 @@ export function DeniedAccessPageClient() {
             </Link>
             <button
               onClick={() => router.push("/")}
+              data-testid="return-home-button"
               className="w-full py-3 px-4 border border-slate-600 rounded-md shadow-sm text-sm font-medium text-slate-300 bg-slate-700/50 hover:bg-slate-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors"
             >
               Return Home

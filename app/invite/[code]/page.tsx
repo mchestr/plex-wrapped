@@ -108,7 +108,7 @@ export default function InvitePage() {
                 />
               </svg>
             </motion.div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white mb-2">Invalid Invite</h1>
+            <h1 data-testid="invalid-invite-heading" className="text-xl sm:text-2xl font-bold text-white mb-2">Invalid Invite</h1>
             <p className="text-slate-300 mb-6 text-sm sm:text-base px-2">{error}</p>
             <button
               onClick={() => router.push("/")}

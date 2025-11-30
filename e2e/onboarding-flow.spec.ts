@@ -34,7 +34,7 @@ test.describe('Onboarding Flow', () => {
 
         // Verify the welcome step is visible
         await expect(page.getByTestId('onboarding-welcome-heading')).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText("Let's get you started")).toBeVisible();
+        await expect(page.getByTestId('onboarding-wizard-subheading')).toBeVisible();
 
         // Step 1: Welcome - Click "Let's Go" button
         const letsGoButton = page.getByTestId('onboarding-welcome-continue');
