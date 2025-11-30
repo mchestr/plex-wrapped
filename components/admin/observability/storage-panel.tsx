@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import type { StorageResponse, DiskSpaceItem, LibraryInfo } from "@/app/api/observability/storage/route"
 import { SonarrIcon, RadarrIcon } from "@/components/ui/service-icons"
+import { REFRESH_INTERVALS } from "@/lib/constants/observability"
 
 async function fetchStorage(): Promise<StorageResponse> {
   const response = await fetch("/api/observability/storage")
@@ -58,7 +59,7 @@ export function StoragePanel() {
   } = useQuery({
     queryKey: ["observability", "storage"],
     queryFn: fetchStorage,
-    refetchInterval: 60_000, // 1 minute - storage changes slowly
+    refetchInterval: REFRESH_INTERVALS.STORAGE,
     staleTime: 30_000,
   })
 

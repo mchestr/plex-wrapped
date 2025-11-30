@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import type { SessionsResponse } from "@/app/api/observability/sessions/route"
+import { REFRESH_INTERVALS } from "@/lib/constants/observability"
 
 async function fetchSessions(): Promise<SessionsResponse> {
   const response = await fetch("/api/observability/sessions")
@@ -21,7 +22,7 @@ export function ActiveSessionsPanel() {
   } = useQuery({
     queryKey: ["observability", "sessions"],
     queryFn: fetchSessions,
-    refetchInterval: 10_000, // 10 seconds
+    refetchInterval: REFRESH_INTERVALS.ACTIVE_SESSIONS,
     staleTime: 5_000,
   })
 

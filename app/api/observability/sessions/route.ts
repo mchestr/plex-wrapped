@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { requireAdminAPI } from "@/lib/security/api-helpers"
 import { ErrorCode, getStatusCode, logError } from "@/lib/security/error-handler"
 import { adminRateLimiter } from "@/lib/security/rate-limit"
+import { tautulliActivityResponseSchema } from "@/lib/validations/tautulli"
 import { NextRequest, NextResponse } from "next/server"
 
 export interface PlexSession {
@@ -72,24 +73,20 @@ export async function GET(request: NextRequest) {
       } satisfies SessionsResponse)
     }
 
-    // Parse the response
-    const activity = result.data as { response?: { data?: { sessions?: Array<{
-      session_id?: string
-      session_key?: string
-      user?: string
-      user_thumb?: string
-      title?: string
-      grandparent_title?: string
-      media_type?: string
-      progress_percent?: string | number
-      state?: string
-      player?: string
-      quality_profile?: string
-      stream_video_full_resolution?: string
-      duration?: string | number
-      view_offset?: string | number
-    }>, stream_count?: number } } }
+    // Validate and parse the response
+    const validatedActivity = tautulliActivityResponseSchema.safeParse(result.data)
 
+    if (!validatedActivity.success) {
+      logError("OBSERVABILITY_SESSIONS_VALIDATION", validatedActivity.error)
+      return NextResponse.json({
+        available: false,
+        sessions: [],
+        streamCount: 0,
+        error: "Invalid response format from Tautulli",
+      } satisfies SessionsResponse)
+    }
+
+    const activity = validatedActivity.data
     const sessions: PlexSession[] = (activity?.response?.data?.sessions || []).map(
       (session) => ({
         sessionId: session.session_id || session.session_key || "",

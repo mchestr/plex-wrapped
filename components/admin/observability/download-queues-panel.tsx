@@ -3,6 +3,7 @@
 import { useQuery } from "@tanstack/react-query"
 import type { QueuesResponse, QueueItem } from "@/app/api/observability/queues/route"
 import { SonarrIcon, RadarrIcon } from "@/components/ui/service-icons"
+import { REFRESH_INTERVALS } from "@/lib/constants/observability"
 
 async function fetchQueues(): Promise<QueuesResponse> {
   const response = await fetch("/api/observability/queues")
@@ -77,7 +78,7 @@ export function DownloadQueuesPanel() {
   } = useQuery({
     queryKey: ["observability", "queues"],
     queryFn: fetchQueues,
-    refetchInterval: 15_000, // 15 seconds
+    refetchInterval: REFRESH_INTERVALS.DOWNLOAD_QUEUES,
     staleTime: 10_000,
   })
 

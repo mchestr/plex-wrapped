@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import type { RequestsStatsResponse, RequestItem } from "@/app/api/observability/requests/route"
+import { REFRESH_INTERVALS } from "@/lib/constants/observability"
 
 async function fetchRequests(): Promise<RequestsStatsResponse> {
   const response = await fetch("/api/observability/requests")
@@ -54,7 +55,7 @@ export function RequestsPanel() {
   } = useQuery({
     queryKey: ["observability", "requests"],
     queryFn: fetchRequests,
-    refetchInterval: 60_000, // 1 minute
+    refetchInterval: REFRESH_INTERVALS.REQUESTS,
     staleTime: 30_000,
   })
 

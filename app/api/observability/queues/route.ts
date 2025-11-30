@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma"
 import { requireAdminAPI } from "@/lib/security/api-helpers"
 import { ErrorCode, getStatusCode, logError } from "@/lib/security/error-handler"
 import { adminRateLimiter } from "@/lib/security/rate-limit"
+import { radarrQueueResponseSchema, type RadarrQueueRecord } from "@/lib/validations/radarr"
+import { sonarrQueueResponseSchema, type SonarrQueueRecord } from "@/lib/validations/sonarr"
 import { NextRequest, NextResponse } from "next/server"
 
 export interface QueueItem {
@@ -65,19 +67,23 @@ export async function GET(request: NextRequest) {
 
     const items: QueueItem[] = []
 
-    // Queue item type for Sonarr/Radarr
-    interface QueueRecord {
-      id: number
-      title?: string
-      status?: string
-      trackedDownloadStatus?: string
-      size?: number
-      sizeleft?: number
-      estimatedCompletionTime?: string
-      quality?: { quality?: { name?: string } }
-      series?: { title?: string }
-      episode?: { title?: string; seasonNumber?: number; episodeNumber?: number }
-      movie?: { title?: string }
+    // Helper to extract records from validated queue response
+    function extractSonarrRecords(data: unknown): SonarrQueueRecord[] {
+      const validated = sonarrQueueResponseSchema.safeParse(data)
+      if (!validated.success) {
+        logError("OBSERVABILITY_SONARR_QUEUE_VALIDATION", validated.error)
+        return []
+      }
+      return Array.isArray(validated.data) ? validated.data : validated.data.records || []
+    }
+
+    function extractRadarrRecords(data: unknown): RadarrQueueRecord[] {
+      const validated = radarrQueueResponseSchema.safeParse(data)
+      if (!validated.success) {
+        logError("OBSERVABILITY_RADARR_QUEUE_VALIDATION", validated.error)
+        return []
+      }
+      return Array.isArray(validated.data) ? validated.data : validated.data.records || []
     }
 
     // Fetch Sonarr queue
@@ -90,8 +96,7 @@ export async function GET(request: NextRequest) {
         })
 
         if (result.success && result.data) {
-          const queue = result.data as { records?: QueueRecord[] } | QueueRecord[]
-          const records = (Array.isArray(queue) ? queue : queue.records) || []
+          const records = extractSonarrRecords(result.data)
           for (const item of records) {
             items.push({
               id: item.id,
@@ -125,8 +130,7 @@ export async function GET(request: NextRequest) {
         })
 
         if (result.success && result.data) {
-          const queue = result.data as { records?: QueueRecord[] } | QueueRecord[]
-          const records = (Array.isArray(queue) ? queue : queue.records) || []
+          const records = extractRadarrRecords(result.data)
           for (const item of records) {
             items.push({
               id: item.id,
