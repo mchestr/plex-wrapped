@@ -195,6 +195,7 @@ export function AdminNav() {
   const router = useRouter()
   const [moreMenuOpen, setMoreMenuOpen] = useState(false)
   const moreMenuRef = useRef<HTMLDivElement>(null)
+  const moreButtonRef = useRef<HTMLButtonElement>(null)
 
   const handleSignOut = async () => {
     await signOut({ redirect: false })
@@ -204,14 +205,20 @@ export function AdminNav() {
 
   // Close more menu when clicking outside
   useEffect(() => {
+    if (!moreMenuOpen) return
+
     const handleClickOutside = (event: MouseEvent) => {
-      if (moreMenuRef.current && !moreMenuRef.current.contains(event.target as Node)) {
+      const target = event.target as Node
+      // Don't close if clicking on the More button itself (it toggles via onClick)
+      if (moreButtonRef.current?.contains(target)) {
+        return
+      }
+      if (moreMenuRef.current && !moreMenuRef.current.contains(target)) {
         setMoreMenuOpen(false)
       }
     }
-    if (moreMenuOpen) {
-      document.addEventListener("mousedown", handleClickOutside)
-    }
+
+    document.addEventListener("mousedown", handleClickOutside)
     return () => document.removeEventListener("mousedown", handleClickOutside)
   }, [moreMenuOpen])
 
@@ -387,6 +394,9 @@ export function AdminNav() {
         {moreMenuOpen && (
           <div
             ref={moreMenuRef}
+            id="mobile-more-menu"
+            role="menu"
+            aria-label="Additional navigation options"
             className="absolute bottom-full left-0 right-0 bg-slate-900/98 backdrop-blur-sm border-t border-slate-700 max-h-[60vh] overflow-y-auto"
           >
             <div className="p-4 grid grid-cols-3 gap-2">
@@ -394,6 +404,7 @@ export function AdminNav() {
                 <Link
                   key={item.href}
                   href={item.href}
+                  role="menuitem"
                   data-testid={`${item.testId}-mobile`}
                   className={`flex flex-col items-center gap-2 p-3 rounded-lg transition-all ${
                     isActive(item.href)
@@ -412,6 +423,8 @@ export function AdminNav() {
               {/* Home and Sign Out in More menu */}
               <Link
                 href="/"
+                role="menuitem"
+                data-testid="admin-nav-home-mobile"
                 className="flex flex-col items-center gap-2 p-3 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800/50 transition-all"
               >
                 <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -421,6 +434,8 @@ export function AdminNav() {
               </Link>
               <button
                 onClick={handleSignOut}
+                role="menuitem"
+                data-testid="admin-nav-signout-mobile"
                 className="flex flex-col items-center gap-2 p-3 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-all"
               >
                 <svg className="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -437,8 +452,13 @@ export function AdminNav() {
           {primaryMobileNavItems.map((item) => renderNavItem(item, true))}
           {/* More Button */}
           <button
+            ref={moreButtonRef}
             onClick={() => setMoreMenuOpen(!moreMenuOpen)}
             data-testid="admin-nav-more-mobile"
+            aria-expanded={moreMenuOpen}
+            aria-haspopup="true"
+            aria-label="More navigation options"
+            aria-controls="mobile-more-menu"
             className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all min-w-0 flex-1 ${
               moreMenuOpen || isSecondaryActive ? "text-cyan-400" : "text-slate-400"
             }`}
