@@ -56,14 +56,25 @@ export function ActiveSessionsPanel() {
     )
   }
 
+  const activityUrl = data.tautulliUrl ? `${data.tautulliUrl}/activity` : undefined
+
   return (
     <div data-testid="active-sessions-panel">
       <div className="divide-y divide-slate-700">
-        {data.sessions.map((session) => (
-          <div
+        {data.sessions.map((session) => {
+          const Wrapper = activityUrl ? 'a' : 'div'
+          const wrapperProps = activityUrl ? {
+            href: activityUrl,
+            target: "_blank",
+            rel: "noopener noreferrer",
+          } : {}
+
+          return (
+          <Wrapper
             key={session.sessionId}
-            className="p-4 flex items-center gap-4"
+            className={`p-4 flex items-center gap-4 ${activityUrl ? 'hover:bg-slate-800/50 transition-colors cursor-pointer' : ''}`}
             data-testid={`session-${session.sessionId}`}
+            {...wrapperProps}
           >
             {/* User avatar */}
             <div className="shrink-0">
@@ -129,8 +140,9 @@ export function ActiveSessionsPanel() {
                 {session.state}
               </div>
             </div>
-          </div>
-        ))}
+          </Wrapper>
+          )
+        })}
       </div>
       <div className="p-2 text-center text-xs text-slate-600 border-t border-slate-700">
         {data.streamCount} active stream{data.streamCount !== 1 ? "s" : ""} • Updated{" "}

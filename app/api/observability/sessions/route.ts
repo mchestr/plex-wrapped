@@ -24,6 +24,7 @@ export interface SessionsResponse {
   available: boolean
   sessions: PlexSession[]
   streamCount: number
+  tautulliUrl?: string
   error?: string
 }
 
@@ -56,30 +57,41 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch activity from Tautulli
-    const activity = await getTautulliActivity({
+    const result = await getTautulliActivity({
       name: tautulli.name,
       url: tautulli.url,
       apiKey: tautulli.apiKey,
     })
 
+    if (!result.success) {
+      return NextResponse.json({
+        available: false,
+        sessions: [],
+        streamCount: 0,
+        error: result.error || "Failed to fetch Tautulli activity",
+      } satisfies SessionsResponse)
+    }
+
     // Parse the response
-    const sessions: PlexSession[] = (activity.response?.data?.sessions || []).map(
-      (session: {
-        session_id?: string
-        session_key?: string
-        user?: string
-        user_thumb?: string
-        title?: string
-        grandparent_title?: string
-        media_type?: string
-        progress_percent?: string | number
-        state?: string
-        player?: string
-        quality_profile?: string
-        stream_video_full_resolution?: string
-        duration?: string | number
-        view_offset?: string | number
-      }) => ({
+    const activity = result.data as { response?: { data?: { sessions?: Array<{
+      session_id?: string
+      session_key?: string
+      user?: string
+      user_thumb?: string
+      title?: string
+      grandparent_title?: string
+      media_type?: string
+      progress_percent?: string | number
+      state?: string
+      player?: string
+      quality_profile?: string
+      stream_video_full_resolution?: string
+      duration?: string | number
+      view_offset?: string | number
+    }>, stream_count?: number } } }
+
+    const sessions: PlexSession[] = (activity?.response?.data?.sessions || []).map(
+      (session) => ({
         sessionId: session.session_id || session.session_key || "",
         user: session.user || "Unknown",
         userThumb: session.user_thumb || null,
@@ -98,7 +110,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       available: true,
       sessions,
-      streamCount: activity.response?.data?.stream_count || sessions.length,
+      streamCount: activity?.response?.data?.stream_count || sessions.length,
+      tautulliUrl: tautulli.publicUrl || tautulli.url,
     } satisfies SessionsResponse)
   } catch (error) {
     logError("OBSERVABILITY_SESSIONS", error)

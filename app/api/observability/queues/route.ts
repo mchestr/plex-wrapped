@@ -23,6 +23,8 @@ export interface QueuesResponse {
   items: QueueItem[]
   sonarrConfigured: boolean
   radarrConfigured: boolean
+  sonarrUrl?: string
+  radarrUrl?: string
   error?: string
 }
 
@@ -63,30 +65,50 @@ export async function GET(request: NextRequest) {
 
     const items: QueueItem[] = []
 
+    // Queue item type for Sonarr/Radarr
+    interface QueueRecord {
+      id: number
+      title?: string
+      status?: string
+      trackedDownloadStatus?: string
+      size?: number
+      sizeleft?: number
+      estimatedCompletionTime?: string
+      quality?: { quality?: { name?: string } }
+      series?: { title?: string }
+      episode?: { title?: string; seasonNumber?: number; episodeNumber?: number }
+      movie?: { title?: string }
+    }
+
     // Fetch Sonarr queue
     if (sonarr) {
       try {
-        const queue = await getSonarrQueue({
+        const result = await getSonarrQueue({
           name: sonarr.name,
           url: sonarr.url,
           apiKey: sonarr.apiKey,
         })
 
-        const records = queue.records || queue || []
-        for (const item of records) {
-          items.push({
-            id: item.id,
-            source: "sonarr",
-            title: item.series?.title
-              ? `${item.series.title} - ${item.episode?.title || `S${item.episode?.seasonNumber}E${item.episode?.episodeNumber}`}`
-              : item.title || "Unknown",
-            status: mapStatus(item.status, item.trackedDownloadStatus),
-            progress: calculateProgress(item.size, item.sizeleft),
-            size: item.size || 0,
-            sizeLeft: item.sizeleft || 0,
-            estimatedCompletionTime: item.estimatedCompletionTime || null,
-            quality: item.quality?.quality?.name || "Unknown",
-          })
+        if (result.success && result.data) {
+          const queue = result.data as { records?: QueueRecord[] } | QueueRecord[]
+          const records = (Array.isArray(queue) ? queue : queue.records) || []
+          for (const item of records) {
+            items.push({
+              id: item.id,
+              source: "sonarr",
+              title: item.series?.title
+                ? `${item.series.title} - ${item.episode?.title || `S${item.episode?.seasonNumber}E${item.episode?.episodeNumber}`}`
+                : item.title || "Unknown",
+              status: mapStatus(item.status, item.trackedDownloadStatus),
+              progress: calculateProgress(item.size, item.sizeleft),
+              size: item.size || 0,
+              sizeLeft: item.sizeleft || 0,
+              estimatedCompletionTime: item.estimatedCompletionTime || null,
+              quality: item.quality?.quality?.name || "Unknown",
+            })
+          }
+        } else if (!result.success) {
+          logError("OBSERVABILITY_SONARR_QUEUE", new Error(result.error))
         }
       } catch (error) {
         logError("OBSERVABILITY_SONARR_QUEUE", error)
@@ -96,25 +118,30 @@ export async function GET(request: NextRequest) {
     // Fetch Radarr queue
     if (radarr) {
       try {
-        const queue = await getRadarrQueue({
+        const result = await getRadarrQueue({
           name: radarr.name,
           url: radarr.url,
           apiKey: radarr.apiKey,
         })
 
-        const records = queue.records || queue || []
-        for (const item of records) {
-          items.push({
-            id: item.id,
-            source: "radarr",
-            title: item.movie?.title || item.title || "Unknown",
-            status: mapStatus(item.status, item.trackedDownloadStatus),
-            progress: calculateProgress(item.size, item.sizeleft),
-            size: item.size || 0,
-            sizeLeft: item.sizeleft || 0,
-            estimatedCompletionTime: item.estimatedCompletionTime || null,
-            quality: item.quality?.quality?.name || "Unknown",
-          })
+        if (result.success && result.data) {
+          const queue = result.data as { records?: QueueRecord[] } | QueueRecord[]
+          const records = (Array.isArray(queue) ? queue : queue.records) || []
+          for (const item of records) {
+            items.push({
+              id: item.id,
+              source: "radarr",
+              title: item.movie?.title || item.title || "Unknown",
+              status: mapStatus(item.status, item.trackedDownloadStatus),
+              progress: calculateProgress(item.size, item.sizeleft),
+              size: item.size || 0,
+              sizeLeft: item.sizeleft || 0,
+              estimatedCompletionTime: item.estimatedCompletionTime || null,
+              quality: item.quality?.quality?.name || "Unknown",
+            })
+          }
+        } else if (!result.success) {
+          logError("OBSERVABILITY_RADARR_QUEUE", new Error(result.error))
         }
       } catch (error) {
         logError("OBSERVABILITY_RADARR_QUEUE", error)
@@ -133,6 +160,8 @@ export async function GET(request: NextRequest) {
       items,
       sonarrConfigured,
       radarrConfigured,
+      sonarrUrl: sonarr ? (sonarr.publicUrl || sonarr.url) : undefined,
+      radarrUrl: radarr ? (radarr.publicUrl || radarr.url) : undefined,
     } satisfies QueuesResponse)
   } catch (error) {
     logError("OBSERVABILITY_QUEUES", error)

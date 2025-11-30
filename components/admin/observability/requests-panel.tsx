@@ -106,7 +106,7 @@ export function RequestsPanel() {
           </h4>
           <div className="space-y-2">
             {data.recentRequests.slice(0, 5).map((req) => (
-              <RequestRow key={req.id} request={req} />
+              <RequestRow key={req.id} request={req} overseerrUrl={data.overseerrUrl} />
             ))}
           </div>
         </div>
@@ -128,12 +128,16 @@ function StatBox({ label, value, color }: { label: string; value: number; color:
   )
 }
 
-function RequestRow({ request }: { request: RequestItem }) {
-  return (
-    <div
-      data-testid={`request-${request.id}`}
-      className="flex items-center gap-3 bg-slate-800/30 rounded-lg p-2"
-    >
+function RequestRow({ request, overseerrUrl }: { request: RequestItem; overseerrUrl?: string }) {
+  const href = overseerrUrl && request.tmdbId
+    ? `${overseerrUrl}/${request.type}/${request.tmdbId}`
+    : undefined
+
+  const baseClassName = "flex items-center gap-3 bg-slate-800/30 rounded-lg p-2"
+  const hoverClassName = href ? "hover:bg-slate-800/50 transition-colors cursor-pointer" : ""
+
+  const content = (
+    <>
       <span className="text-slate-400 shrink-0">
         {request.type === "movie" ? (
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -161,6 +165,26 @@ function RequestRow({ request }: { request: RequestItem }) {
       >
         {request.status}
       </span>
+    </>
+  )
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        data-testid={`request-${request.id}`}
+        className={`${baseClassName} ${hoverClassName}`}
+      >
+        {content}
+      </a>
+    )
+  }
+
+  return (
+    <div data-testid={`request-${request.id}`} className={baseClassName}>
+      {content}
     </div>
   )
 }

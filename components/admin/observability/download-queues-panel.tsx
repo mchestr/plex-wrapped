@@ -112,14 +112,29 @@ export function DownloadQueuesPanel() {
     )
   }
 
+  const getQueueUrl = (source: "sonarr" | "radarr") => {
+    const baseUrl = source === "sonarr" ? data.sonarrUrl : data.radarrUrl
+    return baseUrl ? `${baseUrl}/activity/queue` : undefined
+  }
+
   return (
     <div data-testid="download-queues-panel">
       <div className="divide-y divide-slate-700">
-        {data.items.slice(0, 5).map((item) => (
-          <div
+        {data.items.slice(0, 5).map((item) => {
+          const queueUrl = getQueueUrl(item.source)
+          const Wrapper = queueUrl ? 'a' : 'div'
+          const wrapperProps = queueUrl ? {
+            href: queueUrl,
+            target: "_blank",
+            rel: "noopener noreferrer",
+          } : {}
+
+          return (
+          <Wrapper
             key={`${item.source}-${item.id}`}
-            className="p-4 flex items-center gap-4"
+            className={`p-4 flex items-center gap-4 ${queueUrl ? 'hover:bg-slate-800/50 transition-colors cursor-pointer' : ''}`}
             data-testid={`queue-item-${item.source}-${item.id}`}
+            {...wrapperProps}
           >
             {/* Source icon */}
             <div className="shrink-0 text-slate-400">
@@ -164,8 +179,9 @@ export function DownloadQueuesPanel() {
                 </div>
               )}
             </div>
-          </div>
-        ))}
+          </Wrapper>
+          )
+        })}
       </div>
       <div className="p-2 text-center text-xs text-slate-600 border-t border-slate-700">
         {data.items.length} item{data.items.length !== 1 ? "s" : ""} in queue
