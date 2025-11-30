@@ -147,7 +147,7 @@ describe('RegenerateWrappedButton', () => {
 
       await waitFor(() => {
         // In non-inline mode, success shows green button with checkmark icon
-        const successButton = screen.getByRole('button', { name: /Regenerate wrapped/i })
+        const successButton = screen.getByRole('button', { name: /Regeneration started/i })
         expect(successButton).toHaveClass('bg-green-600')
         const checkmark = successButton.querySelector('svg')
         expect(checkmark).toBeInTheDocument()
@@ -169,7 +169,7 @@ describe('RegenerateWrappedButton', () => {
 
       await waitFor(() => {
         // In non-inline mode, success shows green button with checkmark icon
-        const successButton = screen.getByRole('button', { name: /Regenerate wrapped/i })
+        const successButton = screen.getByRole('button', { name: /Regeneration started/i })
         expect(successButton).toHaveClass('bg-green-600')
       })
 

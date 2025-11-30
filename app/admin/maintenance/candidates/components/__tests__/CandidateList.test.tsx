@@ -95,8 +95,8 @@ describe('CandidateList', () => {
     it('should format dates correctly', () => {
       render(<CandidateList {...defaultProps} />)
 
-      // formatDate returns ISO format (YYYY-MM-DD) for dates
-      expect(screen.getByText('2024-01-15')).toBeInTheDocument()
+      // formatDate returns localized format (M/D/YYYY) for dates
+      expect(screen.getByText('1/15/2024')).toBeInTheDocument()
     })
 
     it('should display "Never" for null lastWatchedAt', () => {

@@ -253,4 +253,3 @@ export async function getDevDefaults(): Promise<DevDefaults> {
     autoSubmit,
   }
 }
-
