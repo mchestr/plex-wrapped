@@ -214,11 +214,11 @@ export function validateRuleCriteria(
   const errors: string[] = []
 
   // Import field registry dynamically to avoid circular dependencies
-  const { FIELD_DEFINITIONS } = require('@/lib/maintenance/field-registry')
+  const { FIELD_DEFINITIONS } = require('@/lib/maintenance/field-registry') as { FIELD_DEFINITIONS: import('@/lib/maintenance/field-registry').FieldDefinition[] }
 
   function validateNode(node: Condition | ConditionGroup, path = 'root'): void {
     if (node.type === 'condition') {
-      const fieldDef = FIELD_DEFINITIONS.find((f: any) => f.key === node.field)
+      const fieldDef = FIELD_DEFINITIONS.find((f) => f.key === node.field)
 
       if (!fieldDef) {
         errors.push(`${path}: Unknown field "${node.field}"`)
@@ -231,7 +231,7 @@ export function validateRuleCriteria(
         )
       }
 
-      if (!fieldDef.allowedOperators.includes(node.operator)) {
+      if (!(fieldDef.allowedOperators as string[]).includes(node.operator)) {
         errors.push(
           `${path}: Operator "${node.operator}" not allowed for field "${node.field}"`
         )

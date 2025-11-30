@@ -256,7 +256,7 @@ describe("CSRF Protection", () => {
       })
 
       await wrappedHandler(request)
-      expect(mockHandler).toHaveBeenCalledWith(request)
+      expect(mockHandler).toHaveBeenCalledWith(request, undefined)
     })
 
     it("should return CSRF error response if check fails", async () => {

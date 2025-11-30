@@ -428,6 +428,8 @@ describe('Maintenance Validation Schemas', () => {
 
     it('should reject minFileSize with invalid unit', () => {
       // Unit validation is not at schema level in hierarchical format
+      // Intentionally using invalid value to test validation - use string cast to bypass type checking
+      const invalidUnit = 'KB' as 'days' | 'months' | 'years' | 'MB' | 'GB' | 'TB'
       const result = RuleCriteriaSchema.safeParse({
         type: 'group',
         id: generateId(),
@@ -439,7 +441,7 @@ describe('Maintenance Validation Schemas', () => {
             field: 'fileSize',
             operator: 'greaterThanOrEqual',
             value: 100,
-            valueUnit: 'KB' as any,
+            valueUnit: invalidUnit,
           },
         ],
       })

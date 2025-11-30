@@ -1,4 +1,10 @@
-import type { MediaType, ReviewStatus, ScanStatus } from "@/lib/validations/maintenance"
+import type { MediaType, ReviewStatus, ScanStatus, RuleCriteria } from "@/lib/validations/maintenance"
+
+/**
+ * Matched rule entry stored in maintenance candidates
+ * Can be a simple rule name string or an object with rule details
+ */
+export type MatchedRule = string | { ruleName: string }
 
 /**
  * Simplified maintenance candidate type used in candidate list views
@@ -27,9 +33,10 @@ export interface MaintenanceCandidate {
 }
 
 /**
- * Rule criteria structure matching the Zod schema
+ * Legacy rule criteria structure (flat format)
+ * @deprecated Use RuleCriteria (hierarchical format) from @/lib/validations/maintenance instead
  */
-export interface RuleCriteria {
+export interface LegacyRuleCriteriaFlat {
   neverWatched?: boolean
   lastWatchedBefore?: {
     value: number
@@ -50,6 +57,11 @@ export interface RuleCriteria {
   tags?: string[]
   operator: "AND" | "OR"
 }
+
+/**
+ * @deprecated Use LegacyRuleCriteriaFlat for legacy flat format, or RuleCriteria from @/lib/validations/maintenance for hierarchical
+ */
+export type { LegacyRuleCriteriaFlat as LegacyRuleCriteria }
 
 /**
  * Aggregated user feedback data for a media item
@@ -156,7 +168,7 @@ export interface CandidateWithDetails {
   playCount: number
   lastWatchedAt: Date | null
   addedAt: Date | null
-  matchedRules: unknown
+  matchedRules: MatchedRule[]
   flaggedAt: Date
   reviewStatus: ReviewStatus
   reviewedAt: Date | null
@@ -175,7 +187,7 @@ export interface CandidateWithDetails {
       description: string | null
       enabled: boolean
       mediaType: MediaType
-      criteria: unknown
+      criteria: RuleCriteria
       actionType: "FLAG_FOR_REVIEW" | "AUTO_DELETE"
     }
   }
@@ -216,7 +228,7 @@ export interface RuleWithStats {
   description: string | null
   enabled: boolean
   mediaType: MediaType
-  criteria: unknown
+  criteria: RuleCriteria
   actionType: "FLAG_FOR_REVIEW" | "AUTO_DELETE"
   schedule: string | null
   lastRunAt: Date | null
