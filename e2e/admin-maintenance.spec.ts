@@ -27,8 +27,10 @@ test.describe('Admin Maintenance Feature', () => {
   test.describe('Maintenance Rules', () => {
     test.describe('UI Structure', () => {
       test('should access maintenance rules page', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/rules');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+
+        // Click the Rules link in sidebar
+        await adminPage.getByRole('link', { name: 'Rules' }).click();
 
         await waitForAdminContent(adminPage, [
           { type: 'heading', value: 'Maintenance Rules' }
@@ -36,8 +38,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should navigate to create rule page', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/rules');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Rules' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Maintenance Rules' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         await adminPage.getByTestId('maintenance-rule-create').click();
 
@@ -47,8 +52,15 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should display rule creation form', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/rules/new');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Rules' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Maintenance Rules' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
+        await adminPage.getByTestId('maintenance-rule-create').click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Create Maintenance Rule' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         await expect(adminPage.getByTestId('maintenance-rule-name-input')).toBeVisible();
         await expect(adminPage.getByTestId('maintenance-rule-media-type-select')).toBeVisible();
@@ -58,8 +70,15 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should show rule builder interface', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/rules/new');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Rules' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Maintenance Rules' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
+        await adminPage.getByTestId('maintenance-rule-create').click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Create Maintenance Rule' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         await expect(adminPage.getByTestId('maintenance-rule-add-condition')).toBeVisible();
         await expect(adminPage.getByTestId('maintenance-rule-add-group')).toBeVisible();
@@ -69,8 +88,15 @@ test.describe('Admin Maintenance Feature', () => {
 
     test.describe('Rule Creation Workflow', () => {
       test('should show validation error when submitting empty form', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/rules/new');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Rules' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Maintenance Rules' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
+        await adminPage.getByTestId('maintenance-rule-create').click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Create Maintenance Rule' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Clear any default name and submit
         const nameInput = adminPage.getByTestId('maintenance-rule-name-input');
@@ -78,13 +104,22 @@ test.describe('Admin Maintenance Feature', () => {
 
         await adminPage.getByTestId('maintenance-rule-submit').click();
 
-        // Should show validation error toast
-        await waitForToast(adminPage, /rule name is required/i, { timeout: 5000 });
+        // HTML5 validation prevents submission - verify field is invalid
+        const validationMessage = await nameInput.evaluate(
+          (el: HTMLInputElement) => el.validationMessage
+        );
+        expect(validationMessage).toBeTruthy();
+
+        // Should still be on create page (form didn't submit)
+        await expect(adminPage.getByRole('heading', { name: 'Create Maintenance Rule' })).toBeVisible();
       });
 
       test('should navigate back when cancel button is clicked', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/rules');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Rules' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Maintenance Rules' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         await adminPage.getByTestId('maintenance-rule-create').click();
         await waitForAdminContent(adminPage, [
@@ -101,8 +136,15 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should create a complete rule successfully', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/rules/new');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Rules' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Maintenance Rules' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
+        await adminPage.getByTestId('maintenance-rule-create').click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Create Maintenance Rule' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         const uniqueRuleName = `E2E Test Rule ${Date.now()}`;
 
@@ -129,6 +171,10 @@ test.describe('Admin Maintenance Feature', () => {
           { type: 'heading', value: 'Maintenance Rules' }
         ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
+        // Force page reload to ensure fresh data
+        await adminPage.reload();
+        await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+
         // The new rule should appear in the list
         await expect(adminPage.getByText(uniqueRuleName)).toBeVisible({ timeout: 10000 });
       });
@@ -138,8 +184,8 @@ test.describe('Admin Maintenance Feature', () => {
   test.describe('Maintenance Candidates', () => {
     test.describe('UI Structure', () => {
       test('should access candidates page', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
 
         await waitForAdminContent(adminPage, [
           { type: 'heading', value: 'Review Candidates' }
@@ -147,16 +193,22 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should display candidate filters', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         await expect(adminPage.getByTestId('review-status-filter')).toBeVisible();
         await expect(adminPage.getByTestId('media-type-filter')).toBeVisible();
       });
 
       test('should show bulk actions in DOM', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Bulk actions exist in DOM (hidden when no selection)
         const bulkApprove = adminPage.getByTestId('bulk-approve-button');
@@ -181,8 +233,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should display seeded candidates', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Should show candidates in the list
         // Wait for the first candidate to appear
@@ -192,8 +247,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should approve individual candidate', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Wait for candidates to load
         await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.CANDIDATES[0].title)).toBeVisible({
@@ -214,8 +272,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should reject individual candidate', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Wait for candidates to load
         await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.CANDIDATES[1].title)).toBeVisible({
@@ -235,8 +296,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should select candidates using checkboxes', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Wait for candidates to load
         await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.CANDIDATES[0].title)).toBeVisible({
@@ -262,8 +326,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should perform bulk approve operation', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Wait for candidates to load
         await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.CANDIDATES[0].title)).toBeVisible({
@@ -287,8 +354,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should perform bulk reject operation', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Wait for candidates to load
         await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.CANDIDATES[0].title)).toBeVisible({
@@ -310,8 +380,11 @@ test.describe('Admin Maintenance Feature', () => {
       });
 
       test('should filter candidates by review status', async ({ adminPage }) => {
-        await adminPage.goto('/admin/maintenance/candidates');
         await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+        await adminPage.getByRole('link', { name: 'Candidates' }).click();
+        await waitForAdminContent(adminPage, [
+          { type: 'heading', value: 'Review Candidates' }
+        ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
         // Wait for initial load with PENDING filter (default)
         await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.CANDIDATES[0].title)).toBeVisible({
@@ -322,8 +395,8 @@ test.describe('Admin Maintenance Feature', () => {
         const statusFilter = adminPage.getByTestId('review-status-filter');
         await statusFilter.click();
 
-        // Select ALL option
-        await adminPage.getByRole('option', { name: /all/i }).click();
+        // Select ALL option (custom dropdown uses buttons, not native options)
+        await adminPage.getByRole('button', { name: /all status/i }).click();
 
         // Page should update - verify we still see candidates
         await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.CANDIDATES[0].title)).toBeVisible({
@@ -343,8 +416,8 @@ test.describe('Admin Maintenance Feature', () => {
     });
 
     test('should access history page', async ({ adminPage }) => {
-      await adminPage.goto('/admin/maintenance/history');
       await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+      await adminPage.getByRole('link', { name: 'Deletion History' }).click();
 
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Deletion History' }
@@ -352,8 +425,11 @@ test.describe('Admin Maintenance Feature', () => {
     });
 
     test('should display deletion history entries', async ({ adminPage }) => {
-      await adminPage.goto('/admin/maintenance/history');
       await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+      await adminPage.getByRole('link', { name: 'Deletion History' }).click();
+      await waitForAdminContent(adminPage, [
+        { type: 'heading', value: 'Deletion History' }
+      ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
       // Should show the seeded deletion log entry
       await expect(adminPage.getByText(MAINTENANCE_TEST_DATA.DELETION_LOG.title)).toBeVisible({
@@ -362,8 +438,11 @@ test.describe('Admin Maintenance Feature', () => {
     });
 
     test('should show deletion statistics', async ({ adminPage }) => {
-      await adminPage.goto('/admin/maintenance/history');
       await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+      await adminPage.getByRole('link', { name: 'Deletion History' }).click();
+      await waitForAdminContent(adminPage, [
+        { type: 'heading', value: 'Deletion History' }
+      ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
       // The history page should show statistics cards or summary
       // Look for common stat elements
@@ -373,29 +452,30 @@ test.describe('Admin Maintenance Feature', () => {
 
   test.describe('Navigation', () => {
     test('should navigate between maintenance pages', async ({ adminPage }) => {
-      // Start at rules page
-      await adminPage.goto('/admin/maintenance/rules');
       await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+
+      // Start at rules page
+      await adminPage.getByRole('link', { name: 'Rules' }).click();
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Maintenance Rules' }
       ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
       // Navigate to candidates
-      await adminPage.goto('/admin/maintenance/candidates');
-      await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+      await adminPage.getByRole('link', { name: 'Candidates' }).click();
       await waitForAdminContent(adminPage, [
         { type: 'heading', value: 'Review Candidates' }
       ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
 
       // Navigate to history
-      await adminPage.goto('/admin/maintenance/history');
-      await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
-      await expect(adminPage.locator('main')).toBeVisible({ timeout: WAIT_TIMEOUTS.PAGE_CONTENT });
+      await adminPage.getByRole('link', { name: 'Deletion History' }).click();
+      await waitForAdminContent(adminPage, [
+        { type: 'heading', value: 'Deletion History' }
+      ], { timeout: WAIT_TIMEOUTS.ADMIN_CONTENT });
     });
 
     test('should access maintenance overview page', async ({ adminPage }) => {
-      await adminPage.goto('/admin/maintenance');
       await waitForAdminPageReady(adminPage, WAIT_TIMEOUTS.ADMIN_CONTENT);
+      await adminPage.getByRole('link', { name: 'Overview' }).click();
 
       // Should load without error
       await expect(adminPage.locator('main')).toBeVisible({ timeout: WAIT_TIMEOUTS.PAGE_CONTENT });

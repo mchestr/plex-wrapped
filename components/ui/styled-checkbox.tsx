@@ -8,7 +8,7 @@ interface StyledCheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>
 }
 
 export const StyledCheckbox = forwardRef<HTMLInputElement, StyledCheckboxProps>(
-  ({ label, description, className = "", disabled = false, id, ...props }, ref) => {
+  ({ label, description, className = "", disabled = false, id, "data-testid": testId, ...props }, ref) => {
     const checkboxId = id || `checkbox-${Math.random().toString(36).substr(2, 9)}`
 
     return (
@@ -24,6 +24,7 @@ export const StyledCheckbox = forwardRef<HTMLInputElement, StyledCheckboxProps>(
           />
           <label
             htmlFor={checkboxId}
+            data-testid={testId}
             className={`
               relative h-5 w-5 rounded border-2 transition-all duration-200 block
               ${
