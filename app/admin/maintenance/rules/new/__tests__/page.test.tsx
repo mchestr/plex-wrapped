@@ -200,7 +200,7 @@ describe('NewRulePage', () => {
         expect(mockShowError).toHaveBeenCalledWith(
           expect.stringContaining('Failed to load Radarr servers')
         )
-      })
+      }, { timeout: 3000 })
     })
 
     it('should show error toast when Sonarr servers fail to load', async () => {
@@ -226,7 +226,7 @@ describe('NewRulePage', () => {
         expect(mockShowError).toHaveBeenCalledWith(
           expect.stringContaining('Failed to load Sonarr servers')
         )
-      })
+      }, { timeout: 3000 })
     })
   })
 

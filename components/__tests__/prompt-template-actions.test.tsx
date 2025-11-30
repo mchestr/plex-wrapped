@@ -1,7 +1,7 @@
 import { deletePromptTemplate, setActivePromptTemplate } from '@/actions/prompts'
 import { PromptTemplateActions } from '@/components/admin/prompts/prompt-template-actions'
 import { PromptTemplate } from '@/lib/generated/prisma/client'
-import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor, act } from '@testing-library/react'
 import { useRouter } from 'next/navigation'
 
 // Mock dependencies
@@ -301,13 +301,17 @@ describe('PromptTemplateActions', () => {
       const setActiveButton = screen.getByText('Set Active')
 
       // First click - should show error
-      fireEvent.click(setActiveButton)
+      await act(async () => {
+        fireEvent.click(setActiveButton)
+      })
       await waitFor(() => {
         expect(screen.getByText('First error')).toBeInTheDocument()
       })
 
       // Second click - error should be cleared on success
-      fireEvent.click(setActiveButton)
+      await act(async () => {
+        fireEvent.click(setActiveButton)
+      })
       await waitFor(() => {
         expect(screen.queryByText('First error')).not.toBeInTheDocument()
       })
@@ -322,7 +326,9 @@ describe('PromptTemplateActions', () => {
       render(<PromptTemplateActions template={mockTemplate} />)
 
       const setActiveButton = screen.getByText('Set Active')
-      fireEvent.click(setActiveButton)
+      await act(async () => {
+        fireEvent.click(setActiveButton)
+      })
 
       await waitFor(() => {
         const errorElement = screen.getByText('Test error')

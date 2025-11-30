@@ -1,5 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import { WrappedPageClient } from '@/components/wrapped/wrapped-page-client'
+import { ToastProvider } from '@/components/ui/toast'
 import * as userActions from '@/actions/users'
 
 // Mock the user actions
@@ -22,6 +23,10 @@ jest.mock('@/components/generator/wrapped-generating-animation', () => ({
   ),
 }))
 
+const renderWithProviders = (component: React.ReactElement) => {
+  return render(<ToastProvider>{component}</ToastProvider>)
+}
+
 describe('WrappedPageClient', () => {
   beforeEach(() => {
     jest.clearAllMocks()
@@ -34,14 +39,14 @@ describe('WrappedPageClient', () => {
   })
 
   it('should show generating animation when status is generating', () => {
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     expect(screen.getByTestId('generating-animation')).toBeInTheDocument()
     expect(screen.getByText('Generating 2024 Wrapped')).toBeInTheDocument()
   })
 
   it('should not show animation when status is not generating', () => {
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="completed" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="completed" />)
 
     expect(screen.queryByTestId('generating-animation')).not.toBeInTheDocument()
   })
@@ -54,7 +59,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // Advance timer to trigger first poll
     jest.advanceTimersByTime(2000)
@@ -72,7 +77,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // First poll
     jest.advanceTimersByTime(2000)
@@ -95,7 +100,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // First poll
     jest.advanceTimersByTime(2000)
@@ -117,7 +122,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // First poll
     jest.advanceTimersByTime(2000)
@@ -146,7 +151,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // First poll - will change status to completed and stop polling
     jest.advanceTimersByTime(2000)
@@ -168,7 +173,7 @@ describe('WrappedPageClient', () => {
     jest.spyOn(userActions, 'getUserPlexWrapped')
       .mockRejectedValue(new Error('Network error'))
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // Advance timer to trigger poll
     jest.advanceTimersByTime(2000)
@@ -191,7 +196,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    const { unmount } = render(
+    const { unmount } = renderWithProviders(
       <WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />
     )
 
@@ -211,7 +216,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     expect(screen.getByTestId('generating-animation')).toBeInTheDocument()
 
@@ -231,7 +236,7 @@ describe('WrappedPageClient', () => {
     jest.spyOn(userActions, 'getUserPlexWrapped')
       .mockResolvedValue(null)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // Advance timer to trigger poll
     jest.advanceTimersByTime(2000)
@@ -250,7 +255,7 @@ describe('WrappedPageClient', () => {
         year: 2024,
       } as any)
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="generating" />)
 
     // Should not have polled yet
     expect(mockGetWrapped).not.toHaveBeenCalled()
@@ -271,7 +276,7 @@ describe('WrappedPageClient', () => {
   it('should not poll when initial status is not generating', () => {
     const mockGetWrapped = jest.spyOn(userActions, 'getUserPlexWrapped')
 
-    render(<WrappedPageClient userId="user-1" year={2024} initialStatus="completed" />)
+    renderWithProviders(<WrappedPageClient userId="user-1" year={2024} initialStatus="completed" />)
 
     // Advance timer
     jest.advanceTimersByTime(5000)

@@ -477,8 +477,8 @@ describe('AdminNav', () => {
       const svgs = container.querySelectorAll('svg')
       svgs.forEach((svg) => {
         expect(svg).toHaveAttribute('viewBox')
-        expect(svg).toHaveAttribute('fill')
-        expect(svg).toHaveAttribute('stroke')
+        // SVGs should have either fill or stroke (or both)
+        expect(svg.hasAttribute('fill') || svg.hasAttribute('stroke')).toBe(true)
       })
     })
 

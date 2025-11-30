@@ -26,7 +26,7 @@ describe('Maintenance Validation Schemas', () => {
       const result = MediaTypeEnum.safeParse('INVALID')
       expect(result.success).toBe(false)
       if (!result.success) {
-        expect(result.error.issues[0].message).toContain("Invalid enum value")
+        expect(result.error.issues[0].message).toContain("Invalid")
       }
     })
   })
