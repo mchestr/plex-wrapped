@@ -469,7 +469,7 @@ describe("getCommandLogs", () => {
       where: {
         createdAt: {
           gte: startDate,
-          lte: endDate,
+          lt: endDate,
         },
       },
       orderBy: { createdAt: "desc" },
@@ -563,7 +563,7 @@ describe("getCommandStats", () => {
       where: {
         createdAt: {
           gte: startDate,
-          lte: endDate,
+          lt: endDate,
         },
       },
       _count: { _all: true },
@@ -649,7 +649,7 @@ describe("getDailyActivity", () => {
       where: {
         createdAt: {
           gte: startDate,
-          lte: endDate,
+          lt: endDate,
         },
       },
       select: {
@@ -733,7 +733,7 @@ describe("getActiveUsers", () => {
       where: {
         createdAt: {
           gte: startDate,
-          lte: endDate,
+          lt: endDate,
         },
       },
       _count: { _all: true },
