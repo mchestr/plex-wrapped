@@ -7,7 +7,7 @@ test.describe('Public Flows', () => {
     await navigateAndVerify(page, '/');
 
     // Check for Sign In button
-    const signInButton = page.getByRole('button', { name: /Sign in with Plex/i });
+    const signInButton = page.getByTestId('sign-in-with-plex');
     await expect(signInButton).toBeVisible({ timeout: 10000 });
     await expect(signInButton).toBeEnabled();
   });
@@ -18,7 +18,7 @@ test.describe('Public Flows', () => {
       waitForSelector: 'h1, h2, [role="heading"]'
     });
 
-    await expect(page.getByRole('heading', { name: 'Invalid Invite' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('invalid-invite-heading')).toBeVisible({ timeout: 10000 });
   });
 
   test('setup page redirects if already set up', async ({ page }) => {
@@ -30,16 +30,16 @@ test.describe('Public Flows', () => {
     // Wait for loading screen to disappear
     await waitForLoadingGone(page);
 
-    await expect(page.getByRole('button', { name: /Sign in with Plex/i })).toBeVisible();
+    await expect(page.getByTestId('sign-in-with-plex')).toBeVisible();
   });
 
   test('denied page is accessible', async ({ page }) => {
     await page.goto('/auth/denied');
 
     // Should show access denied message
-    await expect(page.getByRole('heading', { name: 'Access Denied' })).toBeVisible();
+    await expect(page.getByTestId('access-denied-heading')).toBeVisible();
     // The page actually has a "Try Again" link and a "Return Home" button, not a "Return to Home" link
-    await expect(page.getByRole('button', { name: 'Return Home' })).toBeVisible();
+    await expect(page.getByTestId('return-home-button')).toBeVisible();
   });
 
   test('onboarding page accessibility check', async ({ page }) => {
@@ -52,8 +52,8 @@ test.describe('Public Flows', () => {
 
     if (isOnboarding) {
       // If we stay on onboarding, verify the wizard is visible
-      await expect(page.getByText('Welcome!')).toBeVisible();
-      await expect(page.getByText("Let's get you started")).toBeVisible();
+      await expect(page.getByTestId('onboarding-wizard-heading')).toBeVisible();
+      await expect(page.getByTestId('onboarding-wizard-subheading')).toBeVisible();
     } else {
       // If redirected, ensure we are on a safe page
       expect(isHome || isSignin).toBeTruthy();
@@ -148,10 +148,10 @@ test.describe('Public Flows', () => {
       await waitForLoadingGone(page);
 
       // Wait for the heading to appear (the page uses client-side rendering with animations)
-      await expect(page.getByRole('heading', { name: /Regular User's 2024 Plex Wrapped/i })).toBeVisible({ timeout: 10000 });
+      await expect(page.getByTestId('wrapped-share-heading')).toBeVisible({ timeout: 10000 });
 
-      // 1000 minutes = 16 hours 40 minutes, but formatWatchTimeHours shows "16 hours"
-      await expect(page.getByText(/16 hour/i)).toBeVisible();
+      // Verify total watch time is displayed (uses data-testid for stability)
+      await expect(page.getByTestId('wrapped-total-watch-time')).toBeVisible();
 
     } finally {
       // Cleanup

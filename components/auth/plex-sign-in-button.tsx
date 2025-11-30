@@ -142,6 +142,7 @@ export function PlexSignInButton({
           <button
             onClick={handleSignIn}
             disabled={isLoading}
+            data-testid="sign-in-with-plex"
             className={buttonClassName || defaultButtonClassName}
           >
             {isLoading ? (

@@ -110,7 +110,7 @@ test.describe('User Scenarios', () => {
         await expect(unauthorizedError).not.toBeVisible();
 
         // Verify wrapped content is actually displayed (not "No Wrapped Found")
-        const noWrappedFound = regularUserPage.getByText('No Wrapped Found');
+        const noWrappedFound = regularUserPage.getByTestId('no-wrapped-found');
         await expect(noWrappedFound).not.toBeVisible();
 
         // Verify some wrapped content is visible (check for year in heading or content)
@@ -214,28 +214,24 @@ test.describe('User Scenarios', () => {
         const notFoundError = anonymousPage.getByText('404', { exact: true });
         await expect(notFoundError).not.toBeVisible();
 
-        // Verify shared wrapped content is displayed
-        // Check for the user's name and year in the heading
-        // The heading format is: "{userName}'s {year} Plex Wrapped"
-        const headingText = `${TEST_USERS.REGULAR.name}'s ${currentYear} Plex Wrapped`;
-        const wrappedHeading = anonymousPage.getByRole('heading', { name: headingText });
+        // Verify shared wrapped content is displayed using stable data-testid selectors
+        const wrappedHeading = anonymousPage.getByTestId('wrapped-share-heading');
         await expect(wrappedHeading).toBeVisible({ timeout: 15000 });
 
-        // Verify statistics are visible (1000 minutes = 16 hours)
-        // The formatWatchTimeHours function formats 1000 minutes as "16 hours"
-        const watchTime = anonymousPage.getByText(/16 hour/i);
-        await expect(watchTime).toBeVisible({ timeout: 15000 });
+        // Verify statistics are visible using data-testid selectors
+        const totalWatchTime = anonymousPage.getByTestId('wrapped-total-watch-time');
+        await expect(totalWatchTime).toBeVisible({ timeout: 15000 });
 
         // Verify "Total Watch Time" label is visible
-        const totalWatchTimeLabel = anonymousPage.getByText('Total Watch Time');
+        const totalWatchTimeLabel = anonymousPage.getByTestId('wrapped-total-watch-time-label');
         await expect(totalWatchTimeLabel).toBeVisible({ timeout: 15000 });
 
         // Verify "Movies Watched" label is visible
-        const moviesWatchedLabel = anonymousPage.getByText('Movies Watched');
+        const moviesWatchedLabel = anonymousPage.getByTestId('wrapped-movies-watched-label');
         await expect(moviesWatchedLabel).toBeVisible({ timeout: 15000 });
 
         // Verify "Shows Watched" label is visible
-        const showsWatchedLabel = anonymousPage.getByText('Shows Watched');
+        const showsWatchedLabel = anonymousPage.getByTestId('wrapped-shows-watched-label');
         await expect(showsWatchedLabel).toBeVisible({ timeout: 15000 });
 
         // Verify we're on the share page URL

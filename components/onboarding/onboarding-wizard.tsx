@@ -136,10 +136,10 @@ export function OnboardingWizard({ currentStep: initialStep }: OnboardingWizardP
           transition={{ duration: 0.6 }}
           className="mb-8"
         >
-          <h1 className="text-4xl font-bold mb-2 drop-shadow-lg bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
+          <h1 data-testid="onboarding-wizard-heading" className="text-4xl font-bold mb-2 drop-shadow-lg bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">
             Welcome!
           </h1>
-          <p className="text-slate-300 text-lg">Let's get you started</p>
+          <p data-testid="onboarding-wizard-subheading" className="text-slate-300 text-lg">Let's get you started</p>
         </motion.div>
 
         {/* Step Indicator */}
