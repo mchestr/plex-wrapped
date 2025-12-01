@@ -673,10 +673,10 @@ describe('AdminNav', () => {
 
       const mobileNav = container.querySelector('nav.md\\:hidden')
       // Primary items should be visible in bottom bar (search within mobile nav)
-      expect(mobileNav?.querySelector('[data-testid="admin-nav-users"]')).toBeInTheDocument()
-      expect(mobileNav?.querySelector('[data-testid="admin-nav-invites"]')).toBeInTheDocument()
-      expect(mobileNav?.querySelector('[data-testid="admin-nav-maintenance-overview"]')).toBeInTheDocument()
-      expect(mobileNav?.querySelector('[data-testid="admin-nav-settings"]')).toBeInTheDocument()
+      expect(mobileNav?.querySelector('[data-testid="admin-nav-users-mobile"]')).toBeInTheDocument()
+      expect(mobileNav?.querySelector('[data-testid="admin-nav-invites-mobile"]')).toBeInTheDocument()
+      expect(mobileNav?.querySelector('[data-testid="admin-nav-maintenance-overview-mobile"]')).toBeInTheDocument()
+      expect(mobileNav?.querySelector('[data-testid="admin-nav-settings-mobile"]')).toBeInTheDocument()
     })
 
     it('should call signOut when Sign Out is clicked in More menu', async () => {

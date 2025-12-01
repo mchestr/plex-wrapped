@@ -265,7 +265,7 @@ export function AdminNav() {
         <Link
           key={item.href}
           href={item.href}
-          data-testid={item.testId}
+          data-testid={`${item.testId}-mobile`}
           className={`flex flex-col items-center gap-1 px-2 py-2 rounded-lg transition-all min-w-0 flex-1 ${
             active ? "text-cyan-400" : "text-slate-400"
           }`}

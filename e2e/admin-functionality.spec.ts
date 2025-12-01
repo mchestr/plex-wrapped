@@ -106,10 +106,10 @@ test.describe('Mobile Navigation', () => {
 
   test('should show primary nav items in mobile bottom bar', async ({ adminPage }) => {
     // Primary items should be visible in bottom bar
-    await expect(adminPage.getByTestId('admin-nav-users')).toBeVisible();
-    await expect(adminPage.getByTestId('admin-nav-invites')).toBeVisible();
-    await expect(adminPage.getByTestId('admin-nav-maintenance-overview')).toBeVisible();
-    await expect(adminPage.getByTestId('admin-nav-settings')).toBeVisible();
+    await expect(adminPage.getByTestId('admin-nav-users-mobile')).toBeVisible();
+    await expect(adminPage.getByTestId('admin-nav-invites-mobile')).toBeVisible();
+    await expect(adminPage.getByTestId('admin-nav-maintenance-overview-mobile')).toBeVisible();
+    await expect(adminPage.getByTestId('admin-nav-settings-mobile')).toBeVisible();
     await expect(adminPage.getByTestId('admin-nav-more-mobile')).toBeVisible();
   });
 
@@ -172,12 +172,12 @@ test.describe('Mobile Navigation', () => {
 
   test('should navigate using primary mobile nav items', async ({ adminPage }) => {
     // Click Invites in the bottom bar
-    await adminPage.getByTestId('admin-nav-invites').click();
+    await adminPage.getByTestId('admin-nav-invites-mobile').click();
     await adminPage.waitForURL('**/admin/invites');
     await waitForAdminPageReady(adminPage, 15000);
 
     // Click Settings in the bottom bar
-    await adminPage.getByTestId('admin-nav-settings').click();
+    await adminPage.getByTestId('admin-nav-settings-mobile').click();
     await adminPage.waitForURL('**/admin/settings');
     await waitForAdminPageReady(adminPage, 15000);
   });
