@@ -1,5 +1,36 @@
 import { z } from "zod"
 
+/**
+ * Validates a cron expression pattern
+ * Supports standard 5-field cron format: minute hour day month weekday
+ * Example: "0 2 * * *" (daily at 2 AM)
+ */
+function isValidCronExpression(cron: string): boolean {
+  // Standard 5-field cron: minute hour day-of-month month day-of-week
+  // Each field can be: number, *, */n, n-m, or comma-separated values
+  const fieldPatterns = [
+    /^(\*|(\*\/[1-9]\d*)|([0-5]?\d)(,[0-5]?\d)*|([0-5]?\d-[0-5]?\d))$/, // minute (0-59)
+    /^(\*|(\*\/[1-9]\d*)|(1?\d|2[0-3])(,(1?\d|2[0-3]))*|(1?\d|2[0-3])-(1?\d|2[0-3]))$/, // hour (0-23)
+    /^(\*|(\*\/[1-9]\d*)|([1-9]|[12]\d|3[01])(,([1-9]|[12]\d|3[01]))*|([1-9]|[12]\d|3[01])-([1-9]|[12]\d|3[01]))$/, // day (1-31)
+    /^(\*|(\*\/[1-9]\d*)|([1-9]|1[0-2])(,([1-9]|1[0-2]))*|([1-9]|1[0-2])-([1-9]|1[0-2]))$/, // month (1-12)
+    /^(\*|(\*\/[1-9]\d*)|[0-6](,[0-6])*|[0-6]-[0-6])$/, // weekday (0-6, 0=Sunday)
+  ]
+
+  const fields = cron.trim().split(/\s+/)
+  if (fields.length !== 5) {
+    return false
+  }
+
+  return fields.every((field, index) => fieldPatterns[index].test(field))
+}
+
+// Cron schedule schema with validation
+const CronScheduleSchema = z
+  .string()
+  .refine((val) => isValidCronExpression(val), {
+    message: "Invalid cron expression. Use 5-field format: minute hour day month weekday (e.g., '0 2 * * *' for daily at 2 AM)",
+  })
+
 // Enums matching Prisma schema
 export const MediaTypeEnum = z.enum(["MOVIE", "TV_SERIES", "EPISODE"])
 
@@ -116,7 +147,7 @@ export const CreateMaintenanceRuleSchema = z.object({
   actionDelayDays: z.number().int().min(0).optional(),
   radarrId: z.string().optional(),
   sonarrId: z.string().optional(),
-  schedule: z.string().optional(),
+  schedule: CronScheduleSchema.optional(),
 })
 
 export const UpdateMaintenanceRuleSchema = z.object({
@@ -129,7 +160,7 @@ export const UpdateMaintenanceRuleSchema = z.object({
   actionDelayDays: z.number().int().min(0).optional(),
   radarrId: z.string().optional(),
   sonarrId: z.string().optional(),
-  schedule: z.string().optional(),
+  schedule: CronScheduleSchema.optional().nullable(),
 })
 
 // User media mark schemas

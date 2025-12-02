@@ -139,18 +139,24 @@ deletionWorker.on("failed", (job, err) => {
   logger.error("Deletion job failed", { jobId: job?.id, error: err })
 })
 
-// Initialize schedulers on startup
-const initializeSchedulers = async () => {
+// Initialize schedulers on startup with retry mechanism
+const SCHEDULER_RETRY_DELAY_MS = 30000
+
+const initializeSchedulers = async (isRetry = false): Promise<void> => {
   try {
-    logger.info("Initializing maintenance rule schedulers")
+    logger.info(isRetry ? "Retrying maintenance rule scheduler initialization" : "Initializing maintenance rule schedulers")
     await syncAllRuleSchedules()
     logger.info("Maintenance rule schedulers initialized")
   } catch (error) {
     logger.error("Failed to initialize maintenance rule schedulers", { error })
+    if (!isRetry) {
+      logger.info(`Will retry scheduler initialization in ${SCHEDULER_RETRY_DELAY_MS / 1000}s`)
+      setTimeout(() => initializeSchedulers(true), SCHEDULER_RETRY_DELAY_MS)
+    }
   }
 }
 
-// Run initialization
+// Run initialization (non-blocking with retry on failure)
 initializeSchedulers()
 
 // Graceful shutdown

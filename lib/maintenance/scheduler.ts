@@ -11,11 +11,25 @@ import { createLogger } from "@/lib/utils/logger"
 
 const logger = createLogger("maintenance-scheduler")
 
+/** Prefix for maintenance rule scheduler IDs */
+const SCHEDULER_ID_PREFIX = "maintenance-rule-" as const
+
 /**
  * Generate a unique scheduler ID for a rule
  */
 function getSchedulerId(ruleId: string): string {
-  return `maintenance-rule-${ruleId}`
+  return `${SCHEDULER_ID_PREFIX}${ruleId}`
+}
+
+/**
+ * Extract rule ID from a scheduler ID
+ * @returns The rule ID if valid, null otherwise
+ */
+function getRuleIdFromSchedulerId(schedulerId: string): string | null {
+  if (schedulerId.startsWith(SCHEDULER_ID_PREFIX)) {
+    return schedulerId.slice(SCHEDULER_ID_PREFIX.length)
+  }
+  return null
 }
 
 /**
@@ -150,12 +164,13 @@ export async function getActiveSchedulers(): Promise<
     const schedulers = await maintenanceQueue.getJobSchedulers()
 
     return schedulers
-      .filter((s): s is typeof s & { id: string } =>
-        typeof s.id === "string" && s.id.startsWith("maintenance-rule-")
-      )
+      .filter((s): s is typeof s & { id: string } => {
+        if (typeof s.id !== "string") return false
+        return getRuleIdFromSchedulerId(s.id) !== null
+      })
       .map((s) => ({
         id: s.id,
-        ruleId: s.id.replace("maintenance-rule-", ""),
+        ruleId: getRuleIdFromSchedulerId(s.id)!,
         pattern: s.pattern ?? null,
         next: s.next ? new Date(s.next) : null,
       }))
