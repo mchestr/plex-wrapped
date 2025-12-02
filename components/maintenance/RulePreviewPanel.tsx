@@ -18,7 +18,7 @@ export function RulePreviewPanel({ criteria, selectedItem }: RulePreviewPanelPro
 
   if (!selectedItem) {
     return (
-      <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4">
+      <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4" data-testid="rule-preview-panel">
         <div className="text-center py-6 text-slate-500 text-sm">
           <svg className="w-10 h-10 mx-auto mb-2 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -35,11 +35,11 @@ export function RulePreviewPanel({ criteria, selectedItem }: RulePreviewPanelPro
   const passedCount = conditionResults.filter(r => r.passed).length
 
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4">
+    <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4" data-testid="rule-preview-panel">
       {/* Result header */}
       <div className={`flex items-center justify-between p-3 rounded-lg mb-4 ${
         matches ? 'bg-green-900/20' : 'bg-red-900/20'
-      }`}>
+      }`} data-testid="rule-preview-result">
         <div className="flex items-center gap-2">
           <div className={`w-3 h-3 rounded-full ${matches ? 'bg-green-400' : 'bg-red-400'}`} />
           <span className={`text-sm font-medium ${matches ? 'text-green-400' : 'text-red-400'}`}>

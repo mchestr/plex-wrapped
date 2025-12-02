@@ -1,5 +1,8 @@
 import { type OverseerrParsed } from "@/lib/validations/overseerr";
 import { fetchWithTimeout, isTimeoutError } from "@/lib/utils/fetch-with-timeout";
+import { createLogger } from "@/lib/utils/logger";
+
+const logger = createLogger("overseerr");
 
 export async function testOverseerrConnection(config: OverseerrParsed): Promise<{ success: boolean; error?: string }> {
   // TEST MODE BYPASS - Skip connection tests in test environment
@@ -196,16 +199,30 @@ export async function batchGetOverseerrMediaStatus(
     const batch = items.slice(i, i + batchSize)
     const promises = batch.map(async (item) => {
       const key = `${item.mediaType}_${item.tmdbId}`
-      const result = await getOverseerrMediaByTmdbId(config, item.tmdbId, item.mediaType)
-      if (result.success && result.data) {
-        const latestRequest = result.data.requests?.[0]
-        const requestCount = result.data.requests?.length || 0
-        results.set(key, {
-          status: result.data.status,
-          hasRequest: requestCount > 0,
-          requestedBy: latestRequest?.requestedBy?.displayName,
-          requestedAt: latestRequest?.createdAt ? new Date(latestRequest.createdAt) : undefined,
-          requestCount,
+      try {
+        const result = await getOverseerrMediaByTmdbId(config, item.tmdbId, item.mediaType)
+        if (result.success && result.data) {
+          const latestRequest = result.data.requests?.[0]
+          const requestCount = result.data.requests?.length || 0
+          results.set(key, {
+            status: result.data.status,
+            hasRequest: requestCount > 0,
+            requestedBy: latestRequest?.requestedBy?.displayName,
+            requestedAt: latestRequest?.createdAt ? new Date(latestRequest.createdAt) : undefined,
+            requestCount,
+          })
+        } else if (!result.success) {
+          logger.debug("Failed to fetch media status", {
+            tmdbId: item.tmdbId,
+            mediaType: item.mediaType,
+            error: result.error,
+          })
+        }
+      } catch (error) {
+        logger.error("Error fetching Overseerr media status", {
+          tmdbId: item.tmdbId,
+          mediaType: item.mediaType,
+          error,
         })
       }
     })

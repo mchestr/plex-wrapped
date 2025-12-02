@@ -58,7 +58,7 @@ export function DataInspector({ item }: DataInspectorProps) {
   const overseerr = item.overseerr as Record<string, unknown> | null | undefined
 
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4">
+    <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4" data-testid="data-inspector">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium text-slate-400">Data Inspector</h3>
         <button

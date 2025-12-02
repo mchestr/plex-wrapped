@@ -93,7 +93,7 @@ export function MediaBrowser({ mediaType, selectedItem, onSelectItem, criteria }
   }, [filteredItems, selectedItem, onSelectItem, isLoading])
 
   return (
-    <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4">
+    <div className="bg-slate-800/50 rounded-lg border border-slate-700 p-4" data-testid="media-browser">
       {/* Header with match summary */}
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-sm font-medium text-slate-400">Test Media</h3>
@@ -121,12 +121,13 @@ export function MediaBrowser({ mediaType, selectedItem, onSelectItem, criteria }
       </div>
 
       {/* Filter tabs */}
-      <div className="flex gap-1 mb-3 bg-slate-900/50 p-1 rounded-lg">
+      <div className="flex gap-1 mb-3 bg-slate-900/50 p-1 rounded-lg" data-testid="media-browser-filters">
         <FilterTab
           active={filterMode === 'all'}
           onClick={() => setFilterMode('all')}
           label="All"
           count={totalCount}
+          testId="filter-all"
         />
         <FilterTab
           active={filterMode === 'matching'}
@@ -134,6 +135,7 @@ export function MediaBrowser({ mediaType, selectedItem, onSelectItem, criteria }
           label="Matching"
           count={matchCount}
           variant="success"
+          testId="filter-matching"
         />
         <FilterTab
           active={filterMode === 'not-matching'}
@@ -141,6 +143,7 @@ export function MediaBrowser({ mediaType, selectedItem, onSelectItem, criteria }
           label="Not Matching"
           count={totalCount - matchCount}
           variant="danger"
+          testId="filter-not-matching"
         />
       </div>
 
@@ -193,9 +196,10 @@ interface FilterTabProps {
   label: string
   count: number
   variant?: 'default' | 'success' | 'danger'
+  testId?: string
 }
 
-function FilterTab({ active, onClick, label, count, variant = 'default' }: FilterTabProps) {
+function FilterTab({ active, onClick, label, count, variant = 'default', testId }: FilterTabProps) {
   const countColor = {
     default: 'text-slate-400',
     success: 'text-green-400',
@@ -206,6 +210,7 @@ function FilterTab({ active, onClick, label, count, variant = 'default' }: Filte
     <button
       type="button"
       onClick={onClick}
+      data-testid={testId}
       className={`
         flex-1 px-2 py-1.5 text-xs font-medium rounded transition-colors
         ${active
