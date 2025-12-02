@@ -25,10 +25,15 @@ function isValidCronExpression(cron: string): boolean {
 }
 
 // Cron schedule schema with validation
-// Allows empty strings (treated as no schedule) or valid cron expressions
+// Allows undefined, null, empty strings, or valid cron expressions
 const CronScheduleSchema = z
   .string()
-  .transform((val) => val.trim() || undefined) // Empty strings become undefined
+  .optional()
+  .nullable()
+  .transform((val) => {
+    if (!val || val.trim() === "") return undefined
+    return val.trim()
+  })
   .refine((val) => val === undefined || isValidCronExpression(val), {
     message: "Invalid cron expression. Use 5-field format: minute hour day month weekday (e.g., '0 2 * * *' for daily at 2 AM)",
   })
@@ -149,7 +154,7 @@ export const CreateMaintenanceRuleSchema = z.object({
   actionDelayDays: z.number().int().min(0).optional(),
   radarrId: z.string().optional(),
   sonarrId: z.string().optional(),
-  schedule: CronScheduleSchema.optional(),
+  schedule: CronScheduleSchema,
 })
 
 export const UpdateMaintenanceRuleSchema = z.object({
@@ -162,7 +167,7 @@ export const UpdateMaintenanceRuleSchema = z.object({
   actionDelayDays: z.number().int().min(0).optional(),
   radarrId: z.string().optional(),
   sonarrId: z.string().optional(),
-  schedule: CronScheduleSchema.optional().nullable(),
+  schedule: CronScheduleSchema,
 })
 
 // User media mark schemas
