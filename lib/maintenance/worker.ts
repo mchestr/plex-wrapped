@@ -4,6 +4,7 @@ import { createLogger } from "@/lib/utils/logger"
 import type { ScanJobData, DeletionJobData } from "./queue"
 import { scanForCandidates } from "./scanner"
 import { executeDeletions } from "./deleter"
+import { syncAllRuleSchedules } from "./scheduler"
 
 const logger = createLogger("maintenance-worker")
 
@@ -137,6 +138,20 @@ deletionWorker.on("completed", (job) => {
 deletionWorker.on("failed", (job, err) => {
   logger.error("Deletion job failed", { jobId: job?.id, error: err })
 })
+
+// Initialize schedulers on startup
+const initializeSchedulers = async () => {
+  try {
+    logger.info("Initializing maintenance rule schedulers")
+    await syncAllRuleSchedules()
+    logger.info("Maintenance rule schedulers initialized")
+  } catch (error) {
+    logger.error("Failed to initialize maintenance rule schedulers", { error })
+  }
+}
+
+// Run initialization
+initializeSchedulers()
 
 // Graceful shutdown
 const shutdown = async () => {
