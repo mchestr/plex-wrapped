@@ -162,7 +162,10 @@ export function RuleForm({ mode, initialData, onSuccess }: RuleFormProps) {
         if (onSuccess) {
           onSuccess()
         } else {
-          router.push("/admin/maintenance/rules")
+          // Small delay to ensure toast is visible before navigation
+          setTimeout(() => {
+            router.push("/admin/maintenance/rules")
+          }, 100)
         }
       } else {
         toast.showError(result.error || `Failed to ${mode} rule`)
