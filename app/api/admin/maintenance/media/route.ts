@@ -167,7 +167,6 @@ async function fetchSeries(search: string, limit: number) {
   return NextResponse.json({ items })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function transformMovieToMediaItem(
   movie: RadarrMovie,
   tautulliItem: any,
@@ -261,7 +260,6 @@ function transformMovieToMediaItem(
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function transformSeriesToMediaItem(
   series: SonarrSeries,
   tautulliItem: any,

@@ -4,6 +4,7 @@ import { createLogger } from "@/lib/utils/logger"
 import type { ScanJobData, DeletionJobData } from "./queue"
 import { scanForCandidates } from "./scanner"
 import { executeDeletions } from "./deleter"
+import { syncAllRuleSchedules } from "./scheduler"
 
 const logger = createLogger("maintenance-worker")
 
@@ -137,6 +138,26 @@ deletionWorker.on("completed", (job) => {
 deletionWorker.on("failed", (job, err) => {
   logger.error("Deletion job failed", { jobId: job?.id, error: err })
 })
+
+// Initialize schedulers on startup with retry mechanism
+const SCHEDULER_RETRY_DELAY_MS = 30000
+
+const initializeSchedulers = async (isRetry = false): Promise<void> => {
+  try {
+    logger.info(isRetry ? "Retrying maintenance rule scheduler initialization" : "Initializing maintenance rule schedulers")
+    await syncAllRuleSchedules()
+    logger.info("Maintenance rule schedulers initialized")
+  } catch (error) {
+    logger.error("Failed to initialize maintenance rule schedulers", { error })
+    if (!isRetry) {
+      logger.info(`Will retry scheduler initialization in ${SCHEDULER_RETRY_DELAY_MS / 1000}s`)
+      setTimeout(() => initializeSchedulers(true), SCHEDULER_RETRY_DELAY_MS)
+    }
+  }
+}
+
+// Run initialization (non-blocking with retry on failure)
+initializeSchedulers()
 
 // Graceful shutdown
 const shutdown = async () => {
