@@ -13,13 +13,30 @@ const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000
  * This function converts the end date to the start of the next day so `lt` (less than)
  * can be used to include all records from the entire end date.
  *
+ * ## Timezone Considerations
+ *
+ * **This function assumes UTC dates.** Date strings without timezone info (e.g., "2025-01-15")
+ * are parsed as UTC midnight by JavaScript's Date constructor. This works correctly when:
+ * - Database timestamps are stored in UTC (Prisma's default behavior)
+ * - Date strings come from HTML date inputs (which provide YYYY-MM-DD format)
+ *
+ * **Future timezone support:** If local timezone handling is needed, this function would
+ * need to accept an optional timezone parameter and use a library like `date-fns-tz` to
+ * calculate the correct end-of-day boundary in the user's timezone.
+ *
  * @param dateStr - Date string (e.g., "2025-01-15") or undefined
- * @returns Date object representing start of next day, or undefined if input is undefined
+ * @returns Date object representing start of next day in UTC, or undefined if input is undefined
  *
  * @example
  * // For inclusive date range queries, use with `lt`:
  * const endDateNextDay = toEndOfDayExclusive(params.endDate)
  * prisma.model.findMany({ where: { createdAt: { gte: startDate, lt: endDateNextDay } } })
+ *
+ * @example
+ * // Input: "2025-01-15" (parsed as 2025-01-15T00:00:00.000Z)
+ * // Output: 2025-01-16T00:00:00.000Z
+ * // Records from 2025-01-15T23:59:59.999Z are included (< 2025-01-16T00:00:00.000Z)
+ * // Records from 2025-01-16T00:00:00.001Z are excluded
  */
 export function toEndOfDayExclusive(dateStr: string | undefined): Date | undefined {
   if (!dateStr) return undefined
@@ -54,6 +71,27 @@ export function formatDate(date: Date | null): string {
   return date.toLocaleDateString()
 }
 
+/** Common acronyms that should remain uppercase when converting to title case */
+const COMMON_ACRONYMS = new Set(['TV', 'DVD', 'HD', 'SD', 'UHD', 'HDR', 'CD', 'VR', 'AR', 'AI'])
+
+/**
+ * Convert a string to title case while preserving common acronyms
+ * @param str - String to convert (e.g., 'TV SHOW', 'HD VIDEO')
+ * @returns Title case string with acronyms preserved (e.g., 'TV Show', 'HD Video')
+ */
+function toTitleCaseWithAcronyms(str: string): string {
+  return str
+    .split(' ')
+    .map((word) => {
+      const upperWord = word.toUpperCase()
+      if (COMMON_ACRONYMS.has(upperWord)) {
+        return upperWord
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+    })
+    .join(' ')
+}
+
 /**
  * Get human-readable label for media type
  * @param mediaType - Media type enum value (e.g., 'MOVIE', 'TV_SERIES', 'EPISODE')
@@ -69,8 +107,6 @@ export function getMediaTypeLabel(mediaType: string): string {
   if (labels[mediaType]) return labels[mediaType]
 
   // Fallback: convert to title case for consistency with known types
-  return mediaType
-    .replace(/_/g, ' ')
-    .toLowerCase()
-    .replace(/\b\w/g, (char) => char.toUpperCase())
+  const spaced = mediaType.replace(/_/g, ' ')
+  return toTitleCaseWithAcronyms(spaced)
 }

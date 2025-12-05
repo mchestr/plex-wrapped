@@ -188,6 +188,155 @@ describe('Maintenance Actions', () => {
       expect(result.success).toBe(false)
       expect(result.error).toBe('DB error')
     })
+
+    it('should return empty array when no rules exist (0 rules scenario)', async () => {
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findMany.mockResolvedValue([])
+
+      const result = await getMaintenanceRules()
+
+      expect(result.success).toBe(true)
+      expect(result.data).toEqual([])
+      expect(result.data).toHaveLength(0)
+    })
+
+    it('should handle rules with 0 scans correctly (0 scans scenario)', async () => {
+      const mockRulesNoScans: Partial<MaintenanceRule>[] = [
+        {
+          id: 'rule-1',
+          name: 'New Rule 1',
+          enabled: true,
+          scans: [],
+          _count: { scans: 0 },
+        },
+        {
+          id: 'rule-2',
+          name: 'New Rule 2',
+          enabled: true,
+          scans: [],
+          _count: { scans: 0 },
+        },
+      ]
+
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findMany.mockResolvedValue(mockRulesNoScans as MaintenanceRule[])
+
+      const result = await getMaintenanceRules()
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(2)
+      expect(result.data?.[0].scans).toEqual([])
+      expect(result.data?.[0]._count.scans).toBe(0)
+      expect(result.data?.[1].scans).toEqual([])
+      expect(result.data?.[1]._count.scans).toBe(0)
+    })
+
+    it('should handle mixed states (some rules with scans, some without)', async () => {
+      const mockMixedRules: Partial<MaintenanceRule>[] = [
+        {
+          id: 'rule-1',
+          name: 'Rule With Scans',
+          enabled: true,
+          scans: [
+            {
+              id: 'scan-1',
+              status: 'COMPLETED',
+              itemsScanned: 50,
+              itemsFlagged: 5,
+              completedAt: new Date(),
+            },
+          ],
+          _count: { scans: 10 },
+        },
+        {
+          id: 'rule-2',
+          name: 'Rule Without Scans',
+          enabled: true,
+          scans: [],
+          _count: { scans: 0 },
+        },
+        {
+          id: 'rule-3',
+          name: 'Another Rule With Scans',
+          enabled: false,
+          scans: [
+            {
+              id: 'scan-2',
+              status: 'FAILED',
+              itemsScanned: 0,
+              itemsFlagged: 0,
+              completedAt: null,
+            },
+          ],
+          _count: { scans: 1 },
+        },
+      ]
+
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findMany.mockResolvedValue(mockMixedRules as MaintenanceRule[])
+
+      const result = await getMaintenanceRules()
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(3)
+
+      // Rule with scans
+      expect(result.data?.[0].scans).toHaveLength(1)
+      expect(result.data?.[0]._count.scans).toBe(10)
+
+      // Rule without scans
+      expect(result.data?.[1].scans).toHaveLength(0)
+      expect(result.data?.[1]._count.scans).toBe(0)
+
+      // Another rule with scans (but failed)
+      expect(result.data?.[2].scans).toHaveLength(1)
+      expect(result.data?.[2].scans[0].status).toBe('FAILED')
+      expect(result.data?.[2]._count.scans).toBe(1)
+    })
+
+    it('should use a single findMany call regardless of rule count (N+1 prevention)', async () => {
+      // Create a larger dataset to verify N+1 prevention
+      const mockManyRules: Partial<MaintenanceRule>[] = Array.from({ length: 50 }, (_, i) => ({
+        id: `rule-${i}`,
+        name: `Rule ${i}`,
+        enabled: i % 2 === 0,
+        scans:
+          i % 3 === 0
+            ? [
+                {
+                  id: `scan-${i}`,
+                  status: 'COMPLETED',
+                  itemsScanned: 100 + i,
+                  itemsFlagged: i,
+                  completedAt: new Date(),
+                },
+              ]
+            : [],
+        _count: { scans: i % 3 === 0 ? 5 : 0 },
+      }))
+
+      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
+      mockPrisma.maintenanceRule.findMany.mockResolvedValue(mockManyRules as MaintenanceRule[])
+
+      const result = await getMaintenanceRules()
+
+      expect(result.success).toBe(true)
+      expect(result.data).toHaveLength(50)
+
+      // Verify that findMany was called exactly once (no N+1 queries)
+      // Prisma's include with _count should batch all queries efficiently
+      expect(mockPrisma.maintenanceRule.findMany).toHaveBeenCalledTimes(1)
+
+      // Verify the query structure uses include (which Prisma optimizes to 2 queries)
+      expect(mockPrisma.maintenanceRule.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          include: expect.objectContaining({
+            scans: expect.any(Object),
+            _count: expect.any(Object),
+          }),
+        })
+      )
+    })
   })
 
   describe('createMaintenanceRule', () => {

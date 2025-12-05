@@ -288,6 +288,79 @@ describe('Component', () => {
 - E2E tests in `e2e/` directory
 - Run tests: `npm test` (unit), `npm run test:e2e` (E2E)
 
+## JSDoc Documentation Strategy
+
+### When to Use Comprehensive JSDoc
+
+Use detailed JSDoc documentation for **complex modules** with:
+- Algorithmic logic (e.g., rule evaluation, data transformation)
+- Non-obvious behavior or edge cases
+- External API integrations
+- Reusable utilities used across the codebase
+
+### JSDoc Structure for Complex Modules
+
+```typescript
+/**
+ * Brief one-line description of the module/function.
+ *
+ * ## Overview Section (for modules)
+ *
+ * High-level explanation of what this module does and why.
+ *
+ * ## Algorithm/Process (if applicable)
+ *
+ * Step-by-step explanation of complex logic using:
+ * - Numbered lists for sequential steps
+ * - ASCII diagrams for visual concepts
+ *
+ * ## Special Cases
+ *
+ * Document edge cases and non-obvious behavior.
+ *
+ * @param paramName - Description of parameter
+ * @returns Description of return value
+ *
+ * @example
+ * ```ts
+ * // Working code example that can be tested
+ * const result = functionName(input)
+ * console.log(result) // Expected output
+ * ```
+ */
+```
+
+### JSDoc Best Practices
+
+- **Test examples**: Include working code examples that are verified by tests (see `lib/maintenance/__tests__/jsdoc-examples.test.ts`)
+- **Internal functions**: Mark helper functions with `@internal` tag
+- **Module annotations**: Use `@module` at file level for complex modules
+- **ASCII diagrams**: Use for tree structures, state machines, or data flow
+- **Avoid redundancy**: Don't document self-explanatory code
+
+### Example: Rule Evaluator Module
+
+See `lib/maintenance/rule-evaluator.ts` for a reference implementation:
+- Module-level JSDoc with algorithm explanation
+- ASCII tree diagram for hierarchical evaluation
+- Documented special cases (null handling, type coercion)
+- Working `@example` blocks verified by tests
+
+### Testing JSDoc Examples
+
+Create tests to verify documentation examples remain accurate:
+
+```typescript
+// lib/maintenance/__tests__/jsdoc-examples.test.ts
+describe('JSDoc Documentation Examples', () => {
+  it('should match the documented behavior', () => {
+    // Copy code from @example block
+    const result = documentedFunction(input)
+    expect(result).toBe(expectedOutput)
+  })
+})
+```
+
 ## Logging
 
 Use the centralized logger utility:

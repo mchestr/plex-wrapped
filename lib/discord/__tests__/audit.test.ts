@@ -9,7 +9,6 @@ import {
   getSummaryStats,
   type CreateCommandLogParams,
   type UpdateCommandLogParams,
-  type GetCommandLogsParams,
 } from "../audit"
 import { prisma } from "@/lib/prisma"
 import type {
@@ -31,6 +30,26 @@ jest.mock("@/lib/prisma", () => ({
     },
   },
 }))
+
+// Type-safe mock helpers using jest.MockedFunction
+const mockCreate = prisma.discordCommandLog.create as jest.MockedFunction<
+  typeof prisma.discordCommandLog.create
+>
+const mockUpdate = prisma.discordCommandLog.update as jest.MockedFunction<
+  typeof prisma.discordCommandLog.update
+>
+const mockFindMany = prisma.discordCommandLog.findMany as jest.MockedFunction<
+  typeof prisma.discordCommandLog.findMany
+>
+const mockCount = prisma.discordCommandLog.count as jest.MockedFunction<
+  typeof prisma.discordCommandLog.count
+>
+const mockGroupBy = prisma.discordCommandLog.groupBy as jest.MockedFunction<
+  typeof prisma.discordCommandLog.groupBy
+>
+const mockAggregate = prisma.discordCommandLog.aggregate as jest.MockedFunction<
+  typeof prisma.discordCommandLog.aggregate
+>
 
 jest.mock("@/lib/utils/logger", () => ({
   createLogger: () => ({
@@ -67,8 +86,6 @@ function createMockCommandLog(
 }
 
 describe("createCommandLog", () => {
-  const mockCreate = prisma.discordCommandLog.create as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -164,8 +181,6 @@ describe("createCommandLog", () => {
 })
 
 describe("updateCommandLog", () => {
-  const mockUpdate = prisma.discordCommandLog.update as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -240,8 +255,6 @@ describe("updateCommandLog", () => {
 })
 
 describe("logCommandExecution", () => {
-  const mockCreate = prisma.discordCommandLog.create as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -331,9 +344,6 @@ describe("logCommandExecution", () => {
 })
 
 describe("getCommandLogs", () => {
-  const mockFindMany = prisma.discordCommandLog.findMany as jest.Mock
-  const mockCount = prisma.discordCommandLog.count as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -372,84 +382,46 @@ describe("getCommandLogs", () => {
     })
   })
 
-  it("should filter by discordUserId", async () => {
+  // Parameterized tests for single-field filters
+  test.each([
+    {
+      filterName: "discordUserId",
+      params: { discordUserId: "discord-123" },
+      expectedWhere: { discordUserId: "discord-123" },
+    },
+    {
+      filterName: "userId",
+      params: { userId: "user-123" },
+      expectedWhere: { userId: "user-123" },
+    },
+    {
+      filterName: "commandType",
+      params: { commandType: "MEDIA_MARK" as DiscordCommandType },
+      expectedWhere: { commandType: "MEDIA_MARK" },
+    },
+    {
+      filterName: "commandName",
+      params: { commandName: "!finished" },
+      expectedWhere: { commandName: "!finished" },
+    },
+    {
+      filterName: "status",
+      params: { status: "FAILED" as DiscordCommandStatus },
+      expectedWhere: { status: "FAILED" },
+    },
+    {
+      filterName: "channelId",
+      params: { channelId: "channel-456" },
+      expectedWhere: { channelId: "channel-456" },
+    },
+  ])("should filter by $filterName", async ({ params, expectedWhere }) => {
     mockFindMany.mockResolvedValue([])
     mockCount.mockResolvedValue(0)
 
-    await getCommandLogs({ discordUserId: "discord-123" })
+    await getCommandLogs(params)
 
     expect(mockFindMany).toHaveBeenCalledWith({
-      where: { discordUserId: "discord-123" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      skip: 0,
-    })
-  })
-
-  it("should filter by userId", async () => {
-    mockFindMany.mockResolvedValue([])
-    mockCount.mockResolvedValue(0)
-
-    await getCommandLogs({ userId: "user-123" })
-
-    expect(mockFindMany).toHaveBeenCalledWith({
-      where: { userId: "user-123" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      skip: 0,
-    })
-  })
-
-  it("should filter by commandType", async () => {
-    mockFindMany.mockResolvedValue([])
-    mockCount.mockResolvedValue(0)
-
-    await getCommandLogs({ commandType: "MEDIA_MARK" as DiscordCommandType })
-
-    expect(mockFindMany).toHaveBeenCalledWith({
-      where: { commandType: "MEDIA_MARK" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      skip: 0,
-    })
-  })
-
-  it("should filter by commandName", async () => {
-    mockFindMany.mockResolvedValue([])
-    mockCount.mockResolvedValue(0)
-
-    await getCommandLogs({ commandName: "!finished" })
-
-    expect(mockFindMany).toHaveBeenCalledWith({
-      where: { commandName: "!finished" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      skip: 0,
-    })
-  })
-
-  it("should filter by status", async () => {
-    mockFindMany.mockResolvedValue([])
-    mockCount.mockResolvedValue(0)
-
-    await getCommandLogs({ status: "FAILED" as DiscordCommandStatus })
-
-    expect(mockFindMany).toHaveBeenCalledWith({
-      where: { status: "FAILED" },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-      skip: 0,
-    })
-  })
-
-  it("should filter by channelId", async () => {
-    mockFindMany.mockResolvedValue([])
-    mockCount.mockResolvedValue(0)
-
-    await getCommandLogs({ channelId: "channel-456" })
-
-    expect(mockFindMany).toHaveBeenCalledWith({
-      where: { channelId: "channel-456" },
+      where: expectedWhere,
       orderBy: { createdAt: "desc" },
       take: 50,
       skip: 0,
@@ -523,9 +495,6 @@ describe("getCommandLogs", () => {
 })
 
 describe("getCommandStats", () => {
-  const mockGroupBy = prisma.discordCommandLog.groupBy as jest.Mock
-  const mockCount = prisma.discordCommandLog.count as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -625,8 +594,6 @@ describe("getCommandStats", () => {
 })
 
 describe("getDailyActivity", () => {
-  const mockFindMany = prisma.discordCommandLog.findMany as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -699,8 +666,6 @@ describe("getDailyActivity", () => {
 })
 
 describe("getActiveUsers", () => {
-  const mockGroupBy = prisma.discordCommandLog.groupBy as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -805,10 +770,6 @@ describe("getActiveUsers", () => {
 })
 
 describe("getSummaryStats", () => {
-  const mockCount = prisma.discordCommandLog.count as jest.Mock
-  const mockAggregate = prisma.discordCommandLog.aggregate as jest.Mock
-  const mockGroupBy = prisma.discordCommandLog.groupBy as jest.Mock
-
   beforeEach(() => {
     jest.clearAllMocks()
   })
@@ -903,14 +864,278 @@ describe("getSummaryStats", () => {
   })
 })
 
+describe("Date range boundary behavior", () => {
+  /**
+   * These tests verify that date range filtering uses the correct operators:
+   * - `gte` (greater than or equal) for startDate: includes records from the start date
+   * - `lt` (less than) for endDate: when used with toEndOfDayExclusive(), includes all
+   *   records from the end date but excludes records from the next day
+   *
+   * This is the pattern used after PR #162 to fix inclusive date range filtering.
+   * See: https://github.com/mchestr/plex-manager/pull/162
+   *
+   * NOTE on date-fns evaluation (GitHub issue #164):
+   * The current implementation uses native Date math (adding 24 hours in milliseconds).
+   * This is simple, works correctly for UTC dates, and doesn't require an external library.
+   * date-fns would provide more readable methods like `addDays()` and `startOfDay()`,
+   * but the added dependency isn't justified for this single use case. If more complex
+   * date manipulations are needed in the future (timezone handling, date formatting),
+   * consider adopting date-fns then.
+   */
+
+  const mockFindMany = prisma.discordCommandLog.findMany as jest.Mock
+  const mockCount = prisma.discordCommandLog.count as jest.Mock
+  const mockGroupBy = prisma.discordCommandLog.groupBy as jest.Mock
+  const mockAggregate = prisma.discordCommandLog.aggregate as jest.Mock
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+  })
+
+  describe("getCommandLogs date range", () => {
+    it("should include records from the entire end date when using lt with next day", async () => {
+      // Scenario: User selects date range "2024-01-01" to "2024-01-15"
+      // After toEndOfDayExclusive(), endDate becomes "2024-01-16T00:00:00Z"
+      // Using `lt` should include all records from "2024-01-15"
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-16T00:00:00.000Z") // Next day midnight (after toEndOfDayExclusive)
+
+      mockFindMany.mockResolvedValue([])
+      mockCount.mockResolvedValue(0)
+
+      await getCommandLogs({ startDate, endDate })
+
+      expect(mockFindMany).toHaveBeenCalledWith({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate,
+          },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 50,
+        skip: 0,
+      })
+    })
+
+    it("should exclude records from the day after end date", async () => {
+      // This test demonstrates the filtering behavior:
+      // Records at 2024-01-15T23:59:59.999Z should be included (lt 2024-01-16T00:00:00Z)
+      // Records at 2024-01-16T00:00:00.001Z should be excluded
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-16T00:00:00.000Z") // Next day midnight
+
+      const recordLateOnEndDate = createMockCommandLog({
+        id: "included",
+        createdAt: new Date("2024-01-15T23:59:59.999Z"),
+      })
+
+      mockFindMany.mockResolvedValue([recordLateOnEndDate])
+      mockCount.mockResolvedValue(1)
+
+      const result = await getCommandLogs({ startDate, endDate })
+
+      // Verify the query uses lt operator for proper boundary handling
+      expect(mockFindMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            createdAt: {
+              gte: startDate,
+              lt: endDate, // lt ensures proper exclusive upper bound
+            },
+          }),
+        })
+      )
+      expect(result.logs).toHaveLength(1)
+      expect(result.logs[0].id).toBe("included")
+    })
+  })
+
+  describe("getCommandStats date range", () => {
+    it("should use lt operator for end date in groupBy query", async () => {
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-16T00:00:00.000Z") // After toEndOfDayExclusive
+
+      mockGroupBy.mockResolvedValue([])
+
+      await getCommandStats(startDate, endDate)
+
+      expect(mockGroupBy).toHaveBeenCalledWith({
+        by: ["commandName", "commandType"],
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate, // Exclusive upper bound
+          },
+        },
+        _count: { _all: true },
+        _avg: { responseTimeMs: true },
+      })
+    })
+
+    it("should include records from late in the end date in success/failed counts", async () => {
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-16T00:00:00.000Z")
+
+      mockGroupBy.mockResolvedValue([
+        {
+          commandName: "!test",
+          commandType: "CHAT" as DiscordCommandType,
+          _count: { _all: 10 },
+          _avg: { responseTimeMs: 100 },
+        },
+      ])
+
+      mockCount
+        .mockResolvedValueOnce(8) // success count
+        .mockResolvedValueOnce(2) // failed count
+
+      await getCommandStats(startDate, endDate)
+
+      // Verify the success/failed count queries also use lt for endDate
+      expect(mockCount).toHaveBeenNthCalledWith(1, {
+        where: {
+          commandName: "!test",
+          commandType: "CHAT",
+          status: "SUCCESS",
+          createdAt: { gte: startDate, lt: endDate },
+        },
+      })
+      expect(mockCount).toHaveBeenNthCalledWith(2, {
+        where: {
+          commandName: "!test",
+          commandType: "CHAT",
+          status: "FAILED",
+          createdAt: { gte: startDate, lt: endDate },
+        },
+      })
+    })
+  })
+
+  describe("getDailyActivity date range", () => {
+    it("should use lt operator for end date", async () => {
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-04T00:00:00.000Z") // After toEndOfDayExclusive for "2024-01-03"
+
+      mockFindMany.mockResolvedValue([])
+
+      await getDailyActivity(startDate, endDate)
+
+      expect(mockFindMany).toHaveBeenCalledWith({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate,
+          },
+        },
+        select: {
+          createdAt: true,
+          status: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      })
+    })
+
+    it("should include activity from late evening of end date", async () => {
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-02T00:00:00.000Z") // Query for just Jan 1st
+
+      // Record at 11:59 PM on Jan 1st should be included
+      mockFindMany.mockResolvedValue([
+        { createdAt: new Date("2024-01-01T23:59:59.000Z"), status: "SUCCESS" },
+      ])
+
+      const result = await getDailyActivity(startDate, endDate)
+
+      expect(result).toEqual([
+        { date: "2024-01-01", total: 1, success: 1, failed: 0 },
+      ])
+    })
+  })
+
+  describe("getActiveUsers date range", () => {
+    it("should use lt operator for end date", async () => {
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-16T00:00:00.000Z")
+
+      mockGroupBy.mockResolvedValue([])
+
+      await getActiveUsers(startDate, endDate)
+
+      expect(mockGroupBy).toHaveBeenCalledWith({
+        by: ["discordUserId", "discordUsername", "userId"],
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate,
+          },
+        },
+        _count: { _all: true },
+        _max: { createdAt: true },
+        orderBy: {
+          _count: {
+            discordUserId: "desc",
+          },
+        },
+        take: 20,
+      })
+    })
+  })
+
+  describe("getSummaryStats date range", () => {
+    it("should use lt operator for end date in all queries", async () => {
+      const startDate = new Date("2024-01-01T00:00:00.000Z")
+      const endDate = new Date("2024-01-16T00:00:00.000Z")
+
+      mockCount.mockResolvedValue(0)
+      mockAggregate.mockResolvedValue({ _avg: { responseTimeMs: null } })
+      mockGroupBy.mockResolvedValue([])
+
+      await getSummaryStats(startDate, endDate)
+
+      // Verify count queries use correct date operators
+      expect(mockCount).toHaveBeenCalledWith({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate,
+          },
+        },
+      })
+
+      // Verify aggregate query uses correct date operators
+      expect(mockAggregate).toHaveBeenCalledWith({
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate,
+          },
+        },
+        _avg: { responseTimeMs: true },
+      })
+
+      // Verify groupBy queries use correct date operators
+      expect(mockGroupBy).toHaveBeenCalledWith({
+        by: ["discordUserId"],
+        where: {
+          createdAt: {
+            gte: startDate,
+            lt: endDate,
+          },
+        },
+      })
+    })
+  })
+})
+
 describe("Edge cases and error handling", () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
   describe("createCommandLog edge cases", () => {
-    const mockCreate = prisma.discordCommandLog.create as jest.Mock
-
     it("should handle very long command arguments", async () => {
       const longArgs = "a".repeat(10000)
       const mockLog = createMockCommandLog({ commandArgs: longArgs })
@@ -952,9 +1177,6 @@ describe("Edge cases and error handling", () => {
   })
 
   describe("getCommandLogs edge cases", () => {
-    const mockFindMany = prisma.discordCommandLog.findMany as jest.Mock
-    const mockCount = prisma.discordCommandLog.count as jest.Mock
-
     it("should handle large offset values", async () => {
       mockFindMany.mockResolvedValue([])
       mockCount.mockResolvedValue(100)
