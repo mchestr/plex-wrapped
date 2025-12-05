@@ -42,8 +42,13 @@
  * @module lib/maintenance/rule-evaluator
  */
 
-import type { RuleCriteria, Condition, ConditionGroup } from "@/lib/validations/maintenance"
-import { migrateLegacyRuleCriteria } from "@/lib/validations/maintenance"
+import {
+  migrateLegacyRuleCriteria,
+  type RuleCriteria,
+  type Condition,
+  type ConditionGroup,
+} from "@/lib/validations/maintenance"
+
 import type {
   StringOperator,
   NumberOperator,
