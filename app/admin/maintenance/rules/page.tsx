@@ -1,6 +1,6 @@
 "use client"
 
-import { getMaintenanceRules, deleteMaintenanceRule, toggleMaintenanceRule, triggerManualScan } from "@/actions/maintenance"
+import { getMaintenanceRules, deleteMaintenanceRule, toggleMaintenanceRule } from "@/actions/maintenance"
 import { useToast } from "@/components/ui/toast"
 import { ConfirmModal } from "@/components/admin/shared/confirm-modal"
 import { LoadingSpinner } from "@/components/ui/loading-spinner"
@@ -81,23 +81,6 @@ export default function RulesPage() {
     },
   })
 
-  const scanMutation = useMutation({
-    mutationFn: async (id: string) => {
-      const result = await triggerManualScan(id)
-      if (!result.success) {
-        throw new Error(result.error || 'Failed to trigger scan')
-      }
-      return result
-    },
-    onSuccess: () => {
-      toast.showSuccess('Scan queued successfully')
-      queryClient.invalidateQueries({ queryKey: ['maintenance-rules'] })
-    },
-    onError: (error) => {
-      toast.showError(error instanceof Error ? error.message : 'Failed to trigger scan')
-    },
-  })
-
   function handleDeleteClick(id: string) {
     setRuleIdToDelete(id)
   }
@@ -110,10 +93,6 @@ export default function RulesPage() {
 
   function handleToggle(id: string, currentEnabled: boolean) {
     toggleMutation.mutate({ id, enabled: !currentEnabled })
-  }
-
-  function handleManualScan(id: string) {
-    scanMutation.mutate(id)
   }
 
   if (isLoading) {
@@ -154,10 +133,8 @@ export default function RulesPage() {
         <RuleList
           rules={rulesResult || []}
           onToggle={handleToggle}
-          onManualScan={handleManualScan}
           onDeleteClick={handleDeleteClick}
           isTogglePending={toggleMutation.isPending}
-          isScanPending={scanMutation.isPending}
         />
 
         <ConfirmModal

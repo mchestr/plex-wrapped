@@ -25,11 +25,8 @@ export {
   bulkUpdateCandidates,
 } from "./candidates"
 
-// Scan and deletion operations
-export {
-  triggerManualScan,
-  triggerDeletion,
-} from "./operations"
+// Scan and deletion operations have been removed (BullMQ removal)
+// TODO: These operations need to be redesigned without queue-based processing
 
 // User media marks
 export {

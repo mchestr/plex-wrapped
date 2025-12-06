@@ -11,8 +11,6 @@ import {
   getMaintenanceCandidates,
   updateCandidateReviewStatus,
   bulkUpdateCandidates,
-  triggerManualScan,
-  triggerDeletion,
   getUserMediaMarks,
   createUserMediaMark,
   deleteUserMediaMark,
@@ -20,7 +18,6 @@ import {
 } from '@/actions/maintenance'
 import { requireAdmin } from '@/lib/admin'
 import { prisma } from '@/lib/prisma'
-import { maintenanceQueue, deletionQueue } from '@/lib/maintenance/queue'
 import { getServerSession } from 'next-auth'
 import { revalidatePath } from 'next/cache'
 import type {
@@ -67,14 +64,6 @@ jest.mock('@/lib/prisma', () => ({
   },
 }))
 
-jest.mock('@/lib/maintenance/queue', () => ({
-  maintenanceQueue: {
-    add: jest.fn(),
-  },
-  deletionQueue: {
-    add: jest.fn(),
-  },
-}))
 
 jest.mock('next-auth', () => ({
   getServerSession: jest.fn(),
@@ -87,8 +76,6 @@ jest.mock('next/cache', () => ({
 const mockRequireAdmin = requireAdmin as jest.MockedFunction<typeof requireAdmin>
 const mockGetServerSession = getServerSession as jest.MockedFunction<typeof getServerSession>
 const mockPrisma = prisma as jest.Mocked<typeof prisma>
-const mockMaintenanceQueue = maintenanceQueue as jest.Mocked<typeof maintenanceQueue>
-const mockDeletionQueue = deletionQueue as jest.Mocked<typeof deletionQueue>
 const mockRevalidatePath = revalidatePath as jest.MockedFunction<typeof revalidatePath>
 
 describe('Maintenance Actions', () => {
@@ -865,196 +852,6 @@ describe('Maintenance Actions', () => {
       await expect(bulkUpdateCandidates(['candidate-1'], 'REJECTED')).rejects.toThrow(
         'Unauthorized'
       )
-    })
-  })
-
-  describe('triggerManualScan', () => {
-    it('should trigger manual scan for enabled rule', async () => {
-      const mockRule: Partial<MaintenanceRule> = {
-        id: 'rule-1',
-        name: 'Test Rule',
-        enabled: true,
-      }
-
-      const mockJob = { id: 'job-123' }
-
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as MaintenanceRule)
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockMaintenanceQueue.add.mockResolvedValue(mockJob as any)
-
-      const result = await triggerManualScan('rule-1')
-
-      expect(result.success).toBe(true)
-      expect(result.data).toEqual({ jobId: 'job-123' })
-      expect(mockMaintenanceQueue.add).toHaveBeenCalledWith(
-        'manual-scan-rule-1',
-        {
-          ruleId: 'rule-1',
-          manualTrigger: true,
-        },
-        {
-          priority: 1,
-        }
-      )
-      expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/maintenance')
-    })
-
-    it('should return error when rule not found', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(null)
-
-      const result = await triggerManualScan('nonexistent')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('Maintenance rule not found')
-      expect(mockMaintenanceQueue.add).not.toHaveBeenCalled()
-    })
-
-    it('should return error when rule is disabled', async () => {
-      const mockRule: Partial<MaintenanceRule> = {
-        id: 'rule-1',
-        name: 'Test Rule',
-        enabled: false,
-      }
-
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as MaintenanceRule)
-
-      const result = await triggerManualScan('rule-1')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('Maintenance rule is disabled')
-      expect(mockMaintenanceQueue.add).not.toHaveBeenCalled()
-    })
-
-    it('should require admin access', async () => {
-      mockRequireAdmin.mockRejectedValue(new Error('Unauthorized'))
-
-      await expect(triggerManualScan('rule-1')).rejects.toThrow('Unauthorized')
-    })
-
-    it('should handle queue errors', async () => {
-      const mockRule: Partial<MaintenanceRule> = { id: 'rule-1', enabled: true }
-
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceRule.findUnique.mockResolvedValue(mockRule as MaintenanceRule)
-      mockMaintenanceQueue.add.mockRejectedValue(new Error('Queue error'))
-
-      const result = await triggerManualScan('rule-1')
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('Queue error')
-    })
-  })
-
-  describe('triggerDeletion', () => {
-    it('should trigger deletion for approved candidates', async () => {
-      const mockCandidates: Partial<MaintenanceCandidate>[] = [
-        { id: 'candidate-1', reviewStatus: 'APPROVED' },
-        { id: 'candidate-2', reviewStatus: 'APPROVED' },
-      ]
-
-      const mockJob = { id: 'job-456' }
-
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
-        mockCandidates as MaintenanceCandidate[]
-      )
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockDeletionQueue.add.mockResolvedValue(mockJob as any)
-
-      const result = await triggerDeletion(['candidate-1', 'candidate-2'], true)
-
-      expect(result.success).toBe(true)
-      expect(result.data).toEqual({ jobId: 'job-456' })
-      expect(mockDeletionQueue.add).toHaveBeenCalledWith(
-        expect.stringContaining('deletion-'),
-        {
-          candidateIds: ['candidate-1', 'candidate-2'],
-          deleteFiles: true,
-          userId: 'admin-1',
-        },
-        {
-          priority: 1,
-        }
-      )
-      expect(mockRevalidatePath).toHaveBeenCalledWith('/admin/maintenance')
-    })
-
-    it('should support deletion without removing files', async () => {
-      const mockCandidates: Partial<MaintenanceCandidate>[] = [
-        { id: 'candidate-1', reviewStatus: 'APPROVED' },
-      ]
-      const mockJob = { id: 'job-789' }
-
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
-        mockCandidates as MaintenanceCandidate[]
-      )
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      mockDeletionQueue.add.mockResolvedValue(mockJob as any)
-
-      const result = await triggerDeletion(['candidate-1'], false)
-
-      expect(result.success).toBe(true)
-      expect(mockDeletionQueue.add).toHaveBeenCalledWith(
-        expect.any(String),
-        expect.objectContaining({
-          deleteFiles: false,
-        }),
-        expect.any(Object)
-      )
-    })
-
-    it('should return error when no candidates found', async () => {
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue([])
-
-      const result = await triggerDeletion(['nonexistent'], true)
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('No candidates found')
-      expect(mockDeletionQueue.add).not.toHaveBeenCalled()
-    })
-
-    it('should return error when some candidates not found', async () => {
-      const mockCandidates: Partial<MaintenanceCandidate>[] = [
-        { id: 'candidate-1', reviewStatus: 'APPROVED' },
-      ]
-
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
-        mockCandidates as MaintenanceCandidate[]
-      )
-
-      const result = await triggerDeletion(['candidate-1', 'candidate-2'], true)
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('Some candidates were not found')
-    })
-
-    it('should return error when candidates not approved', async () => {
-      const mockCandidates: Partial<MaintenanceCandidate>[] = [
-        { id: 'candidate-1', reviewStatus: 'APPROVED' },
-        { id: 'candidate-2', reviewStatus: 'PENDING' },
-      ]
-
-      mockRequireAdmin.mockResolvedValue(mockAdminSession as Session)
-      mockPrisma.maintenanceCandidate.findMany.mockResolvedValue(
-        mockCandidates as MaintenanceCandidate[]
-      )
-
-      const result = await triggerDeletion(['candidate-1', 'candidate-2'], true)
-
-      expect(result.success).toBe(false)
-      expect(result.error).toBe('1 candidate(s) are not approved for deletion')
-    })
-
-    it('should require admin access', async () => {
-      mockRequireAdmin.mockRejectedValue(new Error('Unauthorized'))
-
-      await expect(triggerDeletion(['candidate-1'], true)).rejects.toThrow('Unauthorized')
     })
   })
 

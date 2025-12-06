@@ -9,28 +9,6 @@ export async function register() {
     return
   }
 
-  // Initialize maintenance workers if enabled
-  const envWorkersEnabled = process.env.ENABLE_MAINTENANCE_WORKERS === "true"
-
-  if (envWorkersEnabled) {
-    try {
-      // Import workers to initialize them
-      // Workers register their own event handlers and shutdown listeners
-      await import("./lib/maintenance/worker")
-      console.log("Maintenance workers initialized successfully")
-    } catch (error) {
-      // Silently fail if workers can't be loaded (e.g., missing Redis connection)
-      // This allows the app to start even if workers can't be initialized
-      if (process.env.NODE_ENV === "development") {
-        console.warn("Maintenance workers could not be loaded:", error)
-      }
-    }
-  } else {
-    if (process.env.NODE_ENV === "development") {
-      console.log("Maintenance workers disabled (set ENABLE_MAINTENANCE_WORKERS=true to enable)")
-    }
-  }
-
   // Check if bot should attempt to start (can be disabled via env var for manual control)
   const envBotEnabled = process.env.ENABLE_DISCORD_BOT !== "false"
 

@@ -75,10 +75,8 @@ describe('RuleList', () => {
   const defaultProps = {
     rules: [mockRule],
     onToggle: jest.fn(),
-    onManualScan: jest.fn(),
     onDeleteClick: jest.fn(),
     isTogglePending: false,
-    isScanPending: false,
   }
 
   beforeEach(() => {
@@ -215,17 +213,6 @@ describe('RuleList', () => {
       expect(onToggle).toHaveBeenCalledWith('rule-1', true)
     })
 
-    it('should call onManualScan when scan button is clicked', async () => {
-      const user = userEvent.setup()
-      const onManualScan = jest.fn()
-
-      render(<RuleList {...defaultProps} onManualScan={onManualScan} />)
-
-      await user.click(screen.getByTestId('scan-rule-rule-1'))
-
-      expect(onManualScan).toHaveBeenCalledWith('rule-1')
-    })
-
     it('should call onDeleteClick when delete button is clicked', async () => {
       const user = userEvent.setup()
       const onDeleteClick = jest.fn()
@@ -250,25 +237,6 @@ describe('RuleList', () => {
       render(<RuleList {...defaultProps} isTogglePending={true} />)
 
       expect(screen.getByTestId('toggle-rule-rule-1')).toBeDisabled()
-    })
-
-    it('should disable scan button when isScanPending is true', () => {
-      render(<RuleList {...defaultProps} isScanPending={true} />)
-
-      expect(screen.getByTestId('scan-rule-rule-1')).toBeDisabled()
-    })
-
-    it('should disable scan button when rule is disabled', () => {
-      const disabledRule = { ...mockRule, enabled: false }
-      render(<RuleList {...defaultProps} rules={[disabledRule]} />)
-
-      expect(screen.getByTestId('scan-rule-rule-1')).toBeDisabled()
-    })
-
-    it('should enable scan button when rule is enabled and not pending', () => {
-      render(<RuleList {...defaultProps} />)
-
-      expect(screen.getByTestId('scan-rule-rule-1')).not.toBeDisabled()
     })
   })
 
@@ -328,7 +296,6 @@ describe('RuleList', () => {
 
       expect(screen.getByTestId('rule-row-rule-1')).toBeInTheDocument()
       expect(screen.getByTestId('toggle-rule-rule-1')).toBeInTheDocument()
-      expect(screen.getByTestId('scan-rule-rule-1')).toBeInTheDocument()
       expect(screen.getByTestId('edit-rule-rule-1')).toBeInTheDocument()
       expect(screen.getByTestId('delete-rule-rule-1')).toBeInTheDocument()
     })
@@ -336,7 +303,6 @@ describe('RuleList', () => {
     it('should have title attributes on action buttons', () => {
       render(<RuleList {...defaultProps} />)
 
-      expect(screen.getByTestId('scan-rule-rule-1')).toHaveAttribute('title', 'Run Scan')
       expect(screen.getByTestId('edit-rule-rule-1')).toHaveAttribute('title', 'Edit')
       expect(screen.getByTestId('delete-rule-rule-1')).toHaveAttribute('title', 'Delete')
     })
