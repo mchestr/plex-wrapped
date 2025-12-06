@@ -27,19 +27,15 @@ type MaintenanceRule = {
 interface RuleListProps {
   rules: MaintenanceRule[]
   onToggle: (id: string, currentEnabled: boolean) => void
-  onManualScan: (id: string) => void
   onDeleteClick: (id: string) => void
   isTogglePending: boolean
-  isScanPending: boolean
 }
 
 export function RuleList({
   rules,
   onToggle,
-  onManualScan,
   onDeleteClick,
   isTogglePending,
-  isScanPending,
 }: RuleListProps) {
   function getActionTypeLabel(actionType: string) {
     switch (actionType) {
@@ -146,17 +142,6 @@ export function RuleList({
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => onManualScan(rule.id)}
-                        disabled={!rule.enabled || isScanPending}
-                        className="text-slate-400 hover:text-cyan-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                        title="Run Scan"
-                        data-testid={`scan-rule-${rule.id}`}
-                      >
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                        </svg>
-                      </button>
                       <Link
                         href={`/admin/maintenance/rules/${rule.id}/edit`}
                         className="text-slate-400 hover:text-white transition-colors"
